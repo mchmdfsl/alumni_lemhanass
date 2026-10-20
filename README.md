@@ -1,0 +1,45 @@
+# Sistem Pendataan Alumni Lemhannas
+
+Aplikasi Next.js 16 dengan PostgreSQL. Repository ini memuat antarmuka admin, API backend awal, autentikasi admin berbasis cookie, alur pengajuan alumni, serta importer CSV.
+
+## Kebutuhan
+- Node.js 20.9 atau lebih baru
+- pnpm 10 (sesuai `packageManager`)
+- PostgreSQL 15+
+
+## Menjalankan lokal / VPS
+1. Install dependency: `pnpm install`
+2. Buat database PostgreSQL dan user khusus aplikasi dengan hak akses minimum.
+3. Jalankan schema: `psql "$DATABASE_URL" -f db/schema.sql`
+4. Salin `.env.example` ke `.env.local`, lalu atur `DATABASE_URL`, `ADMIN_USERNAME` atau `ADMIN_EMAIL`, `ADMIN_PASSWORD`, dan `SESSION_SECRET` yang acak dan panjang.
+5. Jalankan development: `pnpm dev`
+6. Uji build produksi: `pnpm build` lalu `pnpm start`.
+
+Jangan commit `.env.local`, kredensial database, atau file CSV berisi data pribadi alumni. Aktifkan HTTPS di reverse proxy VPS. Batasi akses port PostgreSQL ke jaringan privat/localhost.
+
+## API
+- `POST /api/auth/login` — login admin menggunakan `identifier` dan `password`.
+- `POST /api/auth/logout` — menghapus sesi admin.
+- `GET /api/auth/me` — status sesi admin.
+- `GET /api/alumni` — daftar alumni (wajib login); query opsional `search`, `status`, `angkatan`, `wilayah`, `limit`, `offset`.
+- `POST /api/alumni` — tambah data alumni secara manual (wajib login).
+- `PATCH /api/alumni/:id` — edit data alumni (nama, email, angkatan, instansi, jabatan, wilayah, alamat, nomorHp, status, nomorAlumni); wajib login.
+- `DELETE /api/alumni/:id` — hapus data alumni; wajib login.
+- `PATCH /api/alumni/:id/status` — ubah status ke `Menunggu`, `Terverifikasi`, atau `Ditolak`; alasan wajib untuk penolakan (wajib login).
+- `GET /api/alumni/export` — ekspor seluruh data alumni sebagai CSV (UTF-8 BOM); query opsional `status`, `angkatan`, `wilayah`; wajib login.
+- `POST /api/public/alumni` — pengajuan alumni publik, status awal `Menunggu`.
+- `GET /api/stats/wilayah` — statistik jumlah alumni per wilayah; wajib login.
+- `GET /api/stats/angkatan` — statistik jumlah alumni per angkatan beserta wilayah dominan; wajib login.
+- `GET /api/stats/aktivitas` — statistik aktivitas data alumni bulan berjalan (baru, diperbarui, diverifikasi, ditolak); wajib login.
+
+## Impor CSV
+CSV UTF-8 dengan header yang sesuai. Kolom yang dikenali antara lain `nama`, `angkatan`, `nomor alumni`, `tahun angkatan`, `instansi`, `jabatan`, `wilayah`/`provinsi`, `alamat`, `email`, `nomor hp`, `status`. `nama` dan `angkatan` wajib. Bila kolom status tidak tersedia atau tidak cocok, data diimpor sebagai `Menunggu` agar tidak otomatis melewati verifikasi. Setelah data diperiksa, admin dapat memverifikasi data yang benar.
+
+```bash
+node --env-file=.env.local scripts/import-alumni.mjs ./data-alumni.csv
+```
+
+`ON CONFLICT DO NOTHING` melewati duplikasi berdasarkan unique constraints. Lakukan backup database sebelum impor. Uji impor terlebih dahulu dengan salinan kecil yang tidak berisi data sensitif.
+
+## Catatan kesiapan
+Proxy server memproteksi rute `/admin` dengan sesi bertanda tangan; API tetap memeriksa sesi secara terpisah. API dan schema perlu diuji pada lingkungan VPS aktual. Halaman dashboard dan beberapa modul UI lama masih berisi data statis; jangan menganggap angka dashboard atau semua menu laporan telah terhubung ke database sebelum integrasi UI lanjutan selesai.

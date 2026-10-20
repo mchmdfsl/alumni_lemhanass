@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+:root {
+  --lemhannas-navy: #0b1f3a;
+  --lemhannas-navy-dark: #071526;
+  --lemhannas-blue: #123b68;
+  --lemhannas-gold: #c9a227;
+  --lemhannas-red: #9e1b32;
+  --lemhannas-white: #ffffff;
+  --lemhannas-background: #f5f7fa;
+  --lemhannas-text: #172033;
+  --lemhannas-muted: #64748b;
+  --lemhannas-border: #dbe1e8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--lemhannas-background);
+  color: var(--lemhannas-text);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}

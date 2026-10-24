@@ -192,18 +192,25 @@ export async function PATCH(
         },
       };
 
-      const response = responses[result.error];
+      const errorCode = result.error;
+const response =
+  typeof errorCode === "string"
+    ? responses[errorCode]
+    : undefined;
 
-      return NextResponse.json(
-        { error: response.message },
-        { status: response.status },
-      );
-    }
+if (!response) {
+  console.error("Unexpected registration review result:", result);
 
-    return NextResponse.json({
-      ok: true,
-      status: result.status,
-    });
+  return NextResponse.json(
+    { error: "Terjadi kesalahan saat memproses pendaftaran." },
+    { status: 500 },
+  );
+}
+
+return NextResponse.json(
+  { error: response.message },
+  { status: response.status },
+);
   } catch (error) {
     console.error("PATCH alumni account request failed:", error);
 

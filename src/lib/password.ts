@@ -3,15 +3,32 @@ import {
   randomBytes,
   scrypt as scryptCallback,
   timingSafeEqual,
+  type ScryptOptions,
 } from "node:crypto";
-import { promisify } from "node:util";
 
-const scrypt = promisify(scryptCallback);
 const KEY_LENGTH = 64;
 const SALT_LENGTH = 16;
 const COST = 16384;
 const BLOCK_SIZE = 8;
 const PARALLELIZATION = 1;
+
+function scryptAsync(
+  password: string,
+  salt: Buffer,
+  keyLength: number,
+  options: ScryptOptions,
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    scryptCallback(password, salt, keyLength, options, (error, key) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve(key as Buffer);
+    });
+  });
+}
 
 export async function hashPassword(password: string): Promise<string> {
   if (password.length < 12) {
@@ -24,12 +41,12 @@ export async function hashPassword(password: string): Promise<string> {
 
   const salt = randomBytes(SALT_LENGTH);
 
-  const derivedKey = (await scrypt(password, salt, KEY_LENGTH, {
+  const derivedKey = await scryptAsync(password, salt, KEY_LENGTH, {
     N: COST,
     r: BLOCK_SIZE,
     p: PARALLELIZATION,
     maxmem: 64 * 1024 * 1024,
-  })) as Buffer;
+  });
 
   return [
     "scrypt",
@@ -46,6 +63,13 @@ export async function verifyPassword(
   storedHash: string,
 ): Promise<boolean> {
   try {
+    if (
+      typeof storedHash !== "string" ||
+      Buffer.byteLength(password, "utf8") > 1024
+    ) {
+      return false;
+    }
+
     const parts = storedHash.split("$");
 
     if (parts.length !== 6 || parts[0] !== "scrypt") {
@@ -56,8 +80,6 @@ export async function verifyPassword(
     const blockSize = Number(parts[2]);
     const parallelization = Number(parts[3]);
 
-    // Batasi parameter agar nilai database yang rusak tidak
-    // menyebabkan konsumsi memori/CPU yang tidak terkendali.
     if (
       cost !== COST ||
       blockSize !== BLOCK_SIZE ||
@@ -76,12 +98,12 @@ export async function verifyPassword(
       return false;
     }
 
-    const actual = (await scrypt(password, salt, KEY_LENGTH, {
+    const actual = await scryptAsync(password, salt, KEY_LENGTH, {
       N: COST,
       r: BLOCK_SIZE,
       p: PARALLELIZATION,
       maxmem: 64 * 1024 * 1024,
-    })) as Buffer;
+    });
 
     return timingSafeEqual(actual, expected);
   } catch {

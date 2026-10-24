@@ -6,68 +6,116 @@ import { db } from "@/lib/db";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type ReviewError =
+  | "NOT_FOUND"
+  | "ALREADY_REVIEWED"
+  | "ALUMNI_NOT_LINKED"
+  | "ALUMNI_NOT_FOUND"
+  | "IDENTITY_NOT_VERIFIED"
+  | "ACCOUNT_EXISTS";
+
+type ReviewResult =
+  | { success: true; status: "Disetujui" | "Ditolak" }
+  | { error: ReviewError };
+
+const errorResponses: Record<
+  ReviewError,
+  { status: number; message: string }
+> = {
+  NOT_FOUND: {
+    status: 404,
+    message: "Pendaftaran tidak ditemukan.",
+  },
+  ALREADY_REVIEWED: {
+    status: 409,
+    message: "Pendaftaran sudah diproses.",
+  },
+  ALUMNI_NOT_LINKED: {
+    status: 409,
+    message: "Pendaftaran belum terhubung ke data alumni.",
+  },
+  ALUMNI_NOT_FOUND: {
+    status: 404,
+    message: "Data alumni tidak ditemukan.",
+  },
+  IDENTITY_NOT_VERIFIED: {
+    status: 409,
+    message:
+      "Identitas belum cocok dengan email pada data alumni terverifikasi.",
+  },
+  ACCOUNT_EXISTS: {
+    status: 409,
+    message: "Akun untuk alumni atau email ini sudah ada.",
+  },
+};
+
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-  if (!(await isAdminAuthenticated())) {
-    return NextResponse.json(
-      { error: "Tidak memiliki akses." },
-      { status: 401 },
-    );
-  }
-
-  const { id } = await context.params;
-
-  if (!/^[1-9]\d*$/.test(id)) {
-    return NextResponse.json(
-      { error: "ID pendaftaran tidak valid." },
-      { status: 400 },
-    );
-  }
-
-  let body: { status?: unknown; reviewNote?: unknown };
-
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Format JSON tidak valid." },
-      { status: 400 },
-    );
-  }
+    const authenticated = await isAdminAuthenticated();
 
-  const status = body.status;
-  const reviewNote =
-    typeof body.reviewNote === "string"
-      ? body.reviewNote.trim().slice(0, 1000)
-      : "";
+    if (!authenticated) {
+      return NextResponse.json(
+        { error: "Tidak memiliki akses." },
+        { status: 401 },
+      );
+    }
 
-  if (status !== "Disetujui" && status !== "Ditolak") {
-    return NextResponse.json(
-      { error: "Status harus Disetujui atau Ditolak." },
-      { status: 400 },
-    );
-  }
+    const { id } = await context.params;
 
-  if (status === "Ditolak" && !reviewNote) {
-    return NextResponse.json(
-      { error: "Alasan penolakan wajib diisi." },
-      { status: 400 },
-    );
-  }
+    if (!/^[1-9]\d*$/.test(id)) {
+      return NextResponse.json(
+        { error: "ID pendaftaran tidak valid." },
+        { status: 400 },
+      );
+    }
 
-  try {
+    let body: {
+      status?: unknown;
+      reviewNote?: unknown;
+    };
+
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Format JSON tidak valid." },
+        { status: 400 },
+      );
+    }
+
+    const status = body.status;
+
+    const reviewNote =
+      typeof body.reviewNote === "string"
+        ? body.reviewNote.trim().slice(0, 1000)
+        : "";
+
+    if (status !== "Disetujui" && status !== "Ditolak") {
+      return NextResponse.json(
+        { error: "Status harus Disetujui atau Ditolak." },
+        { status: 400 },
+      );
+    }
+
+    if (status === "Ditolak" && !reviewNote) {
+      return NextResponse.json(
+        { error: "Alasan penolakan wajib diisi." },
+        { status: 400 },
+      );
+    }
+
     const sql = db();
 
-    const result = await sql.begin(async (tx) => {
+    const result: ReviewResult = await sql.begin(async (tx) => {
       const requests = await tx`
         SELECT
           id,
           alumni_id,
           email,
           password_hash,
-          request_type,
           status
         FROM alumni_account_requests
         WHERE id = ${id}
@@ -77,27 +125,31 @@ export async function PATCH(
       const registration = requests[0];
 
       if (!registration) {
-        return { error: "NOT_FOUND" as const };
+        return { error: "NOT_FOUND" };
       }
 
       if (registration.status !== "Menunggu") {
-        return { error: "ALREADY_REVIEWED" as const };
+        return { error: "ALREADY_REVIEWED" };
       }
 
       if (status === "Ditolak") {
         await tx`
           UPDATE alumni_account_requests
-          SET status = 'Ditolak',
-              review_note = ${reviewNote},
-              reviewed_at = NOW()
+          SET
+            status = 'Ditolak',
+            review_note = ${reviewNote},
+            reviewed_at = NOW()
           WHERE id = ${id}
         `;
 
-        return { success: true as const, status: "Ditolak" };
+        return {
+          success: true,
+          status: "Ditolak",
+        };
       }
 
       if (registration.alumni_id === null) {
-        return { error: "ALUMNI_NOT_LINKED" as const };
+        return { error: "ALUMNI_NOT_LINKED" };
       }
 
       const alumniRows = await tx`
@@ -110,28 +162,29 @@ export async function PATCH(
       const alumni = alumniRows[0];
 
       if (!alumni) {
-        return { error: "ALUMNI_NOT_FOUND" as const };
+        return { error: "ALUMNI_NOT_FOUND" };
       }
 
       if (
         alumni.status !== "Terverifikasi" ||
-        !alumni.email ||
+        typeof alumni.email !== "string" ||
+        !alumni.email.trim() ||
         alumni.email.trim().toLowerCase() !==
           String(registration.email).trim().toLowerCase()
       ) {
-        return { error: "IDENTITY_NOT_VERIFIED" as const };
+        return { error: "IDENTITY_NOT_VERIFIED" };
       }
 
       const existing = await tx`
         SELECT id
         FROM alumni_accounts
         WHERE alumni_id = ${registration.alumni_id}
-           OR lower(email) = lower(${registration.email})
+           OR LOWER(email) = LOWER(${registration.email})
         LIMIT 1
       `;
 
       if (existing.length > 0) {
-        return { error: "ACCOUNT_EXISTS" as const };
+        return { error: "ACCOUNT_EXISTS" };
       }
 
       await tx`
@@ -151,57 +204,21 @@ export async function PATCH(
 
       await tx`
         UPDATE alumni_account_requests
-        SET status = 'Disetujui',
-            review_note = NULL,
-            reviewed_at = NOW()
+        SET
+          status = 'Disetujui',
+          review_note = NULL,
+          reviewed_at = NOW()
         WHERE id = ${id}
       `;
 
-      return { success: true as const, status: "Disetujui" };
+      return {
+        success: true,
+        status: "Disetujui",
+      };
     });
 
-     
-    
     if ("error" in result) {
-      const responses: Record<
-        string,
-        { status: number; message: string }
-      > = {
-        NOT_FOUND: {
-          status: 404,
-          message: "Pendaftaran tidak ditemukan.",
-        },
-        ALREADY_REVIEWED: {
-          status: 409,
-          message: "Pendaftaran sudah diproses.",
-        },
-        ALUMNI_NOT_LINKED: {
-          status: 409,
-          message: "Pendaftaran belum terhubung ke data alumni.",
-        },
-        ALUMNI_NOT_FOUND: {
-          status: 404,
-          message: "Data alumni tidak ditemukan.",
-        },
-        IDENTITY_NOT_VERIFIED: {
-          status: 409,
-          message:
-            "Identitas belum cocok dengan email pada data alumni terverifikasi.",
-        },
-        ACCOUNT_EXISTS: {
-          status: 409,
-          message: "Akun untuk alumni atau email ini sudah ada.",
-        },
-      };
-
-      const response = responses[result.error];
-
-      if (!response) {
-        return NextResponse.json(
-          { error: "Terjadi kesalahan saat memproses pendaftaran." },
-          { status: 500 },
-        );
-      }
+      const response = errorResponses[result.error];
 
       return NextResponse.json(
         { error: response.message },
@@ -213,3 +230,15 @@ export async function PATCH(
       ok: true,
       status: result.status,
     });
+  } catch (error) {
+    console.error(
+      "PATCH alumni account request failed:",
+      error,
+    );
+
+    return NextResponse.json(
+      { error: "Gagal memproses pendaftaran akun." },
+      { status: 500 },
+    );
+  }
+}

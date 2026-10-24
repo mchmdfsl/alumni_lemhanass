@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
-import { sql } from "@/lib/db";
+import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 
 export const runtime = "nodejs";
@@ -28,63 +28,98 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password.length < 12 || Buffer.byteLength(password, "utf8") > 1024) {
+    if (
+      password.length < 12 ||
+      Buffer.byteLength(password, "utf8") > 1024
+    ) {
       return NextResponse.json(
-        { error: "Password harus minimal 12 karakter." },
+        { error: "Password minimal 12 karakter." },
         { status: 400 },
       );
     }
 
     const passwordHash = await hashPassword(password);
+    const sql = db();
 
-    // Akun aktif yang sudah memakai email ini tidak boleh
-    // didaftarkan ulang melalui endpoint registrasi.
-    const existingAccount = await sql`
-      SELECT id
-      FROM alumni_accounts
-      WHERE lower(email) = ${email}
-      LIMIT 1
-    `;
+    const result = await sql.begin(async (tx) => {
+      const existing = await tx`
+        SELECT id
+        FROM alumni_accounts
+        WHERE lower(email) = ${email}
+        LIMIT 1
+      `;
 
-    if (existingAccount.length > 0) {
+      if (existing.length) {
+        return { kind: "existing" as const };
+      }
+
+      const pending = await tx`
+        SELECT id
+        FROM alumni_account_requests
+        WHERE lower(email) = ${email}
+          AND status = 'Menunggu'
+        LIMIT 1
+      `;
+
+      if (pending.length) {
+        return { kind: "pending" as const };
+      }
+
+      const candidates = await tx`
+        SELECT id
+        FROM alumni
+        WHERE lower(trim(coalesce(email, ''))) = ${email}
+        LIMIT 2
+      `;
+
+      // Hanya tautkan permintaan ke kandidat bila tepat satu
+      // baris ditemukan. Kecocokan email bukan bukti kepemilikan.
+      const alumniId =
+        candidates.length === 1 ? Number(candidates[0].id) : null;
+
+      await tx`
+        INSERT INTO alumni_account_requests
+          (alumni_id, email, password_hash, request_type, status)
+        VALUES
+          (${alumniId}, ${email}, ${passwordHash}, 'register', 'Menunggu')
+      `;
+
+      return {
+        kind: "created" as const,
+        candidateFound: alumniId !== null,
+      };
+    });
+
+    if (result.kind === "existing") {
       return NextResponse.json(
         { error: "Permintaan tidak dapat diproses. Silakan login atau hubungi admin." },
         { status: 409 },
       );
     }
 
-    // Cari kandidat alumni berdasarkan email saja. Hasil ini
-    // tidak otomatis mengaktifkan akun atau memberikan sesi.
-    const candidates = await sql`
-      SELECT id
-      FROM alumni
-      WHERE lower(trim(coalesce(email, ''))) = ${email}
-      LIMIT 2
-    `;
+    if (result.kind === "pending") {
+      return NextResponse.json(
+        { error: "Permintaan dengan email ini sedang menunggu pemeriksaan." },
+        { status: 409 },
+      );
+    }
 
-    const matchedAlumniId =
-      candidates.length === 1 ? Number(candidates[0].id) : null;
-
-    // Jangan menyimpan password pada tabel permintaan.
-    // Hash disimpan sementara pada field review_note tidak aman,
-    // sehingga desain tabel harus menampung hash secara eksplisit.
-    // Karena itu, endpoint ini menolak sampai migrasi berikut
-    // menyediakan kolom password_hash untuk permintaan.
     return NextResponse.json(
       {
-        error:
-          "Registrasi belum dapat diaktifkan. Migrasi perlu menambahkan penyimpanan hash sementara pada permintaan aktivasi terlebih dahulu.",
-        candidateFound: matchedAlumniId !== null,
+        ok: true,
+        status: "Menunggu",
+        message:
+          "Permintaan registrasi diterima dan menunggu verifikasi admin.",
       },
-      { status: 503 },
+      { status: 202 },
     );
   } catch (error) {
-    console.error("auth/register failed", error);
+    console.error("POST /api/auth/register failed", error);
 
     return NextResponse.json(
-      { error: "Terjadi kesalahan server saat registrasi." },
+      { error: "Registrasi gagal diproses oleh server." },
       { status: 500 },
     );
   }
-        }
-  
+      }
+      

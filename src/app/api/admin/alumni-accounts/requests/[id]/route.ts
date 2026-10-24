@@ -160,6 +160,7 @@ export async function PATCH(
       return { success: true as const, status: "Disetujui" };
     });
 
+     
     if ("error" in result) {
       const responses: Record<
         string,
@@ -192,32 +193,22 @@ export async function PATCH(
         },
       };
 
-      const errorCode = result.error;
-const response =
-  typeof errorCode === "string"
-    ? responses[errorCode]
-    : undefined;
+      const response = responses[result.error];
 
-if (!response) {
-  console.error("Unexpected registration review result:", result);
+      if (!response) {
+        return NextResponse.json(
+          { error: "Terjadi kesalahan saat memproses pendaftaran." },
+          { status: 500 },
+        );
+      }
 
-  return NextResponse.json(
-    { error: "Terjadi kesalahan saat memproses pendaftaran." },
-    { status: 500 },
-  );
-}
+      return NextResponse.json(
+        { error: response.message },
+        { status: response.status },
+      );
+    }
 
-return NextResponse.json(
-  { error: response.message },
-  { status: response.status },
-);
-  } catch (error) {
-    console.error("PATCH alumni account request failed:", error);
-
-    return NextResponse.json(
-      { error: "Gagal memproses pendaftaran akun." },
-      { status: 500 },
-    );
-  }
-            }
-       
+    return NextResponse.json({
+      ok: true,
+      status: result.status,
+    });

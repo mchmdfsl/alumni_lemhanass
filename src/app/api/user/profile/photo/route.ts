@@ -1,6 +1,6 @@
 import {
-  PutObjectCommand,
   DeleteObjectCommand,
+  PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
@@ -10,6 +10,7 @@ import { getAlumniSession } from "@/lib/alumni-session";
 import { r2, r2Bucket, r2PublicUrl } from "@/lib/r2";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -22,6 +23,7 @@ const ALLOWED_TYPES = {
       buffer[1] === 0xd8 &&
       buffer[2] === 0xff,
   },
+
   "image/png": {
     extension: "png",
     signature: (buffer: Buffer) =>
@@ -34,6 +36,7 @@ const ALLOWED_TYPES = {
           ])
         ),
   },
+
   "image/webp": {
     extension: "webp",
     signature: (buffer: Buffer) =>
@@ -47,21 +50,24 @@ export async function POST(request: NextRequest) {
   let uploadedKey: string | null = null;
 
   try {
-    // 1. Validasi sesi alumni.
+    // 1. Periksa sesi login alumni.
     const session = await getAlumniSession();
 
     if (!session) {
       return NextResponse.json(
-        { message: "Silakan login terlebih dahulu." },
+        {
+          message: "Sesi login berakhir. Silakan login kembali.",
+        },
         { status: 401 }
       );
     }
 
-    // 2. Pastikan akun aktif dan alumni sudah terverifikasi.
+    // 2. Pastikan akun aktif dan alumni terverifikasi.
     const [alumni] = await db()`
       SELECT a.id
       FROM alumni_accounts aa
-      INNER JOIN alumni a ON a.id = aa.alumni_id
+      INNER JOIN alumni a
+        ON a.id = aa.alumni_id
       WHERE aa.id = ${session.accountId}
         AND a.id = ${session.alumniId}
         AND aa.is_active = TRUE
@@ -79,28 +85,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Validasi konfigurasi R2.
+    // 3. Periksa konfigurasi Cloudflare R2.
     if (!r2PublicUrl) {
-      console.error(
-        "R2_PUBLIC_URL belum dikonfigurasi."
-      );
+      console.error("R2_PUBLIC_URL belum dikonfigurasi.");
 
       return NextResponse.json(
         {
           message:
-            "Konfigurasi penyimpanan foto belum lengkap.",
+            "URL publik Cloudflare R2 belum dikonfigurasi.",
         },
         { status: 500 }
       );
     }
 
-    // 4. Ambil foto dari FormData.
+    // 4. Ambil file dari form.
     const formData = await request.formData();
     const photo = formData.get("photo");
 
     if (!(photo instanceof File)) {
       return NextResponse.json(
-        { message: "Pilih foto terlebih dahulu." },
+        {
+          message:
+            'Foto tidak ditemukan. Pastikan field upload bernama "photo".',
+        },
         { status: 400 }
       );
     }
@@ -119,7 +126,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Validasi tipe dan signature file.
+    // 5. Validasi format gambar.
     const imageType =
       ALLOWED_TYPES[
         photo.type as keyof typeof ALLOWED_TYPES
@@ -128,8 +135,7 @@ export async function POST(request: NextRequest) {
     if (!imageType) {
       return NextResponse.json(
         {
-          message:
-            "Format foto harus JPEG, PNG, atau WebP.",
+          message: "Format foto harus JPG, PNG, atau WebP.",
         },
         { status: 400 }
       );
@@ -143,13 +149,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           message:
-            "Isi file tidak cocok dengan format gambar.",
+            "File tidak terbaca sebagai gambar yang valid.",
         },
         { status: 400 }
       );
     }
 
-    // 6. Buat nama objek unik untuk menghindari tabrakan.
+    // 6. Buat lokasi file unik di bucket R2.
     const key =
       `profiles/${alumni.id}/` +
       `${randomUUID()}.${imageType.extension}`;
@@ -160,7 +166,7 @@ export async function POST(request: NextRequest) {
         .map((part) => encodeURIComponent(part))
         .join("/")}`;
 
-    // 7. Upload foto ke Cloudflare R2.
+    // 7. Upload file ke Cloudflare R2.
     await r2.send(
       new PutObjectCommand({
         Bucket: r2Bucket,
@@ -181,7 +187,7 @@ export async function POST(request: NextRequest) {
       WHERE id = ${alumni.id}
     `;
 
-    // 9. Kirim URL ke frontend.
+    // 9. Kirim hasil upload ke halaman profil.
     return NextResponse.json(
       {
         message: "Foto profil berhasil diperbarui.",
@@ -197,8 +203,8 @@ export async function POST(request: NextRequest) {
       error
     );
 
-    // Bersihkan objek R2 jika upload berhasil,
-    // tetapi proses penyimpanan database gagal.
+    // Jika upload R2 berhasil tetapi database gagal,
+    // hapus file yang telanjur diunggah.
     if (uploadedKey) {
       try {
         await r2.send(
@@ -218,9 +224,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         message:
-          "Gagal mengunggah foto profil. Silakan coba lagi.",
+          "Gagal mengunggah foto profil. Periksa konfigurasi R2 dan database.",
       },
       { status: 500 }
     );
   }
-                }
+      }

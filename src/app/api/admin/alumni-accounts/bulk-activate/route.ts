@@ -46,16 +46,25 @@ export async function POST() {
         const passwordHash = await hashPassword(password);
         // Existing records may not have email. A reserved internal address satisfies
         // schemas requiring email while login by alumni number remains available.
-        const email = typeof row.email === "string" && row.email.trim()
-          ? row.email.trim().toLowerCase()
-          : `alumni-${alumniId}@akun.invalid`;
+        const suppliedEmail = typeof row.email === "string" ? row.email.trim().toLowerCase() : "";
+        let accountEmail = suppliedEmail;
+        if (accountEmail) {
+          const emailOwner = await tx`
+            SELECT id FROM alumni_accounts WHERE lower(email) = lower(${accountEmail}) LIMIT 1
+          `;
+          if (emailOwner.length) accountEmail = "";
+        }
 
-        const emailOwner = await tx`
-          SELECT id FROM alumni_accounts WHERE lower(email) = lower(${email}) LIMIT 1
-        `;
-        const accountEmail = emailOwner.length
-          ? `alumni-${alumniId}@akun.invalid`
-          : email;
+        // Verify fallback addresses too, so a duplicate can never silently fail the batch.
+        if (!accountEmail) {
+          accountEmail = `alumni-${alumniId}@akun.invalid`;
+          const fallbackOwner = await tx`
+            SELECT id FROM alumni_accounts WHERE lower(email) = lower(${accountEmail}) LIMIT 1
+          `;
+          if (fallbackOwner.length) {
+            throw new Error(`Alamat email internal untuk alumni ID ${alumniId} sudah digunakan.`);
+          }
+        }
 
         await tx`
           INSERT INTO alumni_accounts (alumni_id, email, password_hash, is_active)
@@ -65,7 +74,7 @@ export async function POST() {
           nama: String(row.nama ?? ""),
           angkatan,
           nomorAlumni,
-          email: typeof row.email === "string" ? row.email.trim() : "",
+          email: suppliedEmail,
           password,
         });
       }

@@ -29,6 +29,7 @@ export default function PengaturanPage() {
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
   const [error, setError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -58,7 +59,7 @@ export default function PengaturanPage() {
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [router, reloadKey]);
 
   async function handleLogout() {
     if (loggingOut) return;
@@ -95,7 +96,16 @@ export default function PengaturanPage() {
         {error && (
           <div role="alert" className="mx-5 mt-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 sm:mx-6">
             <AlertCircle size={18} className="mt-0.5 shrink-0" />
-            <p>{error}</p>
+            <div className="min-w-0 flex-1">
+              <p>{error}</p>
+              <button
+                type="button"
+                onClick={() => setReloadKey((value) => value + 1)}
+                className="mt-2 font-semibold underline underline-offset-2"
+              >
+                Coba muat ulang
+              </button>
+            </div>
           </div>
         )}
 

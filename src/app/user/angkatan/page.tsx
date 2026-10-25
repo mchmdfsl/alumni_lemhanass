@@ -93,7 +93,7 @@ export default function ListAngkatan() {
           <div className="min-w-0">
             <p className="font-semibold">Tidak dapat memuat direktori</p>
             <p className="mt-1">{error}</p>
-            <button type="button" onClick={() => setQuery((value) => value)} className="mt-2 font-semibold underline">Coba lagi dengan mengubah pencarian</button>
+            <button type="button" onClick={() => window.location.reload()} className="mt-2 font-semibold underline">Coba lagi dengan mengubah pencarian</button>
           </div>
         </div>
       )}

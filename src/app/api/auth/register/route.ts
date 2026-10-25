@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email sudah digunakan akun. Silakan login." }, { status: 409 });
     }
     if (result.kind === "use_claim") {
-      return NextResponse.json({ error: "Email sudah tercatat pada data alumni. Jika data Anda sudah ada, gunakan fitur Klaim Akun." }, { status: 409 });
+      return NextResponse.json({ error: "Email sudah tercatat pada data alumni. Silakan login menggunakan ID alumni jika akun Anda sudah diaktifkan admin." }, { status: 409 });
     }
     if (result.kind === "pending") {
       return NextResponse.json({ error: "Pengajuan dengan email ini masih menunggu pemeriksaan admin." }, { status: 409 });

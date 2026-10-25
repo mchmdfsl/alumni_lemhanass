@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -7,238 +6,170 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type ReviewError =
-  | "NOT_FOUND"
-  | "ALREADY_REVIEWED"
-  | "ALUMNI_NOT_LINKED"
-  | "ALUMNI_NOT_FOUND"
-  | "IDENTITY_NOT_VERIFIED"
-  | "ACCOUNT_EXISTS";
+  | "NOT_FOUND" | "ALREADY_REVIEWED" | "ALUMNI_NOT_LINKED"
+  | "ALUMNI_NOT_FOUND" | "IDENTITY_NOT_VERIFIED" | "ACCOUNT_EXISTS"
+  | "EMAIL_IN_USE" | "NOMOR_ALUMNI_IN_USE" | "INVALID_NEW_ALUMNI";
 
 type ReviewResult =
-  | { success: true; status: "Disetujui" | "Ditolak" }
+  | { success: true; status: "Disetujui" | "Ditolak"; alumniId?: number }
   | { error: ReviewError };
 
-const errorResponses: Record<
-  ReviewError,
-  { status: number; message: string }
-> = {
-  NOT_FOUND: {
-    status: 404,
-    message: "Pendaftaran tidak ditemukan.",
-  },
-  ALREADY_REVIEWED: {
-    status: 409,
-    message: "Pendaftaran sudah diproses.",
-  },
-  ALUMNI_NOT_LINKED: {
-    status: 409,
-    message: "Pendaftaran belum terhubung ke data alumni.",
-  },
-  ALUMNI_NOT_FOUND: {
-    status: 404,
-    message: "Data alumni tidak ditemukan.",
-  },
-  IDENTITY_NOT_VERIFIED: {
-    status: 409,
-    message:
-      "Identitas belum cocok dengan email pada data alumni terverifikasi.",
-  },
-  ACCOUNT_EXISTS: {
-    status: 409,
-    message: "Akun untuk alumni atau email ini sudah ada.",
-  },
+const errorResponses: Record<ReviewError, { status: number; message: string }> = {
+  NOT_FOUND: { status: 404, message: "Pendaftaran tidak ditemukan." },
+  ALREADY_REVIEWED: { status: 409, message: "Pendaftaran sudah diproses." },
+  ALUMNI_NOT_LINKED: { status: 409, message: "Pengajuan klaim belum terhubung ke data alumni." },
+  ALUMNI_NOT_FOUND: { status: 404, message: "Data alumni tidak ditemukan." },
+  IDENTITY_NOT_VERIFIED: { status: 409, message: "Data alumni belum terverifikasi." },
+  ACCOUNT_EXISTS: { status: 409, message: "Akun untuk alumni atau email ini sudah ada." },
+  EMAIL_IN_USE: { status: 409, message: "Email sudah digunakan pada data alumni lain." },
+  NOMOR_ALUMNI_IN_USE: { status: 409, message: "Nomor alumni sudah digunakan pada data lain." },
+  INVALID_NEW_ALUMNI: { status: 400, message: "Data pendaftaran alumni baru belum lengkap." },
 };
 
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const authenticated = await isAdminAuthenticated();
-
-    if (!authenticated) {
-      return NextResponse.json(
-        { error: "Tidak memiliki akses." },
-        { status: 401 },
-      );
+    if (!(await isAdminAuthenticated())) {
+      return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
     }
 
     const { id } = await context.params;
-
     if (!/^[1-9]\d*$/.test(id)) {
-      return NextResponse.json(
-        { error: "ID pendaftaran tidak valid." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "ID pendaftaran tidak valid." }, { status: 400 });
     }
 
-    let body: {
-      status?: unknown;
-      reviewNote?: unknown;
-    };
-
+    let body: { status?: unknown; reviewNote?: unknown };
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json(
-        { error: "Format JSON tidak valid." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Format JSON tidak valid." }, { status: 400 });
     }
 
     const status = body.status;
-
-    const reviewNote =
-      typeof body.reviewNote === "string"
-        ? body.reviewNote.trim().slice(0, 1000)
-        : "";
-
+    const reviewNote = typeof body.reviewNote === "string" ? body.reviewNote.trim().slice(0, 1000) : "";
     if (status !== "Disetujui" && status !== "Ditolak") {
-      return NextResponse.json(
-        { error: "Status harus Disetujui atau Ditolak." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Status harus Disetujui atau Ditolak." }, { status: 400 });
     }
-
     if (status === "Ditolak" && !reviewNote) {
-      return NextResponse.json(
-        { error: "Alasan penolakan wajib diisi." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Alasan penolakan wajib diisi." }, { status: 400 });
     }
 
     const sql = db();
-
     const result: ReviewResult = await sql.begin(async (tx) => {
-      const requests = await tx`
-        SELECT
-          id,
-          alumni_id,
-          email,
-          password_hash,
-          status
-        FROM alumni_account_requests
-        WHERE id = ${id}
-        FOR UPDATE
+      const rows = await tx`
+        SELECT id, alumni_id, email, password_hash, request_type, status,
+          submitted_nama, submitted_angkatan, submitted_nomor_hp,
+          submitted_nomor_alumni, submitted_instansi, submitted_jabatan,
+          submitted_wilayah, submitted_alamat
+        FROM alumni_account_requests WHERE id = ${id} FOR UPDATE
       `;
-
-      const registration = requests[0];
-
-      if (!registration) {
-        return { error: "NOT_FOUND" };
-      }
-
-      if (registration.status !== "Menunggu") {
-        return { error: "ALREADY_REVIEWED" };
-      }
+      const req = rows[0];
+      if (!req) return { error: "NOT_FOUND" };
+      if (req.status !== "Menunggu") return { error: "ALREADY_REVIEWED" };
 
       if (status === "Ditolak") {
         await tx`
           UPDATE alumni_account_requests
-          SET
-            status = 'Ditolak',
-            review_note = ${reviewNote},
-            reviewed_at = NOW()
+          SET status = 'Ditolak', review_note = ${reviewNote}, reviewed_at = NOW()
           WHERE id = ${id}
         `;
-
-        return {
-          success: true,
-          status: "Ditolak",
-        };
+        return { success: true, status: "Ditolak" };
       }
 
-      if (registration.alumni_id === null) {
-        return { error: "ALUMNI_NOT_LINKED" };
-      }
+      let alumniId: number;
 
-      const alumniRows = await tx`
-        SELECT id, email, status
-        FROM alumni
-        WHERE id = ${registration.alumni_id}
-        FOR UPDATE
-      `;
+      if (req.request_type === "claim") {
+        if (req.alumni_id === null) return { error: "ALUMNI_NOT_LINKED" };
 
-      const alumni = alumniRows[0];
+        const alumniRows = await tx`
+          SELECT id, status FROM alumni WHERE id = ${req.alumni_id} FOR UPDATE
+        `;
+        const alumni = alumniRows[0];
+        if (!alumni) return { error: "ALUMNI_NOT_FOUND" };
+        if (alumni.status !== "Terverifikasi") return { error: "IDENTITY_NOT_VERIFIED" };
 
-      if (!alumni) {
-        return { error: "ALUMNI_NOT_FOUND" };
-      }
+        const account = await tx`
+          SELECT id FROM alumni_accounts
+          WHERE alumni_id = ${req.alumni_id} OR lower(email) = lower(${req.email})
+          LIMIT 1
+        `;
+        if (account.length) return { error: "ACCOUNT_EXISTS" };
 
-      if (
-        alumni.status !== "Terverifikasi" ||
-        typeof alumni.email !== "string" ||
-        !alumni.email.trim() ||
-        alumni.email.trim().toLowerCase() !==
-          String(registration.email).trim().toLowerCase()
-      ) {
-        return { error: "IDENTITY_NOT_VERIFIED" };
-      }
+        const emailOwner = await tx`
+          SELECT id FROM alumni
+          WHERE lower(trim(coalesce(email, ''))) = lower(${req.email})
+            AND id <> ${req.alumni_id}
+          LIMIT 1
+        `;
+        if (emailOwner.length) return { error: "EMAIL_IN_USE" };
 
-      const existing = await tx`
-        SELECT id
-        FROM alumni_accounts
-        WHERE alumni_id = ${registration.alumni_id}
-           OR LOWER(email) = LOWER(${registration.email})
-        LIMIT 1
-      `;
+        // Email lama memang boleh kosong. Isi dengan email yang diajukan saat klaim disetujui.
+        await tx`
+          UPDATE alumni SET email = ${req.email}, updated_at = NOW()
+          WHERE id = ${req.alumni_id}
+        `;
+        alumniId = Number(req.alumni_id);
+      } else if (req.request_type === "register") {
+        const nama = typeof req.submitted_nama === "string" ? req.submitted_nama.trim() : "";
+        const angkatan = typeof req.submitted_angkatan === "string" ? req.submitted_angkatan.trim() : "";
+        if (!nama || !angkatan) return { error: "INVALID_NEW_ALUMNI" };
 
-      if (existing.length > 0) {
-        return { error: "ACCOUNT_EXISTS" };
+        const emailOwner = await tx`
+          SELECT id FROM alumni WHERE lower(trim(coalesce(email, ''))) = lower(${req.email}) LIMIT 1
+        `;
+        if (emailOwner.length) return { error: "EMAIL_IN_USE" };
+
+        const account = await tx`
+          SELECT id FROM alumni_accounts WHERE lower(email) = lower(${req.email}) LIMIT 1
+        `;
+        if (account.length) return { error: "ACCOUNT_EXISTS" };
+
+        const nomorAlumni = typeof req.submitted_nomor_alumni === "string" ? req.submitted_nomor_alumni.trim() : "";
+        if (nomorAlumni) {
+          const numberOwner = await tx`
+            SELECT id FROM alumni WHERE nomor_alumni = ${nomorAlumni} LIMIT 1
+          `;
+          if (numberOwner.length) return { error: "NOMOR_ALUMNI_IN_USE" };
+        }
+
+        const inserted = await tx`
+          INSERT INTO alumni (
+            nomor_alumni, nama, angkatan, instansi, jabatan, wilayah, alamat,
+            email, nomor_hp, status, sumber_data, verified_at, updated_at
+          ) VALUES (
+            ${nomorAlumni || null}, ${nama}, ${angkatan},
+            ${req.submitted_instansi || ""}, ${req.submitted_jabatan || ""},
+            ${req.submitted_wilayah || ""}, ${req.submitted_alamat || ""},
+            ${req.email}, ${req.submitted_nomor_hp || ""}, 'Terverifikasi',
+            'pengajuan', NOW(), NOW()
+          )
+          RETURNING id
+        `;
+        alumniId = Number(inserted[0].id);
+      } else {
+        return { error: "INVALID_NEW_ALUMNI" };
       }
 
       await tx`
-        INSERT INTO alumni_accounts (
-          alumni_id,
-          email,
-          password_hash,
-          is_active
-        )
-        VALUES (
-          ${registration.alumni_id},
-          ${registration.email},
-          ${registration.password_hash},
-          TRUE
-        )
+        INSERT INTO alumni_accounts (alumni_id, email, password_hash, is_active)
+        VALUES (${alumniId}, ${req.email}, ${req.password_hash}, TRUE)
       `;
 
       await tx`
         UPDATE alumni_account_requests
-        SET
-          status = 'Disetujui',
-          review_note = NULL,
-          reviewed_at = NOW()
+        SET alumni_id = ${alumniId}, status = 'Disetujui',
+            review_note = NULL, reviewed_at = NOW()
         WHERE id = ${id}
       `;
-
-      return {
-        success: true,
-        status: "Disetujui",
-      };
+      return { success: true, status: "Disetujui", alumniId };
     });
 
     if ("error" in result) {
       const response = errorResponses[result.error];
-
-      return NextResponse.json(
-        { error: response.message },
-        { status: response.status },
-      );
+      return NextResponse.json({ error: response.message }, { status: response.status });
     }
-
-    return NextResponse.json({
-      ok: true,
-      status: result.status,
-    });
+    return NextResponse.json({ ok: true, status: result.status, alumniId: result.alumniId });
   } catch (error) {
-    console.error(
-      "PATCH alumni account request failed:",
-      error,
-    );
-
-    return NextResponse.json(
-      { error: "Gagal memproses pendaftaran akun." },
-      { status: 500 },
-    );
+    console.error("PATCH alumni account request failed:", error);
+    return NextResponse.json({ error: "Gagal memproses pendaftaran akun." }, { status: 500 });
   }
 }

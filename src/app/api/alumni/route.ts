@@ -3,59 +3,147 @@ import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 export const runtime = "nodejs";
+
 const statusValues = new Set(["Menunggu", "Terverifikasi", "Ditolak"]);
 
 export async function GET(request: NextRequest) {
-  if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json(
+      { error: "Tidak memiliki akses." },
+      { status: 401 },
+    );
+  }
+
   try {
     const query = request.nextUrl.searchParams;
     const search = (query.get("search") ?? "").trim().slice(0, 120);
     const status = query.get("status") ?? "";
     const angkatan = query.get("angkatan") ?? "";
     const wilayah = query.get("wilayah") ?? "";
-    const limit = Math.min(Math.max(Number(query.get("limit") ?? 100), 1), 500);
+    const limit = Math.min(
+      Math.max(Number(query.get("limit") ?? 100), 1),
+      500,
+    );
     const offset = Math.max(Number(query.get("offset") ?? 0), 0);
-    if (status && !statusValues.has(status)) return NextResponse.json({ error: "Filter status tidak valid." }, { status: 400 });
+
+    if (status && !statusValues.has(status)) {
+      return NextResponse.json(
+        { error: "Filter status tidak valid." },
+        { status: 400 },
+      );
+    }
+
     const rows = await db()`
-      SELECT id, COALESCE(nomor_alumni, '') AS "nomorAlumni", nama, angkatan, instansi, jabatan, wilayah, alamat, COALESCE(email, '') AS email,
-             nomor_hp AS "nomorHp", status, alasan_penolakan AS "alasanPenolakan",
-             sumber_data AS "sumberData", created_at AS "createdAt", updated_at AS "updatedAt", verified_at AS "verifiedAt"
+      SELECT
+        id,
+        COALESCE(nomor_alumni, '') AS "nomorAlumni",
+        nama,
+        angkatan,
+        instansi,
+        jabatan,
+        wilayah,
+        alamat,
+        COALESCE(email, '') AS email,
+        nomor_hp AS "nomorHp",
+        foto_profil AS "fotoProfil",
+        status,
+        alasan_penolakan AS "alasanPenolakan",
+        sumber_data AS "sumberData",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt",
+        verified_at AS "verifiedAt"
       FROM alumni
-      WHERE (${search} = '' OR CONCAT_WS(' ', nama, nomor_alumni, email, instansi, nomor_hp, alamat) ILIKE ${'%' + search + '%'})
+      WHERE (
+        ${search} = ''
+        OR CONCAT_WS(
+          ' ',
+          nama,
+          nomor_alumni,
+          email,
+          instansi,
+          nomor_hp,
+          alamat
+        ) ILIKE ${"%" + search + "%"}
+      )
         AND (${status} = '' OR status = ${status})
         AND (${angkatan} = '' OR angkatan = ${angkatan})
         AND (${wilayah} = '' OR wilayah = ${wilayah})
-      ORDER BY updated_at DESC, id DESC LIMIT ${limit} OFFSET ${offset}`;
-    const [counts] = await db()`SELECT COUNT(*)::int AS total,
-      COUNT(*) FILTER (WHERE status = 'Terverifikasi')::int AS terverifikasi,
-      COUNT(*) FILTER (WHERE status = 'Menunggu')::int AS menunggu,
-      COUNT(*) FILTER (WHERE status = 'Ditolak')::int AS ditolak FROM alumni`;
-    return NextResponse.json({ data: rows, counts });
+      ORDER BY updated_at DESC, id DESC
+      LIMIT ${limit}
+      OFFSET ${offset}
+    `;
+
+    const [counts] = await db()`
+      SELECT
+        COUNT(*)::int AS total,
+        COUNT(*) FILTER (
+          WHERE status = 'Terverifikasi'
+        )::int AS terverifikasi,
+        COUNT(*) FILTER (
+          WHERE status = 'Menunggu'
+        )::int AS menunggu,
+        COUNT(*) FILTER (
+          WHERE status = 'Ditolak'
+        )::int AS ditolak
+      FROM alumni
+    `;
+
+    return NextResponse.json({
+      data: rows,
+      counts,
+    });
   } catch (error) {
     console.error("GET /api/alumni failed", error);
-    return NextResponse.json({ error: "Gagal mengambil data alumni. Periksa koneksi database." }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        error:
+          "Gagal mengambil data alumni. Periksa koneksi database.",
+      },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json(
+      { error: "Tidak memiliki akses." },
+      { status: 401 },
+    );
+  }
+
   try {
     const body = await request.json();
-    const nama = typeof body.nama === "string" ? body.nama.trim() : "";
-    const angkatan = typeof body.angkatan === "string" ? body.angkatan.trim() : "";
-    if (nama.length < 2 || nama.length > 200 || !angkatan || angkatan.length > 100) {
-      return NextResponse.json({ error: "Nama dan angkatan wajib diisi dengan format yang benar." }, { status: 400 });
+
+    const nama =
+      typeof body.nama === "string" ? body.nama.trim() : "";
+
+    const angkatan =
+      typeof body.angkatan === "string"
+        ? body.angkatan.trim()
+        : "";
+
+    if (
+      nama.length < 2 ||
+      nama.length > 200 ||
+      !angkatan ||
+      angkatan.length > 100
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Nama dan angkatan wajib diisi dengan format yang benar.",
+        },
+        { status: 400 },
+      );
     }
-    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Format email tidak valid." }, { status: 400 });
-    const [row] = await db()`INSERT INTO alumni (nomor_alumni,nama,angkatan,instansi,jabatan,wilayah,alamat,email,nomor_hp,status,sumber_data)
-      VALUES (${body.nomorAlumni || null},${nama},${angkatan},${body.instansi || ''},${body.jabatan || ''},${body.wilayah || ''},${body.alamat || ''},${email || null},${body.nomorHp || ''},${statusValues.has(body.status) ? body.status : 'Menunggu'},'impor')
-      RETURNING id, nomor_alumni AS "nomorAlumni", nama, angkatan, instansi, jabatan, wilayah, alamat, email, nomor_hp AS "nomorHp", status`;
-    return NextResponse.json({ data: row }, { status: 201 });
-  } catch (error) {
-    const code = (error as { code?: string })?.code;
-    if (code === "23505") return NextResponse.json({ error: "Nomor alumni atau email sudah terdaftar." }, { status: 409 });
-    console.error("POST /api/alumni failed", error);
-    return NextResponse.json({ error: "Gagal menyimpan data alumni." }, { status: 500 });
-  }
-}
+
+    const email =
+      typeof body.email === "string"
+        ? body.email.trim().toLowerCase()
+        : "";
+
+    if (
+      email &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test

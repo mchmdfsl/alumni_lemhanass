@@ -1,49 +1,173 @@
 "use client";
-import { useState } from "react";
+
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { Search, Users, RefreshCw, AlertCircle, Building2, BriefcaseBusiness } from "lucide-react";
+
+type Alumni = {
+  id: string | number;
+  nama: string | null;
+  angkatan: string | number | null;
+  jabatan: string | null;
+  instansi: string | null;
+  fotoProfil: string | null;
+};
 
 export default function ListAngkatan() {
-  const [filter, setFilter] = useState("");
-  
-  const dummyAlumni = [
-    { nama: "Ahmad Rizky", angkatan: 2020, pekerjaan: "Software Engineer" },
-    { nama: "Siti Sarah", angkatan: 2021, pekerjaan: "Data Analyst" },
-    { nama: "Budi Santoso", angkatan: 2020, pekerjaan: "UI/UX Designer" },
-  ];
+  const [query, setQuery] = useState("");
+  const [alumni, setAlumni] = useState<Alumni[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadDirectory() {
+      setLoading(true);
+      setError("");
+      try {
+        const params = new URLSearchParams();
+        if (query.trim()) params.set("q", query.trim());
+        const response = await fetch(`/api/user/directory?${params.toString()}`, {
+          method: "GET",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.message || "Direktori alumni gagal dimuat.");
+        }
+        setAlumni(Array.isArray(result.data) ? result.data : []);
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
+        setError(err instanceof Error ? err.message : "Terjadi kesalahan saat memuat data.");
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+
+    loadDirectory();
+    return () => controller.abort();
+  }, [query]);
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold text-[#0b1f3a]">Direktori Alumni</h1>
-        <input 
-          type="text" 
-          placeholder="Cari tahun angkatan..." 
-          className="border rounded p-2 text-sm w-full sm:w-64"
-          onChange={(e) => setFilter(e.target.value)}
-        />
-      </div>
+    <div className="space-y-6">
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="bg-[#0b1f3a] px-5 py-6 text-white sm:px-7">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10">
+              <Users size={22} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold sm:text-2xl">Direktori Alumni</h1>
+              <p className="mt-1 text-sm text-slate-300">Temukan alumni yang telah terverifikasi.</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-5 sm:p-6">
+          <label htmlFor="directory-search" className="mb-2 block text-sm font-semibold text-[#172033]">
+            Cari alumni
+          </label>
+          <div className="relative">
+            <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              id="directory-search"
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              maxLength={100}
+              placeholder="Nama, angkatan, jabatan, atau instansi..."
+              className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm outline-none transition focus:border-[#0b1f3a] focus:ring-4 focus:ring-[#0b1f3a]/10"
+            />
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-500">
+            <span>{loading ? "Memuat data alumni..." : `${alumni.length} alumni ditampilkan (maksimal 200)`}</span>
+            {loading && <RefreshCw size={15} className="animate-spin" aria-label="Memuat" />}
+          </div>
+        </div>
+      </section>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50 border-y">
-              <th className="p-3 text-sm font-semibold">Nama Alumni</th>
-              <th className="p-3 text-sm font-semibold">Angkatan</th>
-              <th className="p-3 text-sm font-semibold">Pekerjaan</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dummyAlumni
-              .filter(a => a.angkatan.toString().includes(filter))
-              .map((alumni, i) => (
-              <tr key={i} className="border-b hover:bg-gray-50">
-                <td className="p-3 text-sm">{alumni.nama}</td>
-                <td className="p-3 text-sm">{alumni.angkatan}</td>
-                <td className="p-3 text-sm text-gray-500">{alumni.pekerjaan}</td>
-              </tr>
+      {error && (
+        <div role="alert" className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <AlertCircle size={18} className="mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <p className="font-semibold">Tidak dapat memuat direktori</p>
+            <p className="mt-1">{error}</p>
+            <button type="button" onClick={() => setQuery((value) => value)} className="mt-2 font-semibold underline">Coba lagi dengan mengubah pencarian</button>
+          </div>
+        </div>
+      )}
+
+      {!error && !loading && alumni.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center">
+          <Users size={30} className="mx-auto text-slate-400" />
+          <h2 className="mt-3 font-bold text-[#172033]">Alumni tidak ditemukan</h2>
+          <p className="mt-1 text-sm text-slate-500">Coba gunakan kata kunci lain.</p>
+        </div>
+      )}
+
+      {alumni.length > 0 && (
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full border-collapse text-left">
+              <thead className="bg-slate-50">
+                <tr className="border-b border-slate-200">
+                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Alumni</th>
+                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Angkatan</th>
+                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Jabatan</th>
+                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Instansi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {alumni.map((person) => (
+                  <tr key={person.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/70">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar person={person} />
+                        <span className="font-semibold text-[#172033]">{person.nama || "Nama tidak tersedia"}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-sm text-slate-600">{person.angkatan ?? "-"}</td>
+                    <td className="px-5 py-4 text-sm text-slate-600">{person.jabatan || "-"}</td>
+                    <td className="px-5 py-4 text-sm text-slate-600">{person.instansi || "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="grid gap-3 p-4 md:hidden">
+            {alumni.map((person) => (
+              <article key={person.id} className="rounded-xl border border-slate-200 p-4">
+                <div className="flex items-start gap-3">
+                  <Avatar person={person} />
+                  <div className="min-w-0 flex-1">
+                    <h2 className="break-words font-bold text-[#172033]">{person.nama || "Nama tidak tersedia"}</h2>
+                    <p className="mt-1 text-xs font-semibold text-[#b28b16]">Angkatan: {person.angkatan ?? "-"}</p>
+                    <div className="mt-3 space-y-2 text-sm text-slate-600">
+                      <p className="flex gap-2"><BriefcaseBusiness size={16} className="mt-0.5 shrink-0 text-slate-400" /><span>{person.jabatan || "Jabatan belum diisi"}</span></p>
+                      <p className="flex gap-2"><Building2 size={16} className="mt-0.5 shrink-0 text-slate-400" /><span>{person.instansi || "Instansi belum diisi"}</span></p>
+                    </div>
+                  </div>
+                </div>
+              </article>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </section>
+      )}
+      <p className="text-xs leading-5 text-slate-400">Direktori hanya menampilkan alumni berstatus terverifikasi. Informasi dibatasi pada data profesional yang tersedia di sistem.</p>
+    </div>
+  );
+}
+
+function Avatar({ person }: { person: Alumni }) {
+  const name = person.nama?.trim() || "Alumni";
+  const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "AL";
+
+  return (
+    <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e8edf4] text-sm font-bold text-[#0b1f3a]">
+      {person.fotoProfil ? (
+        <Image src={person.fotoProfil} alt={`Foto ${name}`} fill sizes="44px" unoptimized className="object-cover" />
+      ) : initials}
     </div>
   );
 }

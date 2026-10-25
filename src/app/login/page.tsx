@@ -63,9 +63,8 @@ export default function LoginPage() {
           {loading ? "MEMPROSES..." : "MASUK"}
         </button>
       </form>
-      <div className="mt-6 space-y-3 border-t border-slate-100 pt-5 text-center text-sm text-slate-600">
-        <p>Belum terdaftar? <Link href="/daftar" className="font-semibold text-[#0b1f3a] hover:underline">Daftar alumni</Link></p>
-        <p>Data Anda sudah ada? <Link href="/klaim-akun" className="font-semibold text-[#0b1f3a] hover:underline">Klaim akun & buat password</Link></p>
+      <div className="mt-6 border-t border-slate-100 pt-5 text-center text-sm text-slate-600">
+        <p>Belum punya akun? <Link href="/daftar" className="font-semibold text-[#0b1f3a] hover:underline">Daftar alumni</Link></p>
       </div>
     </AuthShell>
   );

@@ -18,6 +18,7 @@ async function getVerifiedAlumni() {
       a.angkatan,
       a.jabatan,
       a.instansi,
+      a.foto_profil AS "fotoProfil",
       a.status
     FROM alumni_accounts aa
     INNER JOIN alumni a ON a.id = aa.alumni_id

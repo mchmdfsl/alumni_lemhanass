@@ -1,4 +1,4 @@
-import type { Sql } from "postgres";
+import type { TransactionSql } from "postgres";
 
 export function alumniNumberPrefix(angkatan: string): string {
   const normalized = angkatan
@@ -14,7 +14,7 @@ export function alumniNumberPrefix(angkatan: string): string {
 }
 
 export async function assignAlumniNumber(
-  tx: Sql,
+  tx: TransactionSql,
   alumniId: number,
   angkatan: string,
   existingNumber: string | null,

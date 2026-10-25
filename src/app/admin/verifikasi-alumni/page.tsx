@@ -146,9 +146,9 @@ export default function VerifikasiAlumniPage() {
         }
         await new Promise((resolve) => window.setTimeout(resolve, 150));
       }
-      const headers = ["Nama", "Angkatan", "ID Alumni", "Email", "Password"];
+      const headers = ["Nama", "Angkatan", "ID Alumni", "Email (belum diisi)", "Password"];
       const escapeCsv = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"' ;
-      const csv = [headers, ...allCredentials.map((item) => [item.nama, item.angkatan, item.nomorAlumni, item.email, item.password])].map((row) => row.map(escapeCsv).join(",")).join("\\r\\n");
+      const csv = [headers, ...allCredentials.map((item) => [item.nama, item.angkatan, item.nomorAlumni, "", item.password])].map((row) => row.map(escapeCsv).join(",")).join("\\r\\n");
       const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");

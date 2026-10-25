@@ -137,10 +137,12 @@ export default function VerifikasiAlumniPage() {
         const anchor = document.createElement("a");
         anchor.href = url;
         anchor.download = "kredensial-alumni-" + new Date().toISOString().slice(0, 10) + ".csv";
+        anchor.style.display = "none";
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
-        URL.revokeObjectURL(url);
+        // Keep the Blob URL alive long enough for mobile browsers to start the download.
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
       }
       window.alert(result.message || ("Akun dibuat: " + credentials.length));
     } catch (error) {

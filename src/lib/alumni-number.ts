@@ -1,3 +1,5 @@
+import type { Sql } from "postgres";
+
 export function alumniNumberPrefix(angkatan: string): string {
   const normalized = angkatan
     .normalize("NFKD")
@@ -12,7 +14,7 @@ export function alumniNumberPrefix(angkatan: string): string {
 }
 
 export async function assignAlumniNumber(
-  tx: Parameters<Parameters<ReturnType<typeof import("@/lib/db").db>["begin"]>[0]>[0],
+  tx: Sql,
   alumniId: number,
   angkatan: string,
   existingNumber: string | null,

@@ -46,24 +46,15 @@ export async function POST() {
         const passwordHash = await hashPassword(password);
         // Existing records may not have email. A reserved internal address satisfies
         // schemas requiring email while login by alumni number remains available.
-        const suppliedEmail = typeof row.email === "string" ? row.email.trim().toLowerCase() : "";
-        let accountEmail = suppliedEmail;
-        if (accountEmail) {
-          const emailOwner = await tx`
-            SELECT id FROM alumni_accounts WHERE lower(email) = lower(${accountEmail}) LIMIT 1
-          `;
-          if (emailOwner.length) accountEmail = "";
-        }
-
-        // Verify fallback addresses too, so a duplicate can never silently fail the batch.
-        if (!accountEmail) {
-          accountEmail = `alumni-${alumniId}@akun.invalid`;
-          const fallbackOwner = await tx`
-            SELECT id FROM alumni_accounts WHERE lower(email) = lower(${accountEmail}) LIMIT 1
-          `;
-          if (fallbackOwner.length) {
-            throw new Error(`Alamat email internal untuk alumni ID ${alumniId} sudah digunakan.`);
-          }
+        // Email belum dikumpulkan untuk distribusi akun. Gunakan alamat internal non-deliverable
+        // hanya untuk memenuhi skema database; login tetap memakai nomor alumni.
+        const suppliedEmail = "";
+        const accountEmail = `alumni-${alumniId}@akun.invalid`;
+        const fallbackOwner = await tx`
+          SELECT id FROM alumni_accounts WHERE lower(email) = lower(${accountEmail}) LIMIT 1
+        `;
+        if (fallbackOwner.length) {
+          throw new Error(`Alamat internal akun untuk alumni ID ${alumniId} sudah digunakan.`);
         }
 
         await tx`

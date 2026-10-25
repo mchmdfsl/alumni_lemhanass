@@ -169,6 +169,67 @@ export default function VerifikasiAlumniPage() {
     }
   };
 
+
+  const handleResetPasswords = async () => {
+    const confirmed = window.confirm(
+      "PERINGATAN: password baru akan menggantikan password lama untuk seluruh akun alumni aktif yang terverifikasi. Pengguna harus memakai password baru. File CSV akan berisi password baru. Lanjutkan?"
+    );
+    if (!confirmed) return;
+    setAccountLoading(true);
+    const allCredentials: Array<{ nama: string; angkatan: string; nomorAlumni: string; email: string; password: string }> = [];
+    const downloadCsv = () => {
+      if (!allCredentials.length) return;
+      const headers = ["Nama", "Angkatan", "ID Alumni", "Email", "Password"];
+      const escapeCsv = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
+      const csv = [headers, ...allCredentials.map((item) => [item.nama, item.angkatan, item.nomorAlumni, item.email, item.password])]
+        .map((row) => row.map(escapeCsv).join(",")).join("\r\n");
+      const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "password-baru-alumni-" + new Date().toISOString().slice(0, 10) + ".csv";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+    };
+    try {
+      let afterId = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 60000);
+        let response: Response;
+        try {
+          response = await fetch("/api/admin/alumni-accounts/reset-passwords", {
+            method: "POST", cache: "no-store",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ afterId }), signal: controller.signal,
+          });
+        } finally { window.clearTimeout(timeout); }
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Reset password gagal.");
+        const credentials = Array.isArray(result.credentials) ? result.credentials : [];
+        allCredentials.push(...credentials);
+        afterId = Number(result.lastId) || afterId;
+        hasMore = Boolean(result.hasMore);
+        if (hasMore && credentials.length === 0) throw new Error("Batch kosong padahal server menyatakan masih ada akun. Proses dihentikan.");
+      }
+      if (!allCredentials.length) {
+        window.alert("Tidak ditemukan akun alumni aktif berstatus Terverifikasi. Tidak ada password yang diubah.");
+        return;
+      }
+      downloadCsv();
+      window.alert("Selesai: password " + allCredentials.length + " akun telah direset dan CSV password baru diunduh. Simpan file dengan aman.");
+    } catch (error) {
+      if (allCredentials.length) downloadCsv();
+      const message = error instanceof DOMException && error.name === "AbortError"
+        ? "Permintaan timeout. Password yang berhasil direset sejauh ini diekspor ke CSV."
+        : error instanceof Error ? error.message : "Reset password gagal.";
+      window.alert(message + (allCredentials.length ? "\n\nCSV parsial berisi " + allCredentials.length + " akun yang passwordnya sudah diubah. Simpan file tersebut." : ""));
+    } finally { setAccountLoading(false); }
+  };
+
   const handleVerify = async (alumni: VerificationAlumni) => {
     try {
       const response = await fetch(`/api/alumni/${alumni.id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "Terverifikasi" }) });
@@ -226,6 +287,14 @@ export default function VerifikasiAlumniPage() {
                   className="inline-flex items-center justify-center rounded-xl border border-[#0b1f3a] bg-white px-4 py-3 text-sm font-semibold text-[#0b1f3a] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {accountLoading ? "Membuat akun..." : "Aktivasi Akun Alumni & Unduh Password"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetPasswords}
+                  disabled={accountLoading || bulkLoading}
+                  className="inline-flex items-center justify-center rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {accountLoading ? "Memproses akun..." : "Reset Password 621 Akun & Unduh CSV"}
                 </button>
                 <button
                   type="button"

@@ -221,18 +221,18 @@ return (
   <aside
     id="admin-sidebar"
     aria-label="Navigasi admin"
-    className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-gray-200 bg-white shadow-xl transition-transform duration-300 ease-in-out lg:translate-x-0 lg:shadow-none ${
+    className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white shadow-xl transition-transform duration-300 ease-in-out lg:translate-x-0 lg:shadow-none ${
       mobileOpen ? "translate-x-0" : "-translate-x-full"
     }`}
   >
     {/* Header logo */}
-    <div className="flex h-20 shrink-0 items-center justify-between border-b border-gray-200 px-5">
+    <div className="flex h-20 shrink-0 items-center justify-between border-b border-slate-100 px-5">
       <Link
         href="/admin"
         onClick={closeMobileSidebar}
         className="flex min-w-0 items-center gap-3"
       >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-700 text-white">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0b1f3a] text-white">
           <GraduationCap size={25} />
         </div>
 
@@ -240,7 +240,7 @@ return (
           <h1 className="truncate text-base font-bold text-gray-900">
             Alumni Lemhannas
           </h1>
-          <p className="text-xs text-gray-500">
+          <p className="text-[11px] text-[#94a3b8]">
             Panel Administrator
           </p>
         </div>
@@ -249,7 +249,7 @@ return (
       <button
         type="button"
         onClick={closeMobileSidebar}
-        className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 lg:hidden"
+        className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-[#0b1f3a] lg:hidden"
         aria-label="Tutup menu"
       >
         <X size={21} />
@@ -258,7 +258,7 @@ return (
 
     {/* Daftar navigasi */}
     <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
-      <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+      <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#94a3b8]">
         Menu Utama
       </p>
 
@@ -274,8 +274,8 @@ return (
             aria-current={active ? "page" : undefined}
             className={`group flex items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors ${
               active
-                ? "bg-blue-50 text-blue-700"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                ? "bg-[#0b1f3a] text-white shadow-sm"
+                : "text-[#64748b] hover:bg-slate-50 hover:text-[#0b1f3a]"
             }`}
           >
             <span className="flex min-w-0 items-center gap-3">
@@ -283,8 +283,8 @@ return (
                 size={20}
                 className={`shrink-0 ${
                   active
-                    ? "text-blue-700"
-                    : "text-gray-400 group-hover:text-gray-600"
+                    ? "text-white"
+                    : "text-[#94a3b8] group-hover:text-[#0b1f3a]"
                 }`}
               />
 
@@ -304,14 +304,14 @@ return (
     </nav>
 
     {/* Informasi admin dan tombol logout */}
-    <div className="shrink-0 border-t border-gray-200 p-4">
-      <div className="mb-3 flex items-center gap-3 rounded-xl bg-gray-50 p-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+    <div className="shrink-0 border-t border-slate-100 p-4">
+      <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f5f7fa] p-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0b1f3a] text-white">
           <Settings size={20} />
         </div>
 
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-gray-800">
+          <p className="truncate text-sm font-bold text-[#172033]">
             Administrator
           </p>
           <p className="text-xs text-gray-500">
@@ -324,7 +324,7 @@ return (
         type="button"
         onClick={handleLogout}
         disabled={loadingLogout}
-        className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-[#64748b] transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <LogOut size={20} />
 

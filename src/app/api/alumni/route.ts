@@ -10,26 +10,33 @@ export async function GET(request: NextRequest) {
   if (!(await isAdminAuthenticated())) {
     return NextResponse.json(
       { error: "Tidak memiliki akses." },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
   try {
     const query = request.nextUrl.searchParams;
+
     const search = (query.get("search") ?? "").trim().slice(0, 120);
     const status = query.get("status") ?? "";
     const angkatan = query.get("angkatan") ?? "";
     const wilayah = query.get("wilayah") ?? "";
-    const limit = Math.min(
-      Math.max(Number(query.get("limit") ?? 100), 1),
-      500,
-    );
-    const offset = Math.max(Number(query.get("offset") ?? 0), 0);
+
+    const requestedLimit = Number(query.get("limit") ?? 100);
+    const requestedOffset = Number(query.get("offset") ?? 0);
+
+    const limit = Number.isFinite(requestedLimit)
+      ? Math.min(Math.max(Math.floor(requestedLimit), 1), 500)
+      : 100;
+
+    const offset = Number.isFinite(requestedOffset)
+      ? Math.max(Math.floor(requestedOffset), 0)
+      : 0;
 
     if (status && !statusValues.has(status)) {
       return NextResponse.json(
         { error: "Filter status tidak valid." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -39,12 +46,12 @@ export async function GET(request: NextRequest) {
         COALESCE(nomor_alumni, '') AS "nomorAlumni",
         nama,
         angkatan,
-        instansi,
-        jabatan,
-        wilayah,
-        alamat,
+        COALESCE(instansi, '') AS instansi,
+        COALESCE(jabatan, '') AS jabatan,
+        COALESCE(wilayah, '') AS wilayah,
+        COALESCE(alamat, '') AS alamat,
         COALESCE(email, '') AS email,
-        nomor_hp AS "nomorHp",
+        COALESCE(nomor_hp, '') AS "nomorHp",
         foto_profil AS "fotoProfil",
         status,
         alasan_penolakan AS "alasanPenolakan",
@@ -65,9 +72,9 @@ export async function GET(request: NextRequest) {
           alamat
         ) ILIKE ${"%" + search + "%"}
       )
-        AND (${status} = '' OR status = ${status})
-        AND (${angkatan} = '' OR angkatan = ${angkatan})
-        AND (${wilayah} = '' OR wilayah = ${wilayah})
+      AND (${status} = '' OR status = ${status})
+      AND (${angkatan} = '' OR angkatan = ${angkatan})
+      AND (${wilayah} = '' OR wilayah = ${wilayah})
       ORDER BY updated_at DESC, id DESC
       LIMIT ${limit}
       OFFSET ${offset}
@@ -93,14 +100,14 @@ export async function GET(request: NextRequest) {
       counts,
     });
   } catch (error) {
-    console.error("GET /api/alumni failed", error);
+    console.error("GET /api/alumni failed:", error);
 
     return NextResponse.json(
       {
         error:
-          "Gagal mengambil data alumni. Periksa koneksi database.",
+          "Gagal mengambil data alumni. Periksa koneksi database dan struktur tabel.",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -109,7 +116,7 @@ export async function POST(request: NextRequest) {
   if (!(await isAdminAuthenticated())) {
     return NextResponse.json(
       { error: "Tidak memiliki akses." },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -122,7 +129,7 @@ export async function POST(request: NextRequest) {
     const angkatan =
       typeof body.angkatan === "string"
         ? body.angkatan.trim()
-        : "";
+        : String(body.angkatan ?? "").trim();
 
     if (
       nama.length < 2 ||
@@ -135,7 +142,7 @@ export async function POST(request: NextRequest) {
           error:
             "Nama dan angkatan wajib diisi dengan format yang benar.",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -146,4 +153,114 @@ export async function POST(request: NextRequest) {
 
     if (
       email &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
+      return NextResponse.json(
+        { error: "Format email tidak valid." },
+        { status: 400 }
+      );
+    }
+
+    const nomorAlumni =
+      typeof body.nomorAlumni === "string"
+        ? body.nomorAlumni.trim() || null
+        : null;
+
+    const instansi =
+      typeof body.instansi === "string"
+        ? body.instansi.trim()
+        : "";
+
+    const jabatan =
+      typeof body.jabatan === "string"
+        ? body.jabatan.trim()
+        : "";
+
+    const wilayah =
+      typeof body.wilayah === "string"
+        ? body.wilayah.trim()
+        : "";
+
+    const alamat =
+      typeof body.alamat === "string"
+        ? body.alamat.trim()
+        : "";
+
+    const nomorHp =
+      typeof body.nomorHp === "string"
+        ? body.nomorHp.trim()
+        : "";
+
+    const status =
+      typeof body.status === "string" &&
+      statusValues.has(body.status)
+        ? body.status
+        : "Menunggu";
+
+    const [row] = await db()`
+      INSERT INTO alumni (
+        nomor_alumni,
+        nama,
+        angkatan,
+        instansi,
+        jabatan,
+        wilayah,
+        alamat,
+        email,
+        nomor_hp,
+        status,
+        sumber_data
+      )
+      VALUES (
+        ${nomorAlumni},
+        ${nama},
+        ${angkatan},
+        ${instansi},
+        ${jabatan},
+        ${wilayah},
+        ${alamat},
+        ${email || null},
+        ${nomorHp},
+        ${status},
+        'impor'
+      )
+      RETURNING
+        id,
+        COALESCE(nomor_alumni, '') AS "nomorAlumni",
+        nama,
+        angkatan,
+        COALESCE(instansi, '') AS instansi,
+        COALESCE(jabatan, '') AS jabatan,
+        COALESCE(wilayah, '') AS wilayah,
+        COALESCE(alamat, '') AS alamat,
+        COALESCE(email, '') AS email,
+        COALESCE(nomor_hp, '') AS "nomorHp",
+        foto_profil AS "fotoProfil",
+        status
+    `;
+
+    return NextResponse.json(
+      { data: row },
+      { status: 201 }
+    );
+  } catch (error) {
+    const code = (error as { code?: string })?.code;
+
+    if (code === "23505") {
+      return NextResponse.json(
+        {
+          error:
+            "Nomor alumni atau email sudah terdaftar.",
+        },
+        { status: 409 }
+      );
+    }
+
+    console.error("POST /api/alumni failed:", error);
+
+    return NextResponse.json(
+      { error: "Gagal menyimpan data alumni." },
+      { status: 500 }
+    );
+  }
+  }

@@ -88,8 +88,7 @@ export default function DaftarPage() {
         {loading && <LoaderCircle size={17} className="animate-spin" />}{loading ? "Mengirim pengajuan..." : "Ajukan Pendaftaran"}
       </button>
     </form>
-    <div className="mt-6 space-y-2 text-center text-sm text-slate-600">
-      <p>Data Anda sudah ada? <Link href="/klaim-akun" className="font-semibold text-[#0b1f3a] hover:underline">Klaim akun</Link></p>
+    <div className="mt-6 border-t border-slate-100 pt-5 text-center text-sm text-slate-600">
       <p>Sudah punya akun? <Link href="/login" className="font-semibold text-[#0b1f3a] hover:underline">Login</Link></p>
     </div>
   </AuthShell>;

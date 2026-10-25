@@ -1,12 +1,30 @@
 "use client";
 
 import {
-  ChangeEvent,
-  FormEvent,
   useEffect,
   useRef,
   useState,
+  type ChangeEvent,
+  type FormEvent,
 } from "react";
+
+import {
+  UserRound,
+  Mail,
+  GraduationCap,
+  BriefcaseBusiness,
+  Building2,
+  Save,
+  LoaderCircle,
+  CheckCircle2,
+  AlertCircle,
+  ShieldCheck,
+  ArrowLeft,
+  Camera,
+  Upload,
+} from "lucide-react";
+
+import Link from "next/link";
 
 type Profile = {
   id?: number;
@@ -19,6 +37,11 @@ type Profile = {
   fotoProfil?: string | null;
 };
 
+type Notice = {
+  type: "success" | "error";
+  message: string;
+};
+
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const ALLOWED_TYPES = [
@@ -27,23 +50,23 @@ const ALLOWED_TYPES = [
   "image/webp",
 ];
 
+const inputClass =
+  "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0b1f3a] focus:ring-2 focus:ring-[#0b1f3a]/10 disabled:bg-slate-50";
+
 export default function ProfilUser() {
-  const [form, setForm] = useState({
+  const [profile, setProfile] = useState<Profile>({
     nama: "",
     angkatan: "",
     jabatan: "",
     instansi: "",
+    fotoProfil: null,
   });
 
-  const [nomorAlumni, setNomorAlumni] = useState("");
-  const [fotoProfil, setFotoProfil] = useState<string | null>(null);
-
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [notice, setNotice] = useState<Notice | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,40 +75,61 @@ export default function ProfilUser() {
 
     async function loadProfile() {
       try {
-        const response = await fetch("/api/user/profile", {
-          cache: "no-store",
-        });
+        const [profileResponse, accountResponse] =
+          await Promise.all([
+            fetch("/api/user/profile", {
+              cache: "no-store",
+            }),
+            fetch("/api/auth/me", {
+              cache: "no-store",
+            }),
+          ]);
 
-        const result = await response.json();
+        const profileResult = await profileResponse.json();
+        const accountResult = await accountResponse.json();
 
-        if (!response.ok) {
+        if (!profileResponse.ok) {
           throw new Error(
-            result.message || "Gagal memuat profil."
+            profileResult.message ||
+              "Gagal mengambil data profil."
+          );
+        }
+
+        if (
+          !accountResponse.ok ||
+          accountResult.user?.role !== "alumni"
+        ) {
+          throw new Error(
+            "Sesi alumni tidak valid. Silakan login kembali."
           );
         }
 
         if (!active) return;
 
-        const profile: Profile = result.data;
+        const data = profileResult.data;
 
-        setNomorAlumni(profile.nomorAlumni ?? "");
-
-        setForm({
-          nama: profile.nama ?? "",
-          angkatan: String(profile.angkatan ?? ""),
-          jabatan: profile.jabatan ?? "",
-          instansi: profile.instansi ?? "",
+        setProfile({
+          id: data.id,
+          nomorAlumni: data.nomorAlumni || "",
+          nama: data.nama || "",
+          angkatan: String(data.angkatan || ""),
+          jabatan: data.jabatan || "",
+          instansi: data.instansi || "",
+          status: data.status || "",
+          fotoProfil: data.fotoProfil || null,
         });
 
-        setFotoProfil(profile.fotoProfil ?? null);
-      } catch (err) {
-        if (active) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Terjadi kesalahan saat memuat profil."
-          );
-        }
+        setEmail(accountResult.user.email || "");
+      } catch (error) {
+        if (!active) return;
+
+        setNotice({
+          type: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Terjadi kesalahan saat memuat profil.",
+        });
       } finally {
         if (active) {
           setLoading(false);
@@ -100,33 +144,52 @@ export default function ProfilUser() {
     };
   }, []);
 
+  function updateField(
+    field: keyof Profile,
+    value: string
+  ) {
+    setProfile((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+
+    setNotice(null);
+  }
+
   async function handlePhotoChange(
     event: ChangeEvent<HTMLInputElement>
   ) {
     const file = event.target.files?.[0];
 
-    // Izinkan pengguna memilih file yang sama lagi.
+    // Izinkan pemilihan ulang file yang sama.
     event.target.value = "";
 
     if (!file) return;
 
-    setError("");
-    setSuccess("");
+    setNotice(null);
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setError(
-        "Format foto harus JPEG, PNG, atau WebP."
-      );
+      setNotice({
+        type: "error",
+        message:
+          "Format foto harus JPEG, PNG, atau WebP.",
+      });
       return;
     }
 
     if (file.size === 0) {
-      setError("File foto kosong.");
+      setNotice({
+        type: "error",
+        message: "File foto kosong.",
+      });
       return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setError("Ukuran foto maksimal 5 MB.");
+      setNotice({
+        type: "error",
+        message: "Ukuran foto maksimal 5 MB.",
+      });
       return;
     }
 
@@ -135,7 +198,7 @@ export default function ProfilUser() {
     try {
       const formData = new FormData();
 
-      // Nama field harus sama dengan yang dibaca route.ts.
+      // Harus sama dengan formData.get("photo") di route.ts.
       formData.append("photo", file);
 
       const response = await fetch(
@@ -150,32 +213,41 @@ export default function ProfilUser() {
 
       if (!response.ok) {
         throw new Error(
-          result.message || "Gagal mengunggah foto profil."
+          result.message ||
+            "Gagal mengunggah foto profil."
         );
       }
 
-      const newPhotoUrl =
-        result.data?.fotoProfil ??
-        result.data?.photoUrl ??
-        result.data?.url;
+      const photoUrl = result.data?.fotoProfil;
 
-      if (!newPhotoUrl) {
+      if (
+        typeof photoUrl !== "string" ||
+        !photoUrl
+      ) {
         throw new Error(
-          "Upload berhasil, tetapi URL foto tidak ditemukan pada respons API."
+          "URL foto tidak ditemukan pada respons server."
         );
       }
 
-      setFotoProfil(newPhotoUrl);
+      setProfile((previous) => ({
+        ...previous,
+        fotoProfil: photoUrl,
+      }));
 
-      setSuccess(
-        result.message || "Foto profil berhasil diperbarui."
-      );
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Terjadi kesalahan saat mengunggah foto."
-      );
+      setNotice({
+        type: "success",
+        message:
+          result.message ||
+          "Foto profil berhasil diperbarui.",
+      });
+    } catch (error) {
+      setNotice({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Terjadi kesalahan saat mengunggah foto.",
+      });
     } finally {
       setUploadingPhoto(false);
     }
@@ -185,106 +257,116 @@ export default function ProfilUser() {
     event: FormEvent<HTMLFormElement>
   ) {
     event.preventDefault();
+    setNotice(null);
+
+    if (profile.nama.trim().length < 2) {
+      setNotice({
+        type: "error",
+        message: "Nama lengkap minimal 2 karakter.",
+      });
+      return;
+    }
+
+    if (!profile.angkatan.trim()) {
+      setNotice({
+        type: "error",
+        message: "Tahun angkatan wajib diisi.",
+      });
+      return;
+    }
 
     setSaving(true);
-    setError("");
-    setSuccess("");
 
     try {
-      const response = await fetch("/api/user/profile", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form),
-      });
+      const response = await fetch(
+        "/api/user/profile",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            nama: profile.nama.trim(),
+            angkatan: profile.angkatan.trim(),
+            jabatan: profile.jabatan.trim(),
+            instansi: profile.instansi.trim(),
+          }),
+        }
+      );
 
       const result = await response.json();
 
       if (!response.ok) {
         throw new Error(
-          result.message || "Gagal mengirim perubahan."
+          result.message ||
+            "Gagal mengirim permintaan perubahan profil."
         );
       }
 
-      setSuccess(
-        "Perubahan profil diajukan. Data resmi akan berubah setelah ditinjau admin."
-      );
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Terjadi kesalahan saat mengirim perubahan."
-      );
+      setNotice({
+        type: "success",
+        message:
+          result.message ||
+          "Permintaan perubahan profil berhasil dikirim kepada admin.",
+      });
+    } catch (error) {
+      setNotice({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Terjadi kesalahan. Silakan coba lagi.",
+      });
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) {
-    return (
-      <div className="p-6">
-        Memuat profil alumni...
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto w-full max-w-2xl rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
-      <h1 className="mb-2 text-2xl font-bold text-[#0b1f3a]">
-        Profil Alumni
-      </h1>
+    <div className="mx-auto max-w-5xl space-y-6">
+      {/* Judul halaman */}
+      <section>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#b28b16]">
+          Pengelolaan Akun
+        </p>
 
-      <p className="mb-6 text-sm text-gray-600">
-        Nomor alumni: {nomorAlumni || "-"}
-      </p>
+        <h1 className="text-2xl font-bold tracking-tight text-[#0b1f3a] sm:text-3xl">
+          Profil Saya
+        </h1>
 
-      {/* FOTO PROFIL */}
-      <section className="mb-8 rounded-xl border border-gray-200 bg-gray-50 p-4 sm:p-6">
-        <h2 className="mb-4 text-lg font-semibold text-[#0b1f3a]">
-          Foto Profil
-        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+          Lihat informasi alumni dan ajukan perubahan data
+          yang perlu diperbarui.
+        </p>
+      </section>
 
-        <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
-          <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-gray-200 shadow-sm">
-            {fotoProfil ? (
-              <img
-                src={fotoProfil}
-                alt={`Foto profil ${form.nama || "alumni"}`}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="h-16 w-16 text-gray-400"
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10ZM4 20a8 8 0 1 1 16 0v1H4v-1Z"
-                  clipRule="evenodd"
+      {/* Informasi akun dan foto profil */}
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-5 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:p-6">
+          {/* Foto profil */}
+          <div className="flex shrink-0 flex-col items-center gap-3">
+            <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-slate-100 text-[#0b1f3a] shadow-md sm:h-28 sm:w-28">
+              {profile.fotoProfil ? (
+                <img
+                  src={profile.fotoProfil}
+                  alt={`Foto profil ${profile.nama || "alumni"}`}
+                  className="h-full w-full object-cover"
                 />
-              </svg>
-            )}
-          </div>
-
-          <div className="w-full text-center sm:text-left">
-            <p className="mb-1 font-medium text-gray-800">
-              {form.nama || "Alumni"}
-            </p>
-
-            <p className="mb-4 text-sm text-gray-500">
-              Format JPEG, PNG, atau WebP. Maksimal 5 MB.
-            </p>
+              ) : (
+                <UserRound
+                  size={48}
+                  strokeWidth={1.4}
+                  aria-hidden="true"
+                />
+              )}
+            </div>
 
             <input
               ref={fileInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={handlePhotoChange}
-              disabled={uploadingPhoto}
+              disabled={uploadingPhoto || loading}
               className="hidden"
               aria-label="Pilih foto profil"
             />
@@ -292,193 +374,324 @@ export default function ProfilUser() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingPhoto}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#0b1f3a] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#15345c] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              disabled={uploadingPhoto || loading}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-[#0b1f3a] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {uploadingPhoto ? (
                 <>
-                  <svg
-                    className="h-4 w-4 animate-spin"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4Z"
-                    />
-                  </svg>
-
+                  <LoaderCircle
+                    size={15}
+                    className="animate-spin"
+                  />
                   Mengunggah...
                 </>
               ) : (
                 <>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    className="h-5 w-5"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 16V4m0 0L7 9m5-5 5 5M5 16v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3"
-                    />
-                  </svg>
+                  {profile.fotoProfil ? (
+                    <Camera size={15} />
+                  ) : (
+                    <Upload size={15} />
+                  )}
 
-                  {fotoProfil
+                  {profile.fotoProfil
                     ? "Ganti Foto"
                     : "Upload Foto"}
                 </>
               )}
             </button>
+
+            <p className="text-center text-[11px] text-slate-400">
+              JPEG, PNG, WebP · Maks. 5 MB
+            </p>
           </div>
+
+          {/* Identitas alumni */}
+          <div className="min-w-0 flex-1 text-center sm:text-left">
+            <h2 className="break-words text-lg font-bold text-[#0b1f3a] sm:text-xl">
+              {loading
+                ? "Memuat profil..."
+                : profile.nama || "Alumni"}
+            </h2>
+
+            <p className="mt-1 break-all text-sm text-slate-500">
+              {email || "Email tidak tersedia"}
+            </p>
+
+            <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
+              {profile.nomorAlumni && (
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                  No. Alumni: {profile.nomorAlumni}
+                </span>
+              )}
+
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                <ShieldCheck size={14} />
+                {profile.status || "Status tidak tersedia"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Informasi ringkas */}
+        <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 sm:p-6">
+          <InfoItem
+            icon={GraduationCap}
+            label="Nomor Alumni"
+            value={profile.nomorAlumni || "-"}
+          />
+
+          <InfoItem
+            icon={Mail}
+            label="Email Akun"
+            value={email || "-"}
+          />
+
+          <InfoItem
+            icon={GraduationCap}
+            label="Angkatan"
+            value={profile.angkatan || "-"}
+          />
+
+          <InfoItem
+            icon={ShieldCheck}
+            label="Status Alumni"
+            value={profile.status || "-"}
+          />
         </div>
       </section>
 
-      {/* PESAN */}
-      {error && (
-        <div
-          role="alert"
-          className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+      {/* Form perubahan profil */}
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
+          <h2 className="font-bold text-[#172033]">
+            Ajukan Perubahan Profil
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Perubahan akan dikirim kepada admin untuk
+            ditinjau sebelum diterapkan pada data alumni.
+          </p>
+        </div>
+
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5 p-5 sm:p-6"
         >
-          {error}
-        </div>
-      )}
+          {/* Notifikasi */}
+          {notice && (
+            <div
+              role={notice.type === "error" ? "alert" : "status"}
+              className={`flex items-start gap-3 rounded-xl border p-4 text-sm ${
+                notice.type === "success"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  : "border-red-200 bg-red-50 text-red-700"
+              }`}
+            >
+              {notice.type === "success" ? (
+                <CheckCircle2
+                  size={19}
+                  className="mt-0.5 shrink-0"
+                />
+              ) : (
+                <AlertCircle
+                  size={19}
+                  className="mt-0.5 shrink-0"
+                />
+              )}
 
-      {success && (
-        <div
-          role="status"
-          className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700"
-        >
-          {success}
-        </div>
-      )}
+              <p>{notice.message}</p>
+            </div>
+          )}
 
-      {/* FORM PROFIL */}
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4"
-      >
-        <div>
-          <label
-            htmlFor="nama"
-            className="mb-1 block text-sm font-medium text-gray-700"
-          >
-            Nama lengkap
-          </label>
+          {loading ? (
+            <div className="flex items-center justify-center gap-3 py-12 text-sm text-slate-500">
+              <LoaderCircle
+                size={20}
+                className="animate-spin"
+              />
+              Mengambil data profil...
+            </div>
+          ) : (
+            <>
+              <Field
+                label="Nama Lengkap"
+                icon={UserRound}
+                required
+              >
+                <input
+                  type="text"
+                  value={profile.nama}
+                  onChange={(event) =>
+                    updateField("nama", event.target.value)
+                  }
+                  maxLength={200}
+                  required
+                  className={inputClass}
+                  placeholder="Masukkan nama lengkap"
+                />
+              </Field>
 
-          <input
-            id="nama"
-            value={form.nama}
-            onChange={(event) =>
-              setForm({
-                ...form,
-                nama: event.target.value,
-              })
-            }
-            maxLength={200}
-            required
-            className="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:border-[#0b1f3a] focus:ring-2 focus:ring-[#0b1f3a]/10"
-          />
-        </div>
+              <Field
+                label="Tahun Angkatan"
+                icon={GraduationCap}
+                required
+              >
+                <input
+                  type="text"
+                  value={profile.angkatan}
+                  onChange={(event) =>
+                    updateField(
+                      "angkatan",
+                      event.target.value
+                    )
+                  }
+                  maxLength={100}
+                  required
+                  className={inputClass}
+                  placeholder="Masukkan tahun atau nama angkatan"
+                />
+              </Field>
 
-        <div>
-          <label
-            htmlFor="angkatan"
-            className="mb-1 block text-sm font-medium text-gray-700"
-          >
-            Tahun angkatan
-          </label>
+              <Field
+                label="Jabatan / Pekerjaan"
+                icon={BriefcaseBusiness}
+              >
+                <input
+                  type="text"
+                  value={profile.jabatan}
+                  onChange={(event) =>
+                    updateField(
+                      "jabatan",
+                      event.target.value
+                    )
+                  }
+                  maxLength={200}
+                  className={inputClass}
+                  placeholder="Contoh: Direktur, PNS, Pengusaha"
+                />
+              </Field>
 
-          <input
-            id="angkatan"
-            value={form.angkatan}
-            onChange={(event) =>
-              setForm({
-                ...form,
-                angkatan: event.target.value,
-              })
-            }
-            maxLength={100}
-            required
-            className="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:border-[#0b1f3a] focus:ring-2 focus:ring-[#0b1f3a]/10"
-          />
-        </div>
+              <Field
+                label="Instansi / Perusahaan"
+                icon={Building2}
+              >
+                <input
+                  type="text"
+                  value={profile.instansi}
+                  onChange={(event) =>
+                    updateField(
+                      "instansi",
+                      event.target.value
+                    )
+                  }
+                  maxLength={200}
+                  className={inputClass}
+                  placeholder="Masukkan instansi atau perusahaan"
+                />
+              </Field>
 
-        <div>
-          <label
-            htmlFor="jabatan"
-            className="mb-1 block text-sm font-medium text-gray-700"
-          >
-            Jabatan / pekerjaan saat ini
-          </label>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm leading-relaxed text-amber-900">
+                  <strong>Perhatian:</strong> Mengirim
+                  formulir ini tidak langsung mengubah data
+                  utama. Permintaan akan masuk ke admin
+                  untuk ditinjau terlebih dahulu.
+                </p>
+              </div>
 
-          <input
-            id="jabatan"
-            value={form.jabatan}
-            onChange={(event) =>
-              setForm({
-                ...form,
-                jabatan: event.target.value,
-              })
-            }
-            maxLength={200}
-            className="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:border-[#0b1f3a] focus:ring-2 focus:ring-[#0b1f3a]/10"
-          />
-        </div>
+              <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-between">
+                <Link
+                  href="/user"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                >
+                  <ArrowLeft size={16} />
+                  Kembali ke Dashboard
+                </Link>
 
-        <div>
-          <label
-            htmlFor="instansi"
-            className="mb-1 block text-sm font-medium text-gray-700"
-          >
-            Instansi / perusahaan
-          </label>
-
-          <input
-            id="instansi"
-            value={form.instansi}
-            onChange={(event) =>
-              setForm({
-                ...form,
-                instansi: event.target.value,
-              })
-            }
-            maxLength={200}
-            className="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:border-[#0b1f3a] focus:ring-2 focus:ring-[#0b1f3a]/10"
-          />
-        </div>
-
-        <p className="text-sm leading-6 text-gray-500">
-          Perubahan informasi profil akan diajukan kepada
-          admin untuk ditinjau terlebih dahulu.
-        </p>
-
-        <button
-          type="submit"
-          disabled={saving || uploadingPhoto}
-          className="w-full rounded-lg bg-[#0b1f3a] px-4 py-3 font-medium text-white transition hover:bg-[#15345c] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {saving
-            ? "Mengirim..."
-            : "Ajukan Perubahan Profil"}
-        </button>
-      </form>
+                <button
+                  type="submit"
+                  disabled={saving || uploadingPhoto}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#18385f] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {saving ? (
+                    <>
+                      <LoaderCircle
+                        size={17}
+                        className="animate-spin"
+                      />
+                      Mengirim...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={17} />
+                      Kirim Permintaan
+                    </>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+        </form>
+      </section>
     </div>
   );
-  }
+}
+
+function Field({
+  label,
+  icon: Icon,
+  required = false,
+  children,
+}: {
+  label: string;
+  icon: typeof UserRound;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="flex items-center gap-2 text-sm font-semibold text-[#172033]">
+        <Icon
+          size={16}
+          className="text-[#64748b]"
+        />
+
+        {label}
+
+        {required && (
+          <span className="text-red-500">*</span>
+        )}
+      </label>
+
+      {children}
+    </div>
+  );
+}
+
+function InfoItem({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof UserRound;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-4">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#0b1f3a] shadow-sm">
+        <Icon size={19} />
+      </div>
+
+      <div className="min-w-0">
+        <p className="text-xs font-medium text-slate-500">
+          {label}
+        </p>
+
+        <p className="mt-1 break-words text-sm font-semibold text-[#172033]">
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+    }

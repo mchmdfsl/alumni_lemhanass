@@ -209,9 +209,13 @@ return (
 <>
 {/* Overlay mobile */}
 <div
-className={"fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 lg:hidden ${ mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0" }"}
-onClick={closeMobileSidebar}
-aria-hidden="true"
+  className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 lg:hidden ${
+    mobileOpen
+      ? "pointer-events-auto opacity-100"
+      : "pointer-events-none opacity-0"
+  }`}
+  onClick={closeMobileSidebar}
+  aria-hidden="true"
 />
   {/* Sidebar utama */}
   <aside

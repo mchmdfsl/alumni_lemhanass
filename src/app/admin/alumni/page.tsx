@@ -20,7 +20,6 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
@@ -44,8 +43,6 @@ const ITEMS_PER_PAGE = 10;
 const STATUS_OPTIONS = ["Semua Status", "Terverifikasi", "Menunggu", "Ditolak"];
 
 export default function AlumniPage() {
-  const searchParams = useSearchParams();
-
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("Semua Status");
   const [angkatan, setAngkatan] = useState("Semua Angkatan");
@@ -61,13 +58,14 @@ export default function AlumniPage() {
   const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Init filters from URL params (e.g. from Wilayah/Angkatan pages)
+  // Read URL filters after mount to avoid a useSearchParams prerender/Suspense build error.
   useEffect(() => {
-    const w = searchParams.get("wilayah");
-    const a = searchParams.get("angkatan");
+    const params = new URLSearchParams(window.location.search);
+    const w = params.get("wilayah");
+    const a = params.get("angkatan");
     if (w) setWilayah(w);
     if (a) setAngkatan(a);
-  }, [searchParams]);
+  }, []);
 
   const loadAlumni = () => {
     let active = true;

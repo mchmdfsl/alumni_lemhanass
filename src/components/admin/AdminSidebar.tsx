@@ -126,7 +126,7 @@ export default function AdminSidebar() {
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-20 shrink-0 items-center justify-between border-b border-slate-100 px-5">
+        <div className="flex h-20 shrink-0 items-center gap-3 border-b border-slate-100 px-6">
           <Link href="/admin" onClick={closeMobileSidebar} className="flex min-w-0 items-center gap-3">
             <Image
               src="/images/logo-lemhannas.png"
@@ -137,14 +137,14 @@ export default function AdminSidebar() {
               priority
             />
             <div className="min-w-0">
-              <h1 className="truncate text-base font-bold text-gray-900">LEMHANNAS RI</h1>
-              <p className="text-[11px] text-[#94a3b8]">Panel Administrator</p>
+              <h1 className="truncate text-sm font-bold text-[#0b1f3a]">LEMHANNAS RI</h1>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[#94a3b8]">Panel Administrator</p>
             </div>
           </Link>
           <button
             type="button"
             onClick={closeMobileSidebar}
-            className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-[#0b1f3a] lg:hidden"
+            className="ml-auto rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-[#0b1f3a] lg:hidden"
             aria-label="Tutup menu"
           >
             <X size={21} />

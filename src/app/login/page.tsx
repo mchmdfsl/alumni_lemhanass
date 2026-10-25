@@ -1,73 +1,72 @@
 "use client";
-import { useState } from "react";
+
+import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { LockKeyhole, Mail, LoaderCircle } from "lucide-react";
+import AuthShell from "@/components/auth/AuthShell";
 
 export default function LoginPage() {
   const router = useRouter();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setError("");
-    
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier, password }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error);
-    } else {
-      if (data.role === "admin") router.push("/admin");
-      else router.push("/user/profil");
+    setLoading(true);
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: identifier.trim(), password }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Login gagal. Periksa kembali data Anda.");
+      router.replace(data.role === "admin" ? "/admin" : "/user/profil");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan. Silakan coba lagi.");
+    } finally {
+      setLoading(false);
     }
-  };
+  }
+
+  const inputClass = "w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#0b1f3a] focus:ring-2 focus:ring-[#0b1f3a]/10";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
-      <form onSubmit={handleLogin} className="w-full max-w-md rounded-xl bg-white p-8 shadow-md">
-        <h1 className="mb-6 text-center text-2xl font-bold text-[#0b1f3a]">Login Sistem</h1>
-        
-        {error && <div className="mb-4 rounded bg-red-100 p-2 text-sm text-red-600">{error}</div>}
-
-        <div className="mb-4">
-          <label className="mb-1 block text-sm font-semibold text-gray-700">Email / ID Anggota</label>
-          <input 
-            type="text" 
-            className="w-full rounded border px-3 py-2 focus:border-[#9e1b32] focus:outline-none"
-            value={identifier} 
-            onChange={(e) => setIdentifier(e.target.value)} 
-            required 
-          />
-        </div>
-
-        <div className="mb-6">
-          <label className="mb-1 block text-sm font-semibold text-gray-700">Password / No Angkatan</label>
-          <input 
-            type="password" 
-            className="w-full rounded border px-3 py-2 focus:border-[#9e1b32] focus:outline-none"
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            required 
-          />
-          <div className="mt-2 text-right text-sm">
-            <a href="/lupa-password" className="text-gray-500 hover:text-[#9e1b32]">Lupa password?</a>
+    <AuthShell title="Pendataan Alumni" subtitle="Sistem Informasi Pendataan Alumni Lembaga Ketahanan Nasional Republik Indonesia">
+      <div className="mb-6">
+        <h2 className="text-lg font-bold text-slate-800">Selamat Datang</h2>
+        <p className="mt-1 text-sm leading-6 text-slate-500">Silakan masuk untuk mengakses sistem pendataan alumni LEMHANNAS RI.</p>
+      </div>
+      {error && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+      <form onSubmit={handleLogin} className="space-y-5">
+        <div>
+          <label htmlFor="identifier" className="mb-2 block text-sm font-semibold text-slate-700">Email atau Nomor Alumni</label>
+          <div className="relative">
+            <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input id="identifier" name="identifier" type="text" autoComplete="username" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="Masukkan email atau nomor alumni" required className={inputClass} />
           </div>
         </div>
-
-        <button type="submit" className="w-full rounded bg-[#0b1f3a] py-2 text-white hover:bg-[#0b1f3a]/90">
-          MASUK
-        </button>
-
-        <div className="mt-6 space-y-2 text-center text-sm text-gray-600">
-          <p>Belum terdaftar? <a href="/daftar" className="font-semibold text-[#0b1f3a] hover:text-[#9e1b32]">Buat Pengajuan (Daftar)</a></p>
-          <p>Alumni lama? <a href="/klaim-akun" className="font-semibold text-[#0b1f3a] hover:text-[#9e1b32]">Klaim Akun & Set Password</a></p>
+        <div>
+          <label htmlFor="password" className="mb-2 block text-sm font-semibold text-slate-700">Password</label>
+          <div className="relative">
+            <LockKeyhole size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input id="password" name="password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Masukkan password" required className={inputClass} />
+          </div>
+          <div className="mt-2 text-right text-sm"><Link href="/lupa-password" className="text-slate-500 hover:text-[#0b1f3a]">Lupa password?</Link></div>
         </div>
+        <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] py-3.5 text-sm font-bold tracking-wide text-white transition hover:bg-[#18385f] disabled:cursor-not-allowed disabled:opacity-60">
+          {loading && <LoaderCircle size={17} className="animate-spin" />}
+          {loading ? "MEMPROSES..." : "MASUK"}
+        </button>
       </form>
-    </div>
+      <div className="mt-6 space-y-3 border-t border-slate-100 pt-5 text-center text-sm text-slate-600">
+        <p>Belum terdaftar? <Link href="/daftar" className="font-semibold text-[#0b1f3a] hover:underline">Daftar alumni</Link></p>
+        <p>Data Anda sudah ada? <Link href="/klaim-akun" className="font-semibold text-[#0b1f3a] hover:underline">Klaim akun & buat password</Link></p>
+      </div>
+    </AuthShell>
   );
 }

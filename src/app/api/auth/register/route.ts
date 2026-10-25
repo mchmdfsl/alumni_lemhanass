@@ -103,6 +103,7 @@ export async function POST(request: NextRequest) {
         { status: 409 },
       );
     }
+    
 
     return NextResponse.json(
       {
@@ -113,6 +114,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 202 },
     );
+  
   } catch (error) {
     console.error("POST /api/auth/register failed", error);
 
@@ -121,5 +123,4 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     );
   }
-      }
-      
+}

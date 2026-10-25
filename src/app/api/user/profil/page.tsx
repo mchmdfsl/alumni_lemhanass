@@ -694,4 +694,4 @@ function InfoItem({
       </div>
     </div>
   );
-    }
+}

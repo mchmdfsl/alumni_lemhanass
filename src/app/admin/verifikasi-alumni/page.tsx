@@ -117,36 +117,53 @@ export default function VerifikasiAlumniPage() {
     }
   };
   const handleBulkActivateAccounts = async () => {
-    const confirmed = window.confirm(
-      "Buat akun untuk SEMUA alumni berstatus Terverifikasi yang belum memiliki akun? Password acak akan ditampilkan satu kali untuk diunduh. Simpan file dengan aman."
-    );
+    const confirmed = window.confirm("Buat akun untuk alumni terverifikasi yang belum memiliki akun? Proses berjalan per 20 akun. Simpan file kredensial setelah selesai.");
     if (!confirmed) return;
     setAccountLoading(true);
+    const allCredentials: Array<{ nama: string; angkatan: string; nomorAlumni: string; email: string; password: string }> = [];
     try {
-      const response = await fetch("/api/admin/alumni-accounts/bulk-activate", { method: "POST" });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Aktivasi akun massal gagal.");
-      const credentials = Array.isArray(result.credentials) ? result.credentials : [];
-      if (credentials.length) {
-        const headers = ["Nama", "Angkatan", "ID Alumni", "Email", "Password"];
-        const escapeCsv = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
-        const csv = [headers, ...credentials.map((item: { nama: string; angkatan: string; nomorAlumni: string; email: string; password: string }) => [item.nama, item.angkatan, item.nomorAlumni, item.email, item.password])]
-          .map((row) => row.map(escapeCsv).join(",")).join("\r\n");
-        const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement("a");
-        anchor.href = url;
-        anchor.download = "kredensial-alumni-" + new Date().toISOString().slice(0, 10) + ".csv";
-        anchor.style.display = "none";
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-        // Keep the Blob URL alive long enough for mobile browsers to start the download.
-        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      let finished = false;
+      let batches = 0;
+      while (!finished) {
+        batches += 1;
+        if (batches > 500) throw new Error("Batas aman 10.000 akun tercapai. Jalankan kembali untuk melanjutkan akun yang tersisa.");
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 60000);
+        let response: Response;
+        try {
+          response = await fetch("/api/admin/alumni-accounts/bulk-activate", { method: "POST", cache: "no-store", signal: controller.signal });
+        } finally {
+          window.clearTimeout(timeout);
+        }
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Aktivasi akun massal gagal.");
+        const credentials = Array.isArray(result.credentials) ? result.credentials : [];
+        allCredentials.push(...credentials);
+        finished = credentials.length < 20;
+        if (finished && allCredentials.length === 0) {
+          window.alert(result.message || "Tidak ada alumni terverifikasi tanpa akun.");
+          return;
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 150));
       }
-      window.alert(result.message || ("Akun dibuat: " + credentials.length));
+      const headers = ["Nama", "Angkatan", "ID Alumni", "Email", "Password"];
+      const escapeCsv = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"' ;
+      const csv = [headers, ...allCredentials.map((item) => [item.nama, item.angkatan, item.nomorAlumni, item.email, item.password])].map((row) => row.map(escapeCsv).join(",")).join("\\r\\n");
+      const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "kredensial-alumni-" + new Date().toISOString().slice(0, 10) + ".csv";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+      window.alert("Selesai. " + allCredentials.length + " akun dibuat. Simpan file CSV kredensial sekarang.");
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : "Aktivasi akun massal gagal.");
+      const message = error instanceof DOMException && error.name === "AbortError"
+        ? "Permintaan melewati batas 60 detik. Akun yang sudah berhasil dibuat tetap tersimpan; periksa log server sebelum mencoba lagi."
+        : error instanceof Error ? error.message : "Aktivasi akun massal gagal.";
+      window.alert(message);
     } finally {
       setAccountLoading(false);
     }

@@ -41,6 +41,7 @@ export default function VerifikasiAlumniPage() {
   const [angkatan, setAngkatan] = useState("Semua Angkatan");
   const [wilayah, setWilayah] = useState("Semua Wilayah");
   const [page, setPage] = useState(1);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const [selectedAlumni, setSelectedAlumni] =
     useState<VerificationAlumni | null>(null);
@@ -98,6 +99,22 @@ export default function VerifikasiAlumniPage() {
     setPage(1);
   };
 
+  const handleBulkVerifyImported = async () => {
+    const confirmed = window.confirm("Verifikasi semua data alumni hasil impor dari database? Pengajuan pendaftaran baru tidak akan diubah.");
+    if (!confirmed) return;
+    setBulkLoading(true);
+    try {
+      const response = await fetch("/api/alumni/bulk-verify", { method: "POST" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Verifikasi massal gagal.");
+      window.alert("Berhasil memperbarui " + (result.updated ?? 0) + " data alumni hasil impor.");
+      window.location.reload();
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Verifikasi massal gagal.");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
   const handleVerify = async (alumni: VerificationAlumni) => {
     try {
       const response = await fetch(`/api/alumni/${alumni.id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "Terverifikasi" }) });
@@ -147,6 +164,15 @@ export default function VerifikasiAlumniPage() {
                     sebelum ditampilkan sebagai alumni terverifikasi.
                   </p>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleBulkVerifyImported}
+                  disabled={bulkLoading}
+                  className="inline-flex items-center justify-center rounded-xl bg-[#0b1f3a] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#18385f] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {bulkLoading ? "Memverifikasi..." : "Verifikasi Massal Data Impor"}
+                </button>
 
                 {/* Pending Indicator */}
                 <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">

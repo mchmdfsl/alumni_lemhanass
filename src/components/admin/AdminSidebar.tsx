@@ -15,15 +15,12 @@ Users,
 UserRoundCheck,
 X,
 MapPin,
-Menu,
 } from "lucide-react";
 
-type SidebarCounts = {
+type SidebarData = {
+counts?: {
 menunggu?: number;
 };
-
-type SidebarData = {
-counts?: SidebarCounts;
 };
 
 const menuItems = [
@@ -82,6 +79,7 @@ const closeMobileSidebar = useCallback(() => {
 setMobileOpen(false);
 }, []);
 
+// Menerima event dari tombol hamburger AdminHeader.
 useEffect(() => {
 const handleSidebarToggle = () => {
 setMobileOpen((previous) => !previous);
@@ -101,10 +99,12 @@ return () => {
 
 }, []);
 
+// Tutup sidebar ketika berpindah halaman.
 useEffect(() => {
 closeMobileSidebar();
 }, [pathname, closeMobileSidebar]);
 
+// Tutup sidebar menggunakan tombol Escape.
 useEffect(() => {
 const handleEscape = (event: KeyboardEvent) => {
 if (event.key === "Escape") {
@@ -120,6 +120,7 @@ return () => {
 
 }, [closeMobileSidebar]);
 
+// Cegah halaman di belakang ikut bergulir saat menu mobile terbuka.
 useEffect(() => {
 if (!mobileOpen) return;
 
@@ -132,6 +133,7 @@ return () => {
 
 }, [mobileOpen]);
 
+// Mengambil jumlah alumni yang menunggu verifikasi.
 useEffect(() => {
 let cancelled = false;
 
@@ -168,6 +170,7 @@ return () => {
 
 }, []);
 
+// Logout.
 const handleLogout = async () => {
 if (loadingLogout) return;
 
@@ -205,21 +208,22 @@ return pathname === href || pathname.startsWith(`${href}/`);
 
 return (
 <>
-{/* Overlay untuk tampilan mobile */}
+{/* Overlay mobile */}
 <div
 className={"fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 lg:hidden ${ mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0" }"}
 onClick={closeMobileSidebar}
 aria-hidden="true"
 />
 
-  {/* Sidebar */}
+  {/* Sidebar utama */}
   <aside
-    className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-gray-200 bg-white transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+    id="admin-sidebar"
+    aria-label="Navigasi admin"
+    className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-gray-200 bg-white shadow-xl transition-transform duration-300 ease-in-out lg:translate-x-0 lg:shadow-none ${
       mobileOpen ? "translate-x-0" : "-translate-x-full"
     }`}
-    aria-label="Navigasi admin"
   >
-    {/* Logo dan tombol tutup mobile */}
+    {/* Header logo */}
     <div className="flex h-20 shrink-0 items-center justify-between border-b border-gray-200 px-5">
       <Link
         href="/admin"
@@ -250,7 +254,7 @@ aria-hidden="true"
       </button>
     </div>
 
-    {/* Navigasi */}
+    {/* Daftar navigasi */}
     <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
       <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
         Menu Utama
@@ -275,11 +279,11 @@ aria-hidden="true"
             <span className="flex min-w-0 items-center gap-3">
               <Icon
                 size={20}
-                className={
+                className={`shrink-0 ${
                   active
-                    ? "shrink-0 text-blue-700"
-                    : "shrink-0 text-gray-400 group-hover:text-gray-600"
-                }
+                    ? "text-blue-700"
+                    : "text-gray-400 group-hover:text-gray-600"
+                }`}
               />
 
               <span className="truncate">{item.label}</span>
@@ -297,7 +301,7 @@ aria-hidden="true"
       })}
     </nav>
 
-    {/* Informasi admin dan logout */}
+    {/* Informasi admin */}
     <div className="shrink-0 border-t border-gray-200 p-4">
       <div className="mb-3 flex items-center gap-3 rounded-xl bg-gray-50 p-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700">
@@ -321,12 +325,13 @@ aria-hidden="true"
         className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <LogOut size={20} />
-
-        {loadingLogout ? "Sedang keluar..." : "Keluar"}
+        <span>
+          {loadingLogout ? "Sedang keluar..." : "Keluar"}
+        </span>
       </button>
     </div>
   </aside>
 </>
 
 );
-  }
+}

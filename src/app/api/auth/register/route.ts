@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       typeof body[key] === "string" ? body[key].trim().slice(0, max) : "";
 
     const nama = value("nama", 200);
-    const angkatan = value("angkatan", 100);
+    const angkatan = value("angkatan", 100).toLocaleUpperCase("id-ID");
     const nomorHp = value("nomorHp", 50);
     const nomorAlumni = value("nomorAlumni", 80);
     const instansi = value("instansi", 250);

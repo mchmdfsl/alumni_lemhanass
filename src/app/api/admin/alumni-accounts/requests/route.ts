@@ -11,7 +11,11 @@ export async function GET() {
   }
 
   try {
-    const rows = await db()`
+    const sql = db();
+
+    // Pengajuan terbaru ditampilkan lebih dulu supaya tidak tertutup
+    // oleh 100 pengajuan lama.
+    const rows = await sql`
       SELECT
         r.id,
         r.email,
@@ -32,14 +36,27 @@ export async function GET() {
         r.submitted_alamat AS "submittedAlamat"
       FROM alumni_account_requests r
       LEFT JOIN alumni a ON a.id = r.alumni_id
-      WHERE r.status = 'Menunggu'
-      ORDER BY r.created_at ASC
+      WHERE lower(trim(r.status)) = lower('Menunggu')
+      ORDER BY r.created_at DESC, r.id DESC
       LIMIT 100
     `;
 
-    return NextResponse.json({ data: rows });
+    const [countRow] = await sql`
+      SELECT COUNT(*)::int AS total
+      FROM alumni_account_requests
+      WHERE lower(trim(status)) = lower('Menunggu')
+    `;
+
+    return NextResponse.json({
+      data: rows,
+      totalPending: countRow?.total ?? rows.length,
+      limit: 100,
+    });
   } catch (error) {
     console.error("GET alumni account requests failed:", error);
-    return NextResponse.json({ error: "Gagal mengambil daftar pendaftaran akun." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Gagal mengambil daftar pendaftaran akun." },
+      { status: 500 },
+    );
   }
 }

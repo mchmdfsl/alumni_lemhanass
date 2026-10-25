@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-BarChart3,
 ClipboardCheck,
 FileBarChart,
 GraduationCap,
@@ -120,7 +119,7 @@ return () => {
 
 }, [closeMobileSidebar]);
 
-// Cegah halaman di belakang ikut bergulir saat menu mobile terbuka.
+// Kunci scroll halaman ketika sidebar mobile terbuka.
 useEffect(() => {
 if (!mobileOpen) return;
 
@@ -170,7 +169,7 @@ return () => {
 
 }, []);
 
-// Logout.
+// Logout admin.
 const handleLogout = async () => {
 if (loadingLogout) return;
 
@@ -301,7 +300,7 @@ aria-hidden="true"
       })}
     </nav>
 
-    {/* Informasi admin */}
+    {/* Informasi admin dan tombol logout */}
     <div className="shrink-0 border-t border-gray-200 p-4">
       <div className="mb-3 flex items-center gap-3 rounded-xl bg-gray-50 p-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700">
@@ -325,6 +324,7 @@ aria-hidden="true"
         className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <LogOut size={20} />
+
         <span>
           {loadingLogout ? "Sedang keluar..." : "Keluar"}
         </span>
@@ -334,4 +334,4 @@ aria-hidden="true"
 </>
 
 );
-  }
+}

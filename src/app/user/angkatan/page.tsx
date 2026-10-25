@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Search, Users, RefreshCw, AlertCircle, Building2, BriefcaseBusiness } from "lucide-react";
 
@@ -18,6 +17,7 @@ export default function ListAngkatan() {
   const [alumni, setAlumni] = useState<Alumni[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -48,7 +48,7 @@ export default function ListAngkatan() {
 
     loadDirectory();
     return () => controller.abort();
-  }, [query]);
+  }, [query, reloadKey]);
 
   return (
     <div className="space-y-6">
@@ -160,13 +160,26 @@ export default function ListAngkatan() {
 }
 
 function Avatar({ person }: { person: Alumni }) {
+  const [imageFailed, setImageFailed] = useState(false);
   const name = person.nama?.trim() || "Alumni";
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "AL";
 
+  useEffect(() => {
+    setImageFailed(false);
+  }, [person.fotoProfil]);
+
   return (
-    <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e8edf4] text-sm font-bold text-[#0b1f3a]">
-      {person.fotoProfil ? (
-        <Image src={person.fotoProfil} alt={`Foto ${name}`} fill sizes="44px" unoptimized className="object-cover" />
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e8edf4] text-sm font-bold text-[#0b1f3a]">
+      {person.fotoProfil && !imageFailed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={person.fotoProfil}
+          alt={`Foto ${name}`}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setImageFailed(true)}
+          className="h-full w-full object-cover"
+        />
       ) : initials}
     </div>
   );

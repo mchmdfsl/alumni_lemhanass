@@ -28,7 +28,8 @@ export async function POST() {
         WHERE a.status = 'Terverifikasi'
           AND aa.id IS NULL
         ORDER BY a.angkatan ASC NULLS LAST, a.id ASC
-        FOR UPDATE OF a
+        LIMIT 20
+        FOR UPDATE OF a SKIP LOCKED
       `;
 
       const created: Array<{ nama: string; angkatan: string; nomorAlumni: string; email: string; password: string }> = [];
@@ -77,8 +78,10 @@ export async function POST() {
       ok: true,
       created: credentials.length,
       credentials,
+      batchSize: 20,
+      hasMore: credentials.length === 20,
       message: credentials.length
-        ? "Akun berhasil dibuat. Simpan/unduh daftar kredensial ini sekarang; password tidak disimpan dalam bentuk teks di database."
+        ? "Batch akun berhasil dibuat."
         : "Tidak ada alumni terverifikasi tanpa akun. Tidak ada perubahan dilakukan.",
     });
   } catch (error) {

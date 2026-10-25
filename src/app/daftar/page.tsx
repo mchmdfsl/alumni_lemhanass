@@ -23,7 +23,8 @@ export default function DaftarPage() {
   const [success, setSuccess] = useState(false);
 
   function updateField(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    setForm((previous) => ({ ...previous, [event.target.name]: event.target.value }));
+    const { name, value } = event.target;
+    setForm((previous) => ({ ...previous, [name]: name === "angkatan" ? value.toLocaleUpperCase("id-ID") : value }));
   }
 
   async function handleDaftar(event: FormEvent<HTMLFormElement>) {
@@ -55,34 +56,33 @@ export default function DaftarPage() {
     }
   }
 
-  function Field({ label, name, type = "text", required = false, maxLength }:
-    { label: string; name: keyof FormState; type?: string; required?: boolean; maxLength?: number }) {
-    return <div>
+  const renderField = (label: string, name: keyof FormState, type = "text", required = false, maxLength?: number) => (
+    <div>
       <label htmlFor={name} className="mb-1.5 block text-sm font-semibold text-slate-700">{label}</label>
       <input id={name} name={name} type={type} value={form[name]} onChange={updateField} required={required}
         maxLength={maxLength} autoComplete={name === "email" ? "email" : name === "password" || name === "konfirmasi" ? "new-password" : "off"} className={inputClass} />
-    </div>;
-  }
+    </div>
+  );
 
   return <AuthShell title="Pendaftaran Alumni" subtitle="Buat pengajuan akun baru untuk Sistem Informasi Pendataan Alumni Lemhannas RI.">
     <p className="mb-5 text-sm leading-6 text-slate-500">Gunakan formulir ini jika data Anda belum tersedia di database alumni. Data akan diperiksa administrator.</p>
     {message && <div role="alert" className={`mb-5 rounded-xl border p-3 text-sm ${success ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-700"}`}>{message}</div>}
     <form onSubmit={handleDaftar} className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Nama lengkap *" name="nama" required maxLength={200} />
-        <Field label="Angkatan *" name="angkatan" required maxLength={100} />
-        <Field label="Nomor HP" name="nomorHp" maxLength={50} />
-        <Field label="Nomor alumni (jika ada)" name="nomorAlumni" maxLength={80} />
-        <Field label="Instansi" name="instansi" maxLength={250} />
-        <Field label="Jabatan" name="jabatan" maxLength={200} />
-        <Field label="Wilayah" name="wilayah" maxLength={150} />
-        <Field label="Email aktif *" name="email" type="email" required maxLength={254} />
+        {renderField("Nama lengkap *", "nama", "text", true, 200)}
+        {renderField("Angkatan *", "angkatan", "text", true, 100)}
+        {renderField("Nomor HP", "nomorHp", "text", false, 50)}
+        {renderField("Nomor alumni (jika ada)", "nomorAlumni", "text", false, 80)}
+        {renderField("Instansi", "instansi", "text", false, 250)}
+        {renderField("Jabatan", "jabatan", "text", false, 200)}
+        {renderField("Wilayah", "wilayah", "text", false, 150)}
+        {renderField("Email aktif *", "email", "email", true, 254)}
       </div>
       <div><label htmlFor="alamat" className="mb-1.5 block text-sm font-semibold text-slate-700">Alamat</label>
         <textarea id="alamat" name="alamat" value={form.alamat} onChange={updateField} rows={3} maxLength={5000} className={inputClass} /></div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Password (minimal 12 karakter) *" name="password" type="password" required maxLength={1024} />
-        <Field label="Konfirmasi password *" name="konfirmasi" type="password" required maxLength={1024} />
+        {renderField("Password (minimal 12 karakter) *", "password", "password", true, 1024)}
+        {renderField("Konfirmasi password *", "konfirmasi", "password", true, 1024)}
       </div>
       <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] py-3.5 text-sm font-bold text-white transition hover:bg-[#18385f] disabled:opacity-60">
         {loading && <LoaderCircle size={17} className="animate-spin" />}{loading ? "Mengirim pengajuan..." : "Ajukan Pendaftaran"}

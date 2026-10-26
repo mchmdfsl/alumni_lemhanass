@@ -59,6 +59,7 @@ export default function ProfilUser() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [emailSaving, setEmailSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
@@ -139,6 +140,33 @@ export default function ProfilUser() {
     }));
 
     setNotice(null);
+  }
+
+  async function handleEmailSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setNotice(null);
+    const normalizedEmail = email.trim().toLowerCase();
+    if (normalizedEmail && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(normalizedEmail)) {
+      setNotice({ type: "error", message: "Format email tidak valid." });
+      return;
+    }
+    setEmailSaving(true);
+    try {
+      const response = await fetch("/api/user/email", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Gagal menyimpan email.");
+      setEmail(normalizedEmail);
+      setNotice({ type: "success", message: result.message || "Email berhasil disimpan." });
+    } catch (error) {
+      setNotice({ type: "error", message: error instanceof Error ? error.message : "Gagal menyimpan email." });
+    } finally {
+      setEmailSaving(false);
+    }
   }
 
   async function handlePhotoChange(
@@ -480,6 +508,32 @@ export default function ProfilUser() {
           <p>{notice.message}</p>
         </div>
       )}
+
+      {/* Form email akun: diisi sendiri oleh alumni */ }
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
+          <h2 className="font-bold text-[#172033]">Email Saya</h2>
+          <p className="mt-1 text-sm text-slate-500">Email tidak diisi oleh administrator. Masukkan email pribadi yang aktif, atau biarkan kosong sampai siap.</p>
+        </div>
+        <form onSubmit={handleEmailSubmit} className="space-y-4 p-5 sm:p-6">
+          <Field label="Alamat Email" icon={Mail}>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => { setEmail(event.target.value); setNotice(null); }}
+              maxLength={254}
+              autoComplete="email"
+              className={inputClass}
+              placeholder="nama@email.com"
+              disabled={loading || emailSaving}
+            />
+          </Field>
+          <button type="submit" disabled={loading || emailSaving} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#18385f] disabled:cursor-not-allowed disabled:opacity-60">
+            {emailSaving ? <LoaderCircle size={17} className="animate-spin" /> : <Save size={17} />}
+            {emailSaving ? "Menyimpan email..." : "Simpan Email"}
+          </button>
+        </form>
+      </section>
 
       {/* Form perubahan profil */}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

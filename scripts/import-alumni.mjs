@@ -64,7 +64,7 @@ try {
   await sql.begin(async (tx) => {
     for (const record of records) {
       const nama = pick(record, 'nama', 'nama lengkap', 'name');
-      const angkatan = pick(record, 'angkatan', 'program', 'program pendidikan');
+      const angkatan = pick(record, 'kategori', 'category', 'angkatan', 'program', 'program pendidikan');
       if (!nama || !angkatan) { skipped++; continue; }
       // Email sengaja dikosongkan saat impor; alumni mengisinya sendiri melalui profil.
       try {

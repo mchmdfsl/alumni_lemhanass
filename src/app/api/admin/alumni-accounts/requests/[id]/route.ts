@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,6 +54,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       return NextResponse.json({ error: "Alasan penolakan wajib diisi." }, { status: 400 });
     }
 
+    const actor = await getAdminActor();
     const sql = db();
     const result: ReviewResult = await sql.begin(async (tx) => {
       const rows = await tx`
@@ -167,6 +169,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       const response = errorResponses[result.error];
       return NextResponse.json({ error: response.message }, { status: response.status });
     }
+    if (actor) await writeAdminAudit(actor, result.status === "Disetujui" ? "account_request_approved" : "account_request_rejected", { requestId: Number(id), status: result.status, alumniId: result.alumniId ?? null });
     return NextResponse.json({ ok: true, status: result.status, alumniId: result.alumniId });
   } catch (error) {
     console.error("PATCH alumni account request failed:", error);

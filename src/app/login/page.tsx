@@ -25,7 +25,7 @@ export default function LoginPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Login gagal. Periksa kembali data Anda.");
-      router.replace(data.role === "admin" ? "/admin" : "/user/profil");
+      router.replace(data.role === "admin" || data.role === "super_admin" ? "/admin" : "/user");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan. Silakan coba lagi.");
     } finally {

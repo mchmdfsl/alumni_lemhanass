@@ -146,20 +146,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const email =
-      typeof body.email === "string"
-        ? body.email.trim().toLowerCase()
-        : "";
-
-    if (
-      email &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    ) {
-      return NextResponse.json(
-        { error: "Format email tidak valid." },
-        { status: 400 }
-      );
-    }
+    // Email dibiarkan NULL sampai alumni mengisinya sendiri di profil.
 
     const nomorAlumni =
       typeof body.nomorAlumni === "string"
@@ -219,7 +206,7 @@ export async function POST(request: NextRequest) {
         ${jabatan},
         ${wilayah},
         ${alamat},
-        ${email || null},
+        NULL,
         ${nomorHp},
         ${status},
         'impor'
@@ -250,7 +237,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Nomor alumni atau email sudah terdaftar.",
+            "Nomor alumni sudah terdaftar.",
         },
         { status: 409 }
       );

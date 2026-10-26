@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assignAlumniNumber } from "@/lib/alumni-number";
+import { getAdminActor } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     const reason = typeof body.alasanPenolakan === "string" ? body.alasanPenolakan.trim().slice(0, 1000) : "";
     if (status === "Ditolak" && !reason) return NextResponse.json({ error: "Alasan penolakan wajib diisi." }, { status: 400 });
 
+    const actor = await getAdminActor();
     const result = await db().begin(async (tx) => {
       const [alumni] = await tx`
         SELECT id, nama, angkatan, COALESCE(nomor_alumni, '') AS "nomorAlumni"
@@ -41,7 +43,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
           status, alasan_penolakan AS "alasanPenolakan"
       `;
       if (updated) {
-        await tx`INSERT INTO admin_audit_log (action, alumni_id, details) VALUES (${`status:${status}`}, ${Number(id)}, ${JSON.stringify({ alasan: reason, nomorAlumni })}::jsonb)`;
+        await tx`INSERT INTO admin_audit_log (action, alumni_id, actor, details) VALUES (${`status:${status}`}, ${Number(id)}, ${actor?.actor || "admin"}, ${JSON.stringify({ alasan: reason, nomorAlumni, actorRole: actor?.role || "unknown" })}::jsonb)`;
       }
       return updated;
     });

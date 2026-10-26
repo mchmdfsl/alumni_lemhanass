@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Users, RefreshCw, AlertCircle, Building2, BriefcaseBusiness } from "lucide-react";
 
 type Alumni = {
@@ -14,6 +14,9 @@ type Alumni = {
 
 export default function ListAngkatan() {
   const [query, setQuery] = useState("");
+  const [selectedAngkatan, setSelectedAngkatan] = useState("Semua Angkatan");
+  const [page, setPage] = useState(1);
+  const pageSize = 12;
   const [alumni, setAlumni] = useState<Alumni[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -50,6 +53,13 @@ export default function ListAngkatan() {
     return () => controller.abort();
   }, [query, reloadKey]);
 
+  const angkatanOptions = useMemo(() => Array.from(new Set(alumni.map((person) => String(person.angkatan ?? "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, "id")), [alumni]);
+  const filteredAlumni = useMemo(() => alumni.filter((person) => selectedAngkatan === "Semua Angkatan" || String(person.angkatan ?? "") === selectedAngkatan), [alumni, selectedAngkatan]);
+  const totalPages = Math.max(1, Math.ceil(filteredAlumni.length / pageSize));
+  const visibleAlumni = filteredAlumni.slice((page - 1) * pageSize, page * pageSize);
+
+  useEffect(() => { setPage(1); }, [query, selectedAngkatan]);
+
   return (
     <div className="space-y-6">
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -80,9 +90,18 @@ export default function ListAngkatan() {
               className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm outline-none transition focus:border-[#0b1f3a] focus:ring-4 focus:ring-[#0b1f3a]/10"
             />
           </div>
-          <div className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-500">
-            <span>{loading ? "Memuat data alumni..." : `${alumni.length} alumni ditampilkan (maksimal 200)`}</span>
-            {loading && <RefreshCw size={15} className="animate-spin" aria-label="Memuat" />}
+          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <div>
+              <label htmlFor="directory-angkatan" className="mb-2 block text-sm font-semibold text-[#172033]">Filter angkatan</label>
+              <select id="directory-angkatan" value={selectedAngkatan} onChange={(event) => setSelectedAngkatan(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:border-[#0b1f3a] focus:ring-4 focus:ring-[#0b1f3a]/10">
+                <option>Semua Angkatan</option>
+                {angkatanOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center justify-between gap-3 pb-1 text-xs text-slate-500 sm:justify-end">
+              <span>{loading ? "Memuat data alumni..." : `${filteredAlumni.length} alumni ditemukan`}</span>
+              {loading && <RefreshCw size={15} className="animate-spin" aria-label="Memuat" />}
+            </div>
           </div>
         </div>
       </section>
@@ -106,7 +125,7 @@ export default function ListAngkatan() {
         </div>
       )}
 
-      {alumni.length > 0 && (
+      {filteredAlumni.length > 0 && (
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full border-collapse text-left">
@@ -119,7 +138,7 @@ export default function ListAngkatan() {
                 </tr>
               </thead>
               <tbody>
-                {alumni.map((person) => (
+                {visibleAlumni.map((person) => (
                   <tr key={person.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/70">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
@@ -153,6 +172,15 @@ export default function ListAngkatan() {
             ))}
           </div>
         </section>
+      )}
+      {filteredAlumni.length > pageSize && (
+        <nav aria-label="Halaman direktori alumni" className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-slate-500">Halaman {page} dari {totalPages}</p>
+          <div className="flex items-center gap-2">
+            <button type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-[#0b1f3a] disabled:cursor-not-allowed disabled:opacity-40">Sebelumnya</button>
+            <button type="button" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))} className="rounded-lg bg-[#0b1f3a] px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">Berikutnya</button>
+          </div>
+        </nav>
       )}
       <p className="text-xs leading-5 text-slate-400">Direktori hanya menampilkan alumni berstatus terverifikasi. Informasi dibatasi pada data profesional yang tersedia di sistem.</p>
     </div>

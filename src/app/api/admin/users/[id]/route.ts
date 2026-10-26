@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,6 +29,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       RETURNING id, username, email, is_active AS "isActive", updated_at AS "updatedAt"
     `;
     if (!user) return NextResponse.json({ error: "Akun admin tidak ditemukan." }, { status: 404 });
+    const actor = await getAdminActor();
+    if (actor) await writeAdminAudit(actor, "admin_updated", { targetUsername: user.username, isActive: user.isActive });
     return NextResponse.json({ ok: true, user });
   } catch (error) {
     console.error("PATCH /api/admin/users/[id] failed:", error);
@@ -44,6 +47,8 @@ export async function DELETE(_request: Request, context: RouteContext) {
       RETURNING id, username
     `;
     if (!user) return NextResponse.json({ error: "Akun admin tidak ditemukan." }, { status: 404 });
+    const actor = await getAdminActor();
+    if (actor) await writeAdminAudit(actor, "admin_deleted", { targetUsername: user.username });
     return NextResponse.json({ ok: true, user });
   } catch (error) {
     console.error("DELETE /api/admin/users/[id] failed:", error);

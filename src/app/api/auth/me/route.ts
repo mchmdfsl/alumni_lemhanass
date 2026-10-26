@@ -15,8 +15,8 @@ export async function GET() {
       return NextResponse.json({
         authenticated: true,
         user: {
-          username: process.env.ADMIN_USERNAME || "admin",
-          email: process.env.ADMIN_EMAIL || null,
+          username: adminRole === "super_admin" ? (process.env.SUPER_ADMIN_USERNAME || "super-admin") : (process.env.ADMIN_USERNAME || "admin"),
+          email: adminRole === "super_admin" ? (process.env.SUPER_ADMIN_EMAIL || null) : (process.env.ADMIN_EMAIL || null),
           role: adminRole,
         },
       });

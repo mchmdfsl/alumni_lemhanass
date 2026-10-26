@@ -21,9 +21,9 @@ import AdminHeader from "@/components/admin/AdminHeader";
 
 export default function PengaturanPage() {
   const [adminUser, setAdminUser] = useState({
-    username: "admin",
-    email: "admin@gmail.com",
-    role: "Super Administrator",
+    username: "",
+    email: "",
+    role: "",
   });
   const [dbStats, setDbStats] = useState({
     total: 0,
@@ -124,7 +124,7 @@ export default function PengaturanPage() {
                         <div className="relative">
                           <input
                             type="text"
-                            value={adminUser.username}
+                            value={adminUser.username || "Tidak tersedia"}
                             readOnly
                             className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-800 outline-none"
                           />
@@ -138,7 +138,7 @@ export default function PengaturanPage() {
                         <div className="relative">
                           <input
                             type="text"
-                            value={adminUser.role}
+                            value={adminUser.role || "Tidak tersedia"}
                             readOnly
                             className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-800 outline-none"
                           />
@@ -153,7 +153,7 @@ export default function PengaturanPage() {
                       <div className="relative">
                         <input
                           type="email"
-                          value={adminUser.email}
+                          value={adminUser.email || "Tidak tersedia"}
                           readOnly
                           className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-800 outline-none"
                         />
@@ -258,10 +258,7 @@ export default function PengaturanPage() {
                       <h3 className="text-sm font-bold text-[#172033]">
                         Database Cloud
                       </h3>
-                      <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Terhubung (Live)
-                      </p>
+                      <p className="text-[10px] text-slate-500 font-semibold">Detail konfigurasi server</p>
                     </div>
                   </div>
 
@@ -280,7 +277,7 @@ export default function PengaturanPage() {
                     </div>
                     <div className="flex justify-between border-b border-slate-100 pb-2">
                       <span className="text-slate-500">Pooler</span>
-                      <span className="font-semibold text-slate-800">PgBouncer Active</span>
+                      <span className="font-semibold text-slate-800">Dikelola oleh provider</span>
                     </div>
                   </div>
                 </div>

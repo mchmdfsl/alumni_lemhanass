@@ -39,13 +39,7 @@ export async function PATCH(
     const status =
       typeof body.status === "string" && statusValues.has(body.status) ? body.status : undefined;
 
-    let email: string | null | undefined = undefined;
-    if (typeof body.email === "string") {
-      const emailTrimmed = body.email.trim().toLowerCase();
-      if (emailTrimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed))
-        return NextResponse.json({ error: "Format email tidak valid." }, { status: 400 });
-      email = emailTrimmed || null;
-    }
+    // Email diisi langsung oleh alumni dari halaman profil, bukan administrator.
 
     if (nama !== undefined && (nama.length < 2 || nama.length > 200))
       return NextResponse.json({ error: "Nama harus 2–200 karakter." }, { status: 400 });
@@ -60,7 +54,7 @@ export async function PATCH(
         alamat      = COALESCE(${alamat ?? null}::text, alamat),
         nomor_hp    = COALESCE(${nomorHp ?? null}::varchar, nomor_hp),
         nomor_alumni = COALESCE(${nomorAlumni !== undefined ? nomorAlumni : null}, nomor_alumni),
-        email       = CASE WHEN ${email !== undefined}::boolean THEN ${email ?? null} ELSE email END,
+        email       = email,
         status      = COALESCE(${status ?? null}::varchar, status),
         updated_at  = NOW()
       WHERE id = ${Number(id)}
@@ -79,7 +73,7 @@ export async function PATCH(
   } catch (error) {
     const code = (error as { code?: string })?.code;
     if (code === "23505")
-      return NextResponse.json({ error: "Nomor alumni atau email sudah terdaftar." }, { status: 409 });
+      return NextResponse.json({ error: "Nomor alumni sudah terdaftar." }, { status: 409 });
     console.error("PATCH /api/alumni/[id] failed", error);
     return NextResponse.json({ error: "Gagal memperbarui data alumni." }, { status: 500 });
   }

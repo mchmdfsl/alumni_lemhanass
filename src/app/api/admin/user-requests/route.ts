@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -93,6 +94,8 @@ export async function PATCH(request: NextRequest) {
 
     if (result === "not_found") return NextResponse.json({ error: "Permintaan tidak ditemukan." }, { status: 404 });
     if (result === "already_reviewed") return NextResponse.json({ error: "Permintaan sudah diproses sebelumnya." }, { status: 409 });
+    const actor = await getAdminActor();
+    if (actor) await writeAdminAudit(actor, "user_request_reviewed", { requestId: id, status, adminNote: adminNote || null });
     return NextResponse.json({ ok: true, message: status === "Disetujui" ? "Permintaan disetujui." : "Permintaan ditolak." });
   } catch (error) {
     console.error("PATCH admin user request failed:", error);

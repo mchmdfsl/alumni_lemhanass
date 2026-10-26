@@ -18,6 +18,10 @@ async function getVerifiedAlumni() {
       a.angkatan,
       a.jabatan,
       a.instansi,
+      a.wilayah,
+      a.alamat,
+      a.nomor_hp AS "nomorHp",
+      a.email,
       a.foto_profil AS "fotoProfil",
       a.status
     FROM alumni_accounts aa
@@ -81,6 +85,12 @@ export async function PATCH(request: NextRequest) {
 
     const instansi =
       typeof body.instansi === "string" ? body.instansi.trim() : "";
+    const wilayah =
+      typeof body.wilayah === "string" ? body.wilayah.trim() : "";
+    const alamat =
+      typeof body.alamat === "string" ? body.alamat.trim() : "";
+    const nomorHp =
+      typeof body.nomorHp === "string" ? body.nomorHp.trim() : "";
 
     if (!nama || nama.length > 200) {
       return NextResponse.json(
@@ -96,7 +106,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (jabatan.length > 200 || instansi.length > 200) {
+    if (jabatan.length > 200 || instansi.length > 250 || wilayah.length > 150 || alamat.length > 5000 || nomorHp.length > 50) {
       return NextResponse.json(
         { message: "Jabatan atau instansi maksimal 200 karakter." },
         { status: 400 }
@@ -108,6 +118,9 @@ export async function PATCH(request: NextRequest) {
       angkatan,
       jabatan,
       instansi,
+      wilayah,
+      alamat,
+      nomorHp,
     };
 
     const [result] = await db()`

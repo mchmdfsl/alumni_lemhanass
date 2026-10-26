@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getAdminActor } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,6 +30,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const actor = await getAdminActor();
     const result = await db().begin(async (tx) => {
       const rows = (await tx`
         SELECT id, nama FROM alumni
@@ -39,11 +41,12 @@ export async function POST(request: NextRequest) {
         throw new Error("Sebagian ID alumni tidak ditemukan. Tidak ada data yang dihapus.");
       }
       await tx`
-        INSERT INTO admin_audit_log (action, alumni_id, details)
-        VALUES ('bulk_delete', NULL, ${JSON.stringify({
+        INSERT INTO admin_audit_log (action, alumni_id, actor, details)
+        VALUES ('bulk_delete', NULL, ${actor?.actor || "admin"}, ${JSON.stringify({
           alumniIds: ids,
           names: rows.map((row: { nama: string }) => row.nama),
           total: rows.length,
+          actorRole: actor?.role || "unknown",
         })}::jsonb)
       `;
       await tx`DELETE FROM alumni_accounts WHERE alumni_id = ANY(${ids}::bigint[])`;

@@ -15,6 +15,7 @@ import {
   UserRoundCheck,
   X,
   MapPin,
+  ShieldCheck,
 } from "lucide-react";
 
 type SidebarData = {
@@ -33,6 +34,7 @@ const menuItems = [
   { label: "Wilayah", href: "/admin/wilayah", icon: MapPin },
   { label: "Laporan", href: "/admin/laporan", icon: FileBarChart },
   { label: "Pengaturan", href: "/admin/pengaturan", icon: Settings },
+  { label: "Manajemen Admin", href: "/admin/manajemen-admin", icon: ShieldCheck, superAdminOnly: true },
 ];
 
 export default function AdminSidebar() {
@@ -159,7 +161,7 @@ export default function AdminSidebar() {
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
           <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#94a3b8]">Menu Utama</p>
-          {menuItems.map((item) => {
+          {menuItems.filter((item) => !(("superAdminOnly" in item) && item.superAdminOnly) || currentRole === "super_admin").map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
             return (

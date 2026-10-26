@@ -4,6 +4,7 @@ import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { assignAlumniNumber } from "@/lib/alumni-number";
+import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,6 +67,9 @@ export async function POST() {
       }
       return created;
     });
+
+    const actor = await getAdminActor();
+    if (actor && credentials.length) await writeAdminAudit(actor, "alumni_accounts_bulk_activated", { count: credentials.length, batchSize: 20 });
 
     // Passwords are returned only in this super-admin-authorized response so they can be
     // saved once; only hashes are persisted in the database.

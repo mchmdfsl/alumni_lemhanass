@@ -6,11 +6,7 @@ import {
   Download,
   KeyRound,
   Lock,
-  Mail,
-  RefreshCw,
-  Save,
   Server,
-  Shield,
   ShieldCheck,
   User,
 } from "lucide-react";
@@ -123,7 +119,7 @@ export default function PengaturanPage() {
                         <div className="relative">
                           <input
                             type="text"
-                            value={adminUser.role || "Tidak tersedia"}
+                            value={adminUser.role === "super_admin" ? "Super Admin" : adminUser.role === "admin" ? "Admin" : "Tidak tersedia"}
                             readOnly
                             className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-800 outline-none"
                           />

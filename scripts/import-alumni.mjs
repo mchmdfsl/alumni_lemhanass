@@ -64,7 +64,8 @@ try {
   await sql.begin(async (tx) => {
     for (const record of records) {
       const nama = pick(record, 'nama', 'nama lengkap', 'name');
-      const angkatan = pick(record, 'kategori', 'category', 'angkatan', 'program', 'program pendidikan');
+      const rawAngkatan = pick(record, 'kategori', 'category', 'kategori program', 'jenis program', 'nama program', 'angkatan', 'program', 'program pendidikan');
+      const angkatan = ['p3n', 'p4n', 'ppnk', 'tot'].includes(rawAngkatan.toLowerCase()) ? rawAngkatan.toUpperCase() : rawAngkatan;
       if (!nama || !angkatan) { skipped++; continue; }
       // Email sengaja dikosongkan saat impor; alumni mengisinya sendiri melalui profil.
       try {

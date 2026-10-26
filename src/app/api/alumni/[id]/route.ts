@@ -91,18 +91,25 @@ export async function DELETE(
     return NextResponse.json({ error: "ID alumni tidak valid." }, { status: 400 });
 
   try {
-    const [row] = await db()`
-      DELETE FROM alumni WHERE id = ${Number(id)}
-      RETURNING id, nama`;
+    const result = await db().begin(async (tx) => {
+      const [row] = await tx`
+        SELECT id, nama FROM alumni WHERE id = ${Number(id)} FOR UPDATE
+      `;
+      if (!row) return null;
 
-    if (!row)
+      await tx`DELETE FROM alumni_accounts WHERE alumni_id = ${Number(id)}`;
+      await tx`DELETE FROM alumni WHERE id = ${Number(id)}`;
+      await tx`
+        INSERT INTO admin_audit_log (action, alumni_id, details)
+        VALUES (${'delete'}, NULL, ${JSON.stringify({ alumniId: Number(id), nama: row.nama })}::jsonb)
+      `;
+      return row;
+    });
+
+    if (!result)
       return NextResponse.json({ error: "Data alumni tidak ditemukan." }, { status: 404 });
 
-    await db()`
-      INSERT INTO admin_audit_log (action, alumni_id, details)
-      VALUES ('delete', null, ${JSON.stringify({ alumniId: Number(id), nama: row.nama })}::jsonb)`;
-
-    return NextResponse.json({ message: `Alumni "${row.nama}" berhasil dihapus.` });
+    return NextResponse.json({ message: `Alumni "${result.nama}" beserta akun terkait berhasil dihapus.` });
   } catch (error) {
     console.error("DELETE /api/alumni/[id] failed", error);
     return NextResponse.json({ error: "Gagal menghapus data alumni." }, { status: 500 });

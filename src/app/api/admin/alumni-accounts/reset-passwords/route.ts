@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
+import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,6 +52,8 @@ export async function POST(request: NextRequest) {
       }
       return updated;
     });
+    const actor = await getAdminActor();
+    if (actor && credentials.length) await writeAdminAudit(actor, "alumni_passwords_bulk_reset", { count: credentials.length, accountIds: credentials.map((item) => item.accountId) });
     return NextResponse.json({
       ok: true,
       credentials,

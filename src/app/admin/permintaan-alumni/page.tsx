@@ -98,7 +98,7 @@ export default function PermintaanAlumniPage() {
 
             {loading ? (
               <div className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-16 text-sm text-slate-500"><LoaderCircle size={20} className="animate-spin" /> Memuat permintaan...</div>
-            ) : rows.length === 0 ? (
+            ) : error ? null : rows.length === 0 ? (
               <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center">
                 <CheckCircle2 size={30} className="mx-auto text-emerald-500" />
                 <h2 className="mt-3 font-bold text-[#172033]">Belum ada permintaan</h2>

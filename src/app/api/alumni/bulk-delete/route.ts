@@ -30,11 +30,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await db().begin(async (tx) => {
-      const rows = await tx`
+      const rows = (await tx`
         SELECT id, nama FROM alumni
         WHERE id = ANY(${ids}::bigint[])
         FOR UPDATE
-      `;
+      `) as unknown as { id: number | string; nama: string }[];
       if (rows.length !== ids.length) {
         throw new Error("Sebagian ID alumni tidak ditemukan. Tidak ada data yang dihapus.");
       }

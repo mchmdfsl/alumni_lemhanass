@@ -23,6 +23,10 @@ function labelAction(action: string) {
     login: "Login",
     logout: "Logout",
     user_request_reviewed: "Proses permintaan alumni",
+    account_request_approved: "Setujui pendaftaran akun",
+    account_request_rejected: "Tolak pendaftaran akun",
+    alumni_accounts_bulk_activated: "Buat akun alumni massal",
+    alumni_passwords_bulk_reset: "Reset password alumni massal",
     settings_updated: "Ubah pengaturan",
   };
   return known[action] || action.replaceAll("_", " ");
@@ -91,7 +95,7 @@ export default function LogAktivitasPage() {
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3 text-sm text-slate-500"><span>{data?.pagination.total ?? 0} aktivitas tercatat</span><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold">{role === "super_admin" ? "Super Admin" : "Admin"}</span></div>
           {loading ? <div className="p-10 text-center text-sm text-slate-500">Memuat log aktivitas...</div> : !data?.logs.length ? <div className="p-10 text-center text-sm text-slate-500">Belum ada aktivitas yang cocok dengan pencarian.</div> :
             <div className="overflow-x-auto"><table className="w-full min-w-[800px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Waktu</th><th className="px-5 py-3">Akun</th><th className="px-5 py-3">Aktivitas</th><th className="px-5 py-3">Detail</th></tr></thead>
-              <tbody className="divide-y divide-slate-100">{data.logs.map((log) => <tr key={log.id} className="align-top hover:bg-slate-50/70"><td className="whitespace-nowrap px-5 py-4 text-slate-500">{formatDate(log.createdAt)}</td><td className="px-5 py-4"><span className="font-semibold text-slate-800">{log.actor || "Akun lama (belum tercatat)"}</span><p className="mt-1 text-xs text-slate-400">{String((log.details as { actorRole?: string } | null)?.actorRole || "Peran belum tercatat")}</p></td><td className="px-5 py-4 font-medium text-slate-700">{labelAction(log.action)}</td><td className="max-w-md whitespace-normal px-5 py-4 text-xs leading-5 text-slate-500"><pre className="whitespace-pre-wrap break-words font-sans">{JSON.stringify(log.details ?? {}, null, 2)}</pre>{log.alumniId ? <span className="mt-1 inline-block">ID Alumni: {log.alumniId}</span> : null}</td></tr>)}</tbody>
+              <tbody className="divide-y divide-slate-100">{data.logs.map((log) => <tr key={log.id} className="align-top hover:bg-slate-50/70"><td className="whitespace-nowrap px-5 py-4 text-slate-500">{formatDate(log.createdAt)}</td><td className="px-5 py-4"><span className="font-semibold text-slate-800">{log.actor === "admin" && !(log.details as { actorRole?: string } | null)?.actorRole ? "Akun lama (identitas belum tercatat)" : (log.actor || "Akun lama (belum tercatat)")}</span><p className="mt-1 text-xs text-slate-400">{String((log.details as { actorRole?: string } | null)?.actorRole || "Peran belum tercatat")}</p></td><td className="px-5 py-4 font-medium text-slate-700">{labelAction(log.action)}</td><td className="max-w-md whitespace-normal px-5 py-4 text-xs leading-5 text-slate-500"><pre className="whitespace-pre-wrap break-words font-sans">{JSON.stringify(log.details ?? {}, null, 2)}</pre>{log.alumniId ? <span className="mt-1 inline-block">ID Alumni: {log.alumniId}</span> : null}</td></tr>)}</tbody>
             </table></div>}
           <div className="flex items-center justify-between border-t border-slate-100 p-4"><p className="text-xs text-slate-500">Halaman {data?.pagination.page ?? page} dari {data?.pagination.totalPages ?? 1}</p>
             <div className="flex gap-2"><button disabled={page <= 1 || loading} onClick={() => { const next = page - 1; setPage(next); void loadLogs(next, query); }} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:opacity-40"><ChevronLeft size={16} />Sebelumnya</button>

@@ -15,6 +15,18 @@ import {
 
 export const runtime = "nodejs";
 
+async function logAdminLogin(actor: string, role: "admin" | "super_admin") {
+  try {
+    await db()`
+      INSERT INTO admin_audit_log (action, actor, details)
+      VALUES (${"login"}, ${actor.slice(0, 254)}, ${JSON.stringify({ actorRole: role })}::jsonb)
+    `;
+  } catch (error) {
+    // Audit logging must not prevent a valid login if the log table is temporarily unavailable.
+    console.error("Gagal mencatat login admin:", error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -47,6 +59,7 @@ export async function POST(request: NextRequest) {
         const response = NextResponse.json({ ok: true, role: "super_admin" });
         response.cookies.set(alumniSessionCookie.name, "", { ...alumniSessionCookie, maxAge: 0 });
         response.cookies.set(sessionCookie.name, createSessionToken("super_admin"), sessionCookie);
+        await logAdminLogin(process.env.SUPER_ADMIN_USERNAME || process.env.SUPER_ADMIN_EMAIL || "super-admin", "super_admin");
         return response;
       }
     } catch (error) {
@@ -67,6 +80,7 @@ export async function POST(request: NextRequest) {
         const response = NextResponse.json({ ok: true, role: "admin" });
         response.cookies.set(alumniSessionCookie.name, "", { ...alumniSessionCookie, maxAge: 0 });
         response.cookies.set(sessionCookie.name, createSessionToken("admin", Number(databaseAdmin.id)), sessionCookie);
+        await logAdminLogin(String(databaseAdmin.username || databaseAdmin.email || "admin"), "admin");
         return response;
       }
     } catch (error) {
@@ -79,6 +93,7 @@ export async function POST(request: NextRequest) {
         const response = NextResponse.json({ ok: true, role: "admin" });
         response.cookies.set(alumniSessionCookie.name, "", { ...alumniSessionCookie, maxAge: 0 });
         response.cookies.set(sessionCookie.name, createSessionToken("admin"), sessionCookie);
+        await logAdminLogin(process.env.ADMIN_USERNAME || process.env.ADMIN_EMAIL || "admin", "admin");
         return response;
       }
     } catch (error) {

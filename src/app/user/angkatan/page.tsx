@@ -53,7 +53,7 @@ export default function ListAngkatan() {
     return () => controller.abort();
   }, [query, reloadKey]);
 
-  const angkatanOptions = useMemo(() => Array.from(new Set(alumni.map((person) => String(person.angkatan ?? "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, "id")), [alumni]);
+  const angkatanOptions = useMemo(() => Array.from(new Set(["P3N", "P4N", "PPNK", "TOT", ...alumni.map((person) => String(person.angkatan ?? "").trim()).filter(Boolean)])).sort((a, b) => { const order = ["P3N", "P4N", "PPNK", "TOT"]; const ai = order.indexOf(a); const bi = order.indexOf(b); if (ai >= 0 || bi >= 0) return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi); return a.localeCompare(b, "id"); }), [alumni]);
   const filteredAlumni = useMemo(() => alumni.filter((person) => selectedAngkatan === "Semua Angkatan" || String(person.angkatan ?? "") === selectedAngkatan), [alumni, selectedAngkatan]);
   const totalPages = Math.max(1, Math.ceil(filteredAlumni.length / pageSize));
   const visibleAlumni = filteredAlumni.slice((page - 1) * pageSize, page * pageSize);

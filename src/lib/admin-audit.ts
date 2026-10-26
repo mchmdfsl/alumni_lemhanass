@@ -35,8 +35,14 @@ export async function writeAdminAudit(
   details: Record<string, unknown> = {},
   alumniId: number | null = null,
 ) {
-  await db()`
-    INSERT INTO admin_audit_log (action, alumni_id, actor, details)
-    VALUES (${action.slice(0, 80)}, ${alumniId}, ${actor.actor.slice(0, 254)}, ${JSON.stringify({ ...details, actorRole: actor.role })}::jsonb)
-  `;
+  try {
+    await db()`
+      INSERT INTO admin_audit_log (action, alumni_id, actor, details)
+      VALUES (${action.slice(0, 80)}, ${alumniId}, ${actor.actor.slice(0, 254)}, ${JSON.stringify({ ...details, actorRole: actor.role })}::jsonb)
+    `;
+  } catch (error) {
+    // Logging is best-effort for operations already committed outside the log transaction.
+    // Do not report a successful mutation as failed merely because the log insert failed.
+    console.error("Gagal menyimpan log aktivitas admin:", { action, actor: actor.actor, error });
+  }
 }

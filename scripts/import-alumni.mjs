@@ -66,11 +66,11 @@ try {
       const nama = pick(record, 'nama', 'nama lengkap', 'name');
       const angkatan = pick(record, 'angkatan', 'program', 'program pendidikan');
       if (!nama || !angkatan) { skipped++; continue; }
-      const email = pick(record, 'email', 'alamat email').toLowerCase();
+      // Email sengaja dikosongkan saat impor; alumni mengisinya sendiri melalui profil.
       try {
         const result = await tx`INSERT INTO alumni
           (nomor_alumni,nama,angkatan,tahun_angkatan,instansi,jabatan,wilayah,alamat,email,nomor_hp,status,sumber_data)
-          VALUES (${pick(record, 'nomor alumni', 'nomor_alumni', 'id alumni') || null},${nama.slice(0,200)},${angkatan.slice(0,100)},${Number(pick(record, 'tahun angkatan', 'tahun')) || null},${pick(record, 'instansi', 'lembaga', 'organisasi').slice(0,250)},${pick(record, 'jabatan', 'posisi').slice(0,200)},${pick(record, 'wilayah', 'provinsi', 'domisili').slice(0,150)},${pick(record, 'alamat').slice(0,3000)},${email || null},${pick(record, 'nomor hp', 'no hp', 'telepon', 'no telepon').slice(0,50)},${['Terverifikasi','Menunggu','Ditolak'].includes(pick(record,'status')) ? pick(record,'status') : 'Menunggu'},'impor')
+          VALUES (${pick(record, 'nomor alumni', 'nomor_alumni', 'id alumni') || null},${nama.slice(0,200)},${angkatan.slice(0,100)},${Number(pick(record, 'tahun angkatan', 'tahun')) || null},${pick(record, 'instansi', 'lembaga', 'organisasi').slice(0,250)},${pick(record, 'jabatan', 'posisi').slice(0,200)},${pick(record, 'wilayah', 'provinsi', 'domisili').slice(0,150)},${pick(record, 'alamat').slice(0,3000)},${null},${pick(record, 'nomor hp', 'no hp', 'telepon', 'no telepon').slice(0,50)},${['Terverifikasi','Menunggu','Ditolak'].includes(pick(record,'status')) ? pick(record,'status') : 'Menunggu'},'impor')
           ON CONFLICT DO NOTHING RETURNING id`;
         if (result.length) inserted++; else skipped++;
       } catch (error) {

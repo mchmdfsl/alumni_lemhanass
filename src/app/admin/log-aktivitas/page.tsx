@@ -38,7 +38,7 @@ export default function LogAktivitasPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadLogs = useCallback(async (nextPage = page, q = query) => {
+  const loadLogs = useCallback(async (nextPage: number, q: string) => {
     setLoading(true); setError("");
     try {
       const response = await fetch(`/api/admin/activity-logs?page=${nextPage}&limit=25&q=${encodeURIComponent(q)}`, { cache: "no-store" });
@@ -48,7 +48,7 @@ export default function LogAktivitasPage() {
       setData(result);
     } catch (e) { setError(e instanceof Error ? e.message : "Terjadi kesalahan."); }
     finally { setLoading(false); }
-  }, [page, query, router]);
+  }, [router]);
 
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" }).then(async (response) => {

@@ -10,6 +10,7 @@ import {
   TrendingUp,
   MapPin,
   ShieldCheck,
+  XCircle,
 } from "lucide-react";
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
@@ -120,10 +121,10 @@ export default function AdminDashboardPage() {
               />
 
               <StatCard
-                title="Alumni Aktif"
-                value={formatCount(counts.terverifikasi)}
-                description="Menggunakan total terverifikasi"
-                icon={GraduationCap}
+                title="Ditolak"
+                value={formatCount(counts.ditolak)}
+                description="Data yang ditolak admin"
+                icon={XCircle}
               />
             </section>
 

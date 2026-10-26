@@ -166,7 +166,8 @@ export default function PengaturanPage() {
             </div>
             <div className="min-w-0">
               <h3 className="text-sm font-semibold text-[#172033]">Kata sandi</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-500">Jangan bagikan kata sandi kepada orang lain. Fitur ubah kata sandi belum tersedia pada halaman ini.</p>
+              <p className="mt-1 text-sm leading-6 text-slate-500">Ganti kata sandi secara berkala dan jangan bagikan kepada orang lain.</p>
+              <Link href="/user/ubah-password" className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#0b1f3a] hover:text-[#b28b16]">Ubah kata sandi <ArrowRight size={15} /></Link>
             </div>
           </div>
           <div className="flex items-start gap-3">

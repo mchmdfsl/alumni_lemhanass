@@ -41,6 +41,7 @@ export default function AdminSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loadingLogout, setLoadingLogout] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [currentRole, setCurrentRole] = useState<"admin" | "super_admin">("admin");
 
   const closeMobileSidebar = useCallback(() => setMobileOpen(false), []);
 
@@ -73,6 +74,10 @@ export default function AdminSidebar() {
 
   useEffect(() => {
     let cancelled = false;
+    fetch("/api/auth/me", { cache: "no-store" }).then(async (response) => {
+      const result = await response.json();
+      if (!cancelled && response.ok && (result.user?.role === "admin" || result.user?.role === "super_admin")) setCurrentRole(result.user.role);
+    }).catch(() => undefined);
     async function fetchPendingCount() {
       try {
         const response = await fetch("/api/alumni?limit=1", { cache: "no-store" });
@@ -187,8 +192,8 @@ export default function AdminSidebar() {
               <Settings size={20} />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-[#172033]">Administrator</p>
-              <p className="text-xs text-gray-500">Panel Admin</p>
+              <p className="truncate text-sm font-bold text-[#172033]">{currentRole === "super_admin" ? "Super Admin" : "Administrator"}</p>
+              <p className="text-xs text-gray-500">{currentRole === "super_admin" ? "Akses Super Admin" : "Panel Admin"}</p>
             </div>
           </div>
           <button

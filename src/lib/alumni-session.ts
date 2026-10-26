@@ -9,6 +9,7 @@ type AlumniSession = {
   accountId: number;
   alumniId: number;
   role: "alumni";
+  iat: number;
   exp: number;
 };
 
@@ -36,6 +37,7 @@ export function createAlumniSessionToken(
     accountId,
     alumniId,
     role: "alumni",
+    iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + SESSION_SECONDS,
   };
 
@@ -71,6 +73,8 @@ export function verifyAlumniSessionToken(
 
     if (
       session.role !== "alumni" ||
+      !Number.isSafeInteger(session.iat) ||
+      session.iat <= 0 ||
       !Number.isSafeInteger(session.accountId) ||
       session.accountId <= 0 ||
       !Number.isSafeInteger(session.alumniId) ||
@@ -89,10 +93,35 @@ export function verifyAlumniSessionToken(
 
 export async function getAlumniSession() {
   const cookieStore = await cookies();
-
-  return verifyAlumniSessionToken(
+  const session = verifyAlumniSessionToken(
     cookieStore.get(ALUMNI_COOKIE_NAME)?.value,
   );
+  if (!session) return null;
+
+  // Revalidate the account on every session read. Password changes update
+  // alumni_accounts.updated_at, invalidating tokens issued before that change.
+  try {
+    const { db } = await import("@/lib/db");
+    const [account] = await db()`
+      SELECT aa.updated_at AS "updatedAt"
+      FROM alumni_accounts aa
+      INNER JOIN alumni a ON a.id = aa.alumni_id
+      WHERE aa.id = ${session.accountId}
+        AND a.id = ${session.alumniId}
+        AND aa.is_active = TRUE
+        AND a.status = 'Terverifikasi'
+      LIMIT 1
+    `;
+    if (!account) return null;
+    const updatedAt = account.updatedAt instanceof Date
+      ? account.updatedAt.getTime()
+      : new Date(account.updatedAt).getTime();
+    if (Number.isFinite(updatedAt) && updatedAt > session.iat * 1000) return null;
+    return session;
+  } catch (error) {
+    console.error("Gagal memvalidasi sesi alumni:", error);
+    return null;
+  }
 }
 
 export const alumniSessionCookie = {

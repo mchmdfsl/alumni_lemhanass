@@ -13,8 +13,7 @@ export async function POST(request: NextRequest) {
 
     const nama = value("nama", 200);
     const angkatan = value("angkatan", 100).toLocaleUpperCase("id-ID");
-    const kategoriValid = new Set(["P3N", "P4N", "PPNK", "TOT"]);
-    const kategori = kategoriValid.has(angkatan) ? angkatan : angkatan;
+    const kategori = angkatan;
     const nomorHp = value("nomorHp", 50);
     const nomorAlumni = value("nomorAlumni", 80);
     const instansi = value("instansi", 250);

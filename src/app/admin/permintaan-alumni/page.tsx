@@ -108,6 +108,11 @@ export default function PermintaanAlumniPage() {
               <div className="space-y-4">
                 {rows.map((row) => {
                   const payload = row.payload ?? {};
+                  const details: Array<[string, unknown]> = [
+                    ["Nama", payload.nama], ["Kategori program", payload.angkatan],
+                    ["Jabatan", payload.jabatan], ["Instansi", payload.instansi],
+                    ["Wilayah", payload.wilayah], ["Nomor HP", payload.nomorHp], ["Alamat", payload.alamat],
+                  ];
                   const pending = row.status === "Menunggu";
                   return (
                     <article key={row.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -127,15 +132,7 @@ export default function PermintaanAlumniPage() {
                       <div className="space-y-3 p-5">
                         {row.requestType === "profile_update" ? (
                           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                            {[
-                              ["Nama", payload.nama],
-                              ["Kategori program", payload.angkatan],
-                              ["Jabatan", payload.jabatan],
-                              ["Instansi", payload.instansi],
-                              ["Wilayah", payload.wilayah],
-                              ["Nomor HP", payload.nomorHp],
-                              ["Alamat", payload.alamat],
-                            ].map(([label, value]) => <div key={label} className="rounded-xl bg-slate-50 p-3"><p className="text-xs font-medium text-slate-500">{label}</p><p className="mt-1 break-words text-sm font-semibold text-[#172033]">{String(value || "-")}</p></div>)}
+                            {details.map(([label, value]) => <div key={label} className="rounded-xl bg-slate-50 p-3"><p className="text-xs font-medium text-slate-500">{label}</p><p className="mt-1 break-words text-sm font-semibold text-[#172033]">{String(value || "-")}</p></div>)}
                           </div>
                         ) : (
                           <p className="whitespace-pre-wrap break-words rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-700">{row.message || "Tidak ada keterangan tambahan."}</p>

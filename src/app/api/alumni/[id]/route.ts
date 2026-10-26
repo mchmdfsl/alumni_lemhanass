@@ -33,8 +33,7 @@ export async function PATCH(
       typeof body.alamat === "string" ? body.alamat.trim().slice(0, 3000) : undefined;
     const nomorHp =
       typeof body.nomorHp === "string" ? body.nomorHp.trim().slice(0, 50) : undefined;
-    const nomorAlumni =
-      typeof body.nomorAlumni === "string" ? body.nomorAlumni.trim().slice(0, 80) || null : undefined;
+    // Nomor alumni hanya boleh ditetapkan oleh alur verifikasi khusus.
     // Email diisi langsung oleh alumni dari halaman profil, bukan administrator.
 
     if (nama !== undefined && (nama.length < 2 || nama.length > 200))
@@ -49,7 +48,6 @@ export async function PATCH(
         wilayah     = COALESCE(${wilayah ?? null}::varchar, wilayah),
         alamat      = COALESCE(${alamat ?? null}::text, alamat),
         nomor_hp    = COALESCE(${nomorHp ?? null}::varchar, nomor_hp),
-        nomor_alumni = COALESCE(${nomorAlumni !== undefined ? nomorAlumni : null}, nomor_alumni),
         email       = email,
         updated_at  = NOW()
       WHERE id = ${Number(id)}
@@ -77,8 +75,11 @@ export async function DELETE(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  if (!(await isAdminAuthenticated()))
+  const role = await isAdminAuthenticated();
+  if (!role)
     return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  if (role !== "super_admin")
+    return NextResponse.json({ error: "Hanya Super Admin yang boleh menghapus data alumni." }, { status: 403 });
 
   const { id } = await context.params;
   if (!/^\d+$/.test(id))

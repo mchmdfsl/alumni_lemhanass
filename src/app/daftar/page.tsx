@@ -70,7 +70,16 @@ export default function DaftarPage() {
     <form onSubmit={handleDaftar} className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {renderField("Nama lengkap *", "nama", "text", true, 200)}
-        {renderField("Angkatan *", "angkatan", "text", true, 100)}
+        <div>
+          <label htmlFor="angkatan" className="mb-1.5 block text-sm font-semibold text-slate-700">Kategori program *</label>
+          <select id="angkatan" name="angkatan" value={form.angkatan} onChange={updateField} required className={inputClass}>
+            <option value="">Pilih kategori program</option>
+            <option value="P3N">P3N</option>
+            <option value="P4N">P4N</option>
+            <option value="PPNK">PPNK</option>
+            <option value="TOT">TOT</option>
+          </select>
+        </div>
         {renderField("Nomor HP", "nomorHp", "text", false, 50)}
         {renderField("Nomor alumni (jika ada)", "nomorAlumni", "text", false, 80)}
         {renderField("Instansi", "instansi", "text", false, 250)}

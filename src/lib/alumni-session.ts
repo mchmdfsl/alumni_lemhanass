@@ -37,7 +37,7 @@ export function createAlumniSessionToken(
     accountId,
     alumniId,
     role: "alumni",
-    iat: Math.floor(Date.now() / 1000),
+    iat: Date.now(),
     exp: Math.floor(Date.now() / 1000) + SESSION_SECONDS,
   };
 
@@ -75,6 +75,7 @@ export function verifyAlumniSessionToken(
       session.role !== "alumni" ||
       !Number.isSafeInteger(session.iat) ||
       session.iat <= 0 ||
+      session.iat > Date.now() + 30_000 ||
       !Number.isSafeInteger(session.accountId) ||
       session.accountId <= 0 ||
       !Number.isSafeInteger(session.alumniId) ||
@@ -116,7 +117,7 @@ export async function getAlumniSession() {
     const updatedAt = account.updatedAt instanceof Date
       ? account.updatedAt.getTime()
       : new Date(account.updatedAt).getTime();
-    if (Number.isFinite(updatedAt) && updatedAt > session.iat * 1000) return null;
+    if (Number.isFinite(updatedAt) && updatedAt > session.iat) return null;
     return session;
   } catch (error) {
     console.error("Gagal memvalidasi sesi alumni:", error);

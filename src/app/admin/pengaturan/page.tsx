@@ -32,7 +32,6 @@ export default function PengaturanPage() {
     ditolak: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -61,12 +60,6 @@ export default function PengaturanPage() {
     };
   }, []);
 
-  const handleSimpanProfil = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
-  };
-
   return (
     <div className="min-h-screen bg-[#f5f7fa]">
       <AdminSidebar />
@@ -89,13 +82,6 @@ export default function PengaturanPage() {
               </p>
             </div>
 
-            {saveSuccess && (
-              <div className="mb-6 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm">
-                <CheckCircle2 size={18} className="text-emerald-600" />
-                <span>Pengaturan berhasil disimpan.</span>
-              </div>
-            )}
-
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               {/* Left Column: Admin Profile & Credentials */}
               <div className="space-y-6 lg:col-span-2">
@@ -115,7 +101,7 @@ export default function PengaturanPage() {
                     </div>
                   </div>
 
-                  <form onSubmit={handleSimpanProfil} className="space-y-4">
+                  <div className="space-y-4">
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
                         <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-600">
@@ -162,7 +148,7 @@ export default function PengaturanPage() {
                         Email dan kredensial dikonfigurasi melalui environment variable server demi keamanan maksimal.
                       </p>
                     </div>
-                  </form>
+                  </div>
                 </div>
 
                 {/* Password & Security Card */}

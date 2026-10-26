@@ -677,7 +677,7 @@ function AlumniEditModal({ alumni, saving, onClose, onSave }: { alumni: Alumni; 
         <div className="p-5 sm:p-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <EditField label="Nama Lengkap *" value={form.nama} onChange={set("nama")} />
-            <EditField label="Email" value={form.email} onChange={set("email")} type="email" />
+
             <EditField label="Angkatan *" value={form.angkatan} onChange={set("angkatan")} />
             <EditField label="Nomor HP" value={form.nomorHp} onChange={set("nomorHp")} />
             <EditField label="Nomor Alumni" value={form.nomorAlumni} onChange={set("nomorAlumni")} />
@@ -731,7 +731,7 @@ function AlumniAddModal({ saving, onClose, onSave }: { saving: boolean; onClose:
         <form ref={formRef} onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 sm:p-6">
             <EditField label="Nama Lengkap *" name="nama" required />
-            <EditField label="Email" name="email" type="email" />
+
             <EditField label="Angkatan *" name="angkatan" required />
             <EditField label="Nomor HP" name="nomorHp" />
             <EditField label="Nomor Alumni" name="nomorAlumni" />

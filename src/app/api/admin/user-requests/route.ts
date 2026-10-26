@@ -24,7 +24,11 @@ export async function GET() {
     return NextResponse.json({ data });
   } catch (error) {
     console.error("GET admin user requests failed:", error);
-    return NextResponse.json({ error: "Gagal mengambil permintaan alumni." }, { status: 500 });
+    const dbError = error as { code?: string; message?: string };
+    if (dbError.code === "42P01" || /alumni_user_requests/i.test(dbError.message ?? "")) {
+      return NextResponse.json({ error: "Tabel permintaan alumni belum tersedia di database. Jalankan migrasi db/migrations/002_alumni_user_requests.sql pada database yang dipakai Vercel, lalu muat ulang halaman." }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Gagal mengambil permintaan alumni. Periksa koneksi database dan log server." }, { status: 500 });
   }
 }
 

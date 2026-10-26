@@ -41,6 +41,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 0. Akun admin database yang dibuat oleh Super Admin.
+    try {
+      const [databaseAdmin] = await db()`
+        SELECT id, username, email, password_hash AS "passwordHash"
+        FROM admin_users
+        WHERE is_active = TRUE
+          AND (lower(username) = lower(${identifier}) OR lower(email) = lower(${identifier}))
+        LIMIT 1
+      `;
+      if (databaseAdmin && await verifyPassword(password, databaseAdmin.passwordHash)) {
+        const response = NextResponse.json({ ok: true, role: "admin" });
+        response.cookies.set(alumniSessionCookie.name, "", { ...alumniSessionCookie, maxAge: 0 });
+        response.cookies.set(sessionCookie.name, createSessionToken("admin", Number(databaseAdmin.id)), sessionCookie);
+        return response;
+      }
+    } catch (error) {
+      // Tabel migrasi bisa belum diterapkan; login ENV tetap harus tersedia.
+      console.error("Pemeriksaan akun admin database gagal:", error);
+    }
+
     // 1. Coba Super Admin terlebih dahulu, lalu admin biasa.
     let role: "super_admin" | "admin" | null = null;
 

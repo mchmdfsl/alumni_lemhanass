@@ -11,9 +11,10 @@ Aplikasi Next.js 16 dengan PostgreSQL. Repository ini memuat antarmuka admin, AP
 1. Install dependency: `pnpm install`
 2. Buat database PostgreSQL dan user khusus aplikasi dengan hak akses minimum.
 3. Jalankan schema: `psql "$DATABASE_URL" -f db/schema.sql`
-4. Salin `.env.example` ke `.env.local`, lalu atur `DATABASE_URL`, `ADMIN_USERNAME` atau `ADMIN_EMAIL`, `ADMIN_PASSWORD`, dan `SESSION_SECRET` yang acak dan panjang.\n5. Agar fitur lupa password dapat mengirim email, atur `RESEND_API_KEY`, `PASSWORD_RESET_FROM` (alamat pengirim yang sudah diverifikasi di Resend), dan `NEXT_PUBLIC_APP_URL` (alamat situs lengkap, misalnya `https://domain-anda.id`). Tanpa konfigurasi email tersebut, halaman lupa password tetap terbuka tetapi pengiriman tautan reset belum aktif.\n6. Jalankan development: `pnpm dev`\n7. Uji build produksi: `pnpm build` lalu `pnpm start`.
-5. Jalankan development: `pnpm dev`
-6. Uji build produksi: `pnpm build` lalu `pnpm start`.
+4. Salin `.env.example` ke `.env.local`, lalu atur `DATABASE_URL`, `ADMIN_USERNAME` atau `ADMIN_EMAIL`, `ADMIN_PASSWORD`, dan `SESSION_SECRET` yang acak dan panjang.
+5. Agar fitur lupa password dapat mengirim email, atur `RESEND_API_KEY`, `PASSWORD_RESET_FROM` (alamat pengirim yang sudah diverifikasi di Resend), dan `NEXT_PUBLIC_APP_URL` (alamat situs lengkap, misalnya `https://domain-anda.id`). Tanpa konfigurasi email tersebut, halaman lupa password tetap terbuka tetapi pengiriman tautan reset belum aktif.
+6. Jalankan development: `pnpm dev`
+7. Uji build produksi: `pnpm build` lalu `pnpm start`
 
 Jangan commit `.env.local`, kredensial database, atau file CSV berisi data pribadi alumni. Aktifkan HTTPS di reverse proxy VPS. Batasi akses port PostgreSQL ke jaringan privat/localhost.
 

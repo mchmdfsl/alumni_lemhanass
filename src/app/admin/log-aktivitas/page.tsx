@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Activity, ChevronLeft, ChevronRight, RefreshCw, Search } from "lucide-react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
@@ -59,7 +59,7 @@ export default function LogAktivitasPage() {
     }).catch(() => router.replace("/login"));
   }, [loadLogs, router]);
 
-  function search(event: React.FormEvent) {
+  function search(event: FormEvent) {
     event.preventDefault();
     setPage(1); setQuery(draftQuery.trim());
     void loadLogs(1, draftQuery.trim());

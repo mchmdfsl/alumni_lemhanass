@@ -7,9 +7,9 @@ CREATE TABLE IF NOT EXISTS admin_users (
   role VARCHAR(20) NOT NULL DEFAULT 'admin' CHECK (role = 'admin'),
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT admin_users_username_unique UNIQUE (lower(username)),
-  CONSTRAINT admin_users_email_unique UNIQUE (lower(email))
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS admin_users_username_lower_unique ON admin_users (lower(username));
+CREATE UNIQUE INDEX IF NOT EXISTS admin_users_email_lower_unique ON admin_users (lower(email));
 CREATE INDEX IF NOT EXISTS admin_users_active_idx ON admin_users (is_active);

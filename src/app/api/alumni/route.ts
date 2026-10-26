@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getAdminActor } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 
@@ -178,12 +179,6 @@ export async function POST(request: NextRequest) {
         ? body.nomorHp.trim()
         : "";
 
-    const status =
-      typeof body.status === "string" &&
-      statusValues.has(body.status)
-        ? body.status
-        : "Menunggu";
-
     const [row] = await db()`
       INSERT INTO alumni (
         nomor_alumni,
@@ -208,7 +203,7 @@ export async function POST(request: NextRequest) {
         ${alamat},
         NULL,
         ${nomorHp},
-        ${status},
+        'Menunggu',
         'impor'
       )
       RETURNING
@@ -225,6 +220,19 @@ export async function POST(request: NextRequest) {
         foto_profil AS "fotoProfil",
         status
     `;
+
+    // Audit logging is best-effort here; the alumni record is already committed.
+    const actor = await getAdminActor();
+    if (actor && row) {
+      try {
+        await db()`
+          INSERT INTO admin_audit_log (action, alumni_id, actor, details)
+          VALUES ('create', ${row.id}, ${actor.actor}, ${JSON.stringify({ actorRole: actor.role, nama: row.nama, sumberData: "impor" })}::jsonb)
+        `;
+      } catch (auditError) {
+        console.error("Gagal mencatat pembuatan alumni:", auditError);
+      }
+    }
 
     return NextResponse.json(
       { data: row },

@@ -5,8 +5,6 @@ import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 
-const statusValues = new Set(["Menunggu", "Terverifikasi", "Ditolak"]);
-
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -37,9 +35,6 @@ export async function PATCH(
       typeof body.nomorHp === "string" ? body.nomorHp.trim().slice(0, 50) : undefined;
     const nomorAlumni =
       typeof body.nomorAlumni === "string" ? body.nomorAlumni.trim().slice(0, 80) || null : undefined;
-    const status =
-      typeof body.status === "string" && statusValues.has(body.status) ? body.status : undefined;
-
     // Email diisi langsung oleh alumni dari halaman profil, bukan administrator.
 
     if (nama !== undefined && (nama.length < 2 || nama.length > 200))
@@ -56,7 +51,6 @@ export async function PATCH(
         nomor_hp    = COALESCE(${nomorHp ?? null}::varchar, nomor_hp),
         nomor_alumni = COALESCE(${nomorAlumni !== undefined ? nomorAlumni : null}, nomor_alumni),
         email       = email,
-        status      = COALESCE(${status ?? null}::varchar, status),
         updated_at  = NOW()
       WHERE id = ${Number(id)}
       RETURNING id, COALESCE(nomor_alumni, '') AS "nomorAlumni", nama, angkatan,

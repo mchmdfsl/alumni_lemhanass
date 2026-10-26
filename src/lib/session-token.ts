@@ -13,8 +13,10 @@ function signature(payload: string) {
   return createHmac("sha256", secret()).update(payload).digest("base64url");
 }
 
-export function createSessionToken() {
-  const payload = `${Date.now() + SESSION_SECONDS * 1000}`;
+export type AdminRole = "admin" | "super_admin";
+
+export function createSessionToken(role: AdminRole = "admin") {
+  const payload = `${Date.now() + SESSION_SECONDS * 1000}:${role}`;
   return `${payload}.${signature(payload)}`;
 }
 
@@ -26,10 +28,23 @@ export function verifySessionToken(token?: string) {
     const expected = Buffer.from(signature(payload));
     const supplied = Buffer.from(suppliedSignature);
     if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) return false;
-    return Number(payload) > Date.now();
+    const expiresAt = Number(payload.split(":")[0]);
+    return expiresAt > Date.now();
   } catch {
     return false;
   }
 }
 
 export const SESSION_SECONDS_MAX_AGE = SESSION_SECONDS;
+
+
+export function getSessionRole(token?: string): AdminRole | null {
+  if (!token || !verifySessionToken(token)) return null;
+  try {
+    const payload = token.split(".")[0];
+    const role = payload.split(":")[1];
+    return role === "super_admin" || role === "admin" ? role : null;
+  } catch {
+    return null;
+  }
+}

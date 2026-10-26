@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 
 import {
-  GraduationCap,
   Users,
   UserCheck,
   Clock3,

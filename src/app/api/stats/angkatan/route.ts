@@ -27,7 +27,19 @@ export async function GET() {
       GROUP BY angkatan
       ORDER BY COUNT(*) DESC`;
 
-    return NextResponse.json({ data: rows });
+    const categories = ["P3N", "P4N", "PPNK", "TOT"];
+    const existing = new Set(rows.map((row: { angkatan: string }) => row.angkatan));
+    const emptyCategories = categories.filter((category) => !existing.has(category)).map((angkatan) => ({
+      angkatan, total: 0, terverifikasi: 0, menunggu: 0, ditolak: 0, wilayahDominan: "-",
+    }));
+    const data = [...emptyCategories, ...rows].sort((a, b) => {
+      const order = categories.indexOf(a.angkatan);
+      const other = categories.indexOf(b.angkatan);
+      if (order >= 0 || other >= 0) return (order < 0 ? 99 : order) - (other < 0 ? 99 : other);
+      return b.total - a.total;
+    });
+
+    return NextResponse.json({ data });
   } catch (error) {
     console.error("GET /api/stats/angkatan failed", error);
     return NextResponse.json({ error: "Gagal mengambil data statistik angkatan." }, { status: 500 });

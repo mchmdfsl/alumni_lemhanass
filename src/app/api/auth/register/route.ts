@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
 
     const nama = value("nama", 200);
     const angkatan = value("angkatan", 100).toLocaleUpperCase("id-ID");
+    const kategoriValid = new Set(["P3N", "P4N", "PPNK", "TOT"]);
+    const kategori = kategoriValid.has(angkatan) ? angkatan : angkatan;
     const nomorHp = value("nomorHp", 50);
     const nomorAlumni = value("nomorAlumni", 80);
     const instansi = value("instansi", 250);
@@ -76,7 +78,7 @@ export async function POST(request: NextRequest) {
           submitted_wilayah, submitted_alamat
         ) VALUES (
           NULL, ${email}, ${passwordHash}, 'register', 'Menunggu',
-          ${nama}, ${angkatan}, ${nomorHp || null}, ${nomorAlumni || null},
+          ${nama}, ${kategori}, ${nomorHp || null}, ${nomorAlumni || null},
           ${instansi}, ${jabatan}, ${wilayah}, ${alamat}
         )
       `;

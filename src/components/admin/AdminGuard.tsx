@@ -9,8 +9,10 @@ export default function AdminGuard({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     fetch("/api/auth/me", { cache: "no-store" })
-      .then((response) => {
-        if (!response.ok) router.replace(`/login?next=${encodeURIComponent(pathname || "/admin")}`);
+      .then(async (response) => {
+        const data = await response.json();
+        const isAdmin = response.ok && (data.user?.role === "admin" || data.user?.role === "super_admin");
+        if (!isAdmin) router.replace(`/login?next=${encodeURIComponent(pathname || "/admin")}`);
         else if (active) setReady(true);
       })
       .catch(() => router.replace("/login"));

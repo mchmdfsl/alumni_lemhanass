@@ -17,6 +17,13 @@ type RequestRow = {
   nama: string;
   nomorAlumni?: string | null;
   angkatan: string;
+  currentNama?: string | null;
+  currentAngkatan?: string | null;
+  currentJabatan?: string | null;
+  currentInstansi?: string | null;
+  currentWilayah?: string | null;
+  currentNomorHp?: string | null;
+  currentAlamat?: string | null;
 };
 
 const labels: Record<string, string> = {
@@ -107,11 +114,22 @@ export default function PermintaanAlumniPage() {
             ) : (
               <div className="space-y-4">
                 {rows.map((row) => {
-                  const payload = row.payload ?? {};
-                  const details: Array<[string, unknown]> = [
-                    ["Nama", payload.nama], ["Kategori program", payload.angkatan],
-                    ["Jabatan", payload.jabatan], ["Instansi", payload.instansi],
-                    ["Wilayah", payload.wilayah], ["Nomor HP", payload.nomorHp], ["Alamat", payload.alamat],
+                  const rawPayload = row.payload ?? {};
+                  const payload = (typeof rawPayload === "string"
+                    ? (() => { try { return JSON.parse(rawPayload) as Record<string, unknown>; } catch { return {}; } })()
+                    : rawPayload) as Record<string, unknown>;
+                  const requested = (key: string, fallbackKey?: string) => {
+                    const value = payload[key] ?? (fallbackKey ? payload[fallbackKey] : undefined);
+                    return value === null || value === undefined || String(value).trim() === "" ? "-" : String(value);
+                  };
+                  const details: Array<[string, unknown, unknown]> = [
+                    ["Nama", row.currentNama ?? row.nama, requested("nama")],
+                    ["Kategori program / Angkatan", row.currentAngkatan ?? row.angkatan, requested("angkatan", "kategoriProgram")],
+                    ["Jabatan", row.currentJabatan, requested("jabatan")],
+                    ["Instansi", row.currentInstansi, requested("instansi")],
+                    ["Wilayah", row.currentWilayah, requested("wilayah")],
+                    ["Nomor HP", row.currentNomorHp, requested("nomorHp", "nomor_hp")],
+                    ["Alamat", row.currentAlamat, requested("alamat")],
                   ];
                   const pending = row.status === "Menunggu";
                   return (
@@ -131,8 +149,27 @@ export default function PermintaanAlumniPage() {
                       </div>
                       <div className="space-y-3 p-5">
                         {row.requestType === "profile_update" ? (
-                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                            {details.map(([label, value]) => <div key={label} className="rounded-xl bg-slate-50 p-3"><p className="text-xs font-medium text-slate-500">{label}</p><p className="mt-1 break-words text-sm font-semibold text-[#172033]">{String(value || "-")}</p></div>)}
+                          <div className="space-y-3">
+                            <p className="text-sm font-semibold text-[#172033]">Perbandingan data sebelum dan sesudah</p>
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
+                              <table className="w-full min-w-[520px] text-left text-sm">
+                                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                                  <tr><th className="px-4 py-3">Data</th><th className="px-4 py-3">Data saat ini</th><th className="px-4 py-3">Diajukan alumni</th></tr>
+                                </thead>
+                                <tbody>
+                                  {details.map(([label, current, proposed]) => {
+                                    const currentText = current === null || current === undefined || String(current).trim() === "" ? "-" : String(current);
+                                    const proposedText = String(proposed ?? "-");
+                                    const changed = currentText !== proposedText && proposedText !== "-";
+                                    return <tr key={String(label)} className="border-t border-slate-100 align-top">
+                                      <th className="px-4 py-3 font-medium text-slate-600">{label}</th>
+                                      <td className="px-4 py-3 break-words text-slate-600">{currentText}</td>
+                                      <td className={"px-4 py-3 break-words font-semibold " + (changed ? "text-amber-700" : "text-slate-800")}>{proposedText}{changed ? <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-xs">Berubah</span> : null}</td>
+                                    </tr>;
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
                         ) : (
                           <p className="whitespace-pre-wrap break-words rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-700">{row.message || "Tidak ada keterangan tambahan."}</p>

@@ -108,7 +108,7 @@ export async function PATCH(request: NextRequest) {
 
     if (jabatan.length > 200 || instansi.length > 250 || wilayah.length > 150 || alamat.length > 5000 || nomorHp.length > 50) {
       return NextResponse.json(
-        { message: "Jabatan atau instansi maksimal 200 karakter." },
+        { message: "Jabatan maksimal 200, instansi 250, wilayah 150, nomor telepon 50, dan alamat 5000 karakter." },
         { status: 400 }
       );
     }

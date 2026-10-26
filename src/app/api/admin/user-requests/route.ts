@@ -25,7 +25,7 @@ export async function GET() {
   } catch (error) {
     console.error("GET admin user requests failed:", error);
     const dbError = error as { code?: string; message?: string };
-    if (dbError.code === "42P01" || /alumni_user_requests/i.test(dbError.message ?? "")) {
+    if (dbError.code === "42P01" || (dbError.message ?? "").toLowerCase().includes("relation \"alumni_user_requests\" does not exist")) {
       return NextResponse.json({ error: "Tabel permintaan alumni belum tersedia di database. Jalankan migrasi db/migrations/002_alumni_user_requests.sql pada database yang dipakai Vercel, lalu muat ulang halaman." }, { status: 503 });
     }
     return NextResponse.json({ error: "Gagal mengambil permintaan alumni. Periksa koneksi database dan log server." }, { status: 500 });

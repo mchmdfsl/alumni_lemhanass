@@ -8,8 +8,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  if (!(await isAdminAuthenticated())) {
+  const role = await isAdminAuthenticated();
+  if (!role) {
     return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  }
+  if (role !== "super_admin") {
+    return NextResponse.json(
+      { error: "Hanya Super Admin yang boleh mereset password secara massal." },
+      { status: 403 },
+    );
   }
 
   try {

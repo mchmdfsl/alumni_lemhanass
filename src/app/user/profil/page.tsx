@@ -611,21 +611,25 @@ export default function ProfilUser() {
             </Field>
 
             <Field
-              label="Tahun Angkatan"
+              label="Kategori Program"
               icon={GraduationCap}
               required
             >
-              <input
-                type="text"
+              <select
                 value={profile.angkatan}
-                onChange={(event) =>
-                  updateField("angkatan", event.target.value)
-                }
-                maxLength={100}
+                onChange={(event) => updateField("angkatan", event.target.value)}
                 required
                 className={inputClass}
-                placeholder="Masukkan tahun atau nama angkatan"
-              />
+              >
+                {!["P3N", "P4N", "PPNK", "TOT"].includes(profile.angkatan) && profile.angkatan && (
+                  <option value={profile.angkatan}>{profile.angkatan}</option>
+                )}
+                <option value="">Pilih kategori program</option>
+                <option value="P3N">P3N</option>
+                <option value="P4N">P4N</option>
+                <option value="PPNK">PPNK</option>
+                <option value="TOT">TOT</option>
+              </select>
             </Field>
 
             <Field

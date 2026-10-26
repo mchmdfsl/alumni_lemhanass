@@ -4,6 +4,7 @@ import {
   createSessionToken,
   sessionCookie,
   verifyAdminCredentials,
+  verifySuperAdminCredentials,
 } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
@@ -40,11 +41,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Coba autentikasi admin terlebih dahulu.
-    let isAdmin = false;
+    // 1. Coba Super Admin terlebih dahulu, lalu admin biasa.
+    let role: "super_admin" | "admin" | null = null;
 
     try {
-      isAdmin = verifyAdminCredentials(identifier, password);
+      if (verifySuperAdminCredentials(identifier, password)) role = "super_admin";
+      else if (verifyAdminCredentials(identifier, password)) role = "admin";
     } catch (error) {
       console.error("Konfigurasi login admin bermasalah:", error);
       return NextResponse.json(
@@ -53,10 +55,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (isAdmin) {
+    if (role) {
       const response = NextResponse.json({
         ok: true,
-        role: "admin",
+        role,
       });
 
       response.cookies.set(
@@ -67,7 +69,7 @@ export async function POST(request: NextRequest) {
 
       response.cookies.set(
         sessionCookie.name,
-        createSessionToken(),
+        createSessionToken(role),
         sessionCookie,
       );
 

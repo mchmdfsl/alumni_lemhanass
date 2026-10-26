@@ -21,11 +21,14 @@ export default function AdminDashboardPage() {
   const [counts, setCounts] = useState({ total: 0, terverifikasi: 0, menunggu: 0, ditolak: 0 });
   const [wilayahData, setWilayahData] = useState<{ wilayah: string; jumlah: number; persentase: number }[]>([]);
   const [aktivitas, setAktivitas] = useState({ dataBaru: 0, datadiperbarui: 0, datadiverifikasi: 0, dataditolak: 0 });
+  const [adminRole, setAdminRole] = useState<"admin" | "super_admin">("admin");
   const [loadingWilayah, setLoadingWilayah] = useState(true);
   const [loadingAktivitas, setLoadingAktivitas] = useState(true);
 
   useEffect(() => {
     let active = true;
+
+    fetch("/api/auth/me", { cache: "no-store" }).then(async (r) => { const d = await r.json(); if (r.ok && active && (d.user?.role === "admin" || d.user?.role === "super_admin")) setAdminRole(d.user.role); }).catch(() => undefined);
 
     // Fetch counts
     fetch("/api/alumni?limit=1", { cache: "no-store" })
@@ -72,11 +75,11 @@ export default function AdminDashboardPage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#b28b16]">
-                    Dashboard Admin
+                    Dashboard Administrasi
                   </p>
 
                   <h1 className="text-2xl font-bold tracking-tight text-[#0b1f3a] sm:text-3xl">
-                    Selamat Datang, Admin
+                    Selamat Datang, {adminRole === "super_admin" ? "Super Admin" : "Admin"}
                   </h1>
 
                   <p className="mt-1.5 text-sm text-[#64748b]">

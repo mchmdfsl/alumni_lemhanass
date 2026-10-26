@@ -678,7 +678,7 @@ function AlumniEditModal({ alumni, saving, onClose, onSave }: { alumni: Alumni; 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <EditField label="Nama Lengkap *" value={form.nama} onChange={set("nama")} />
 
-            <EditField label="Angkatan *" value={form.angkatan} onChange={set("angkatan")} />
+            <CategorySelect label="Kategori Program *" value={form.angkatan} onChange={set("angkatan")} />
             <EditField label="Nomor HP" value={form.nomorHp} onChange={set("nomorHp")} />
             <EditField label="Nomor Alumni" value={form.nomorAlumni} onChange={set("nomorAlumni")} />
             <div className="flex flex-col gap-1.5">
@@ -732,7 +732,7 @@ function AlumniAddModal({ saving, onClose, onSave }: { saving: boolean; onClose:
           <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 sm:p-6">
             <EditField label="Nama Lengkap *" name="nama" required />
 
-            <EditField label="Angkatan *" name="angkatan" required />
+            <CategorySelect label="Kategori Program *" name="angkatan" required />
             <EditField label="Nomor HP" name="nomorHp" />
             <EditField label="Nomor Alumni" name="nomorAlumni" />
             <EditField label="Instansi" name="instansi" />
@@ -752,6 +752,21 @@ function AlumniAddModal({ saving, onClose, onSave }: { saving: boolean; onClose:
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+function CategorySelect({ label, value, onChange, name, required = false }: { label: string; value?: string; onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void; name?: string; required?: boolean }) {
+  const categories = ["P3N", "P4N", "PPNK", "TOT"];
+  const options = value && !categories.includes(value) ? [value, ...categories] : categories;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-semibold text-slate-700">{label}</label>
+      <select name={name} value={value} onChange={onChange} required={required} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-[#0b1f3a] focus:ring-4 focus:ring-[#0b1f3a]/10">
+        {!required && <option value="">Pilih kategori</option>}
+        {required && !value && <option value="">Pilih kategori program</option>}
+        {options.map((category) => <option key={category} value={category}>{category}</option>)}
+      </select>
     </div>
   );
 }

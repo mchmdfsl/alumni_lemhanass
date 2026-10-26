@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  ShieldAlert,
   Eye,
   Filter,
   Mail,
@@ -57,6 +58,8 @@ export default function AlumniPage() {
   const [alumniData, setAlumniData] = useState<Alumni[]>([]);
   const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Read URL filters after mount to avoid a useSearchParams prerender/Suspense build error.
   useEffect(() => {
@@ -81,6 +84,57 @@ export default function AlumniPage() {
   };
 
   useEffect(loadAlumni, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json();
+        if (active && response.ok) setIsSuperAdmin(result.user?.role === "super_admin");
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+
+  const handleBulkDelete = async () => {
+    if (!isSuperAdmin || bulkDeleting || alumniData.length === 0) return;
+    const allowedIds = new Set(alumniData.map((alumni) => String(alumni.id)));
+    const input = window.prompt(
+      "Masukkan ID alumni yang ingin dihapus, pisahkan dengan koma. ID tersedia: " +
+      alumniData.map((alumni) => alumni.id).join(", ")
+    );
+    if (input === null || !input.trim()) return;
+    const ids = Array.from(new Set(input.split(",").map((value) => value.trim()).filter(Boolean)));
+    if (!ids.length || ids.some((id) => !/^\\d+$/.test(id) || !allowedIds.has(id))) {
+      window.alert("Daftar ID tidak valid. Pilih ID dari data yang sedang dimuat. Tidak ada data dihapus.");
+      return;
+    }
+    const typed = window.prompt(
+      `Anda akan menghapus ${ids.length} data alumni beserta akun yang terkait. Tindakan tidak dapat dibatalkan. Ketik HAPUS untuk melanjutkan.`
+    );
+    if (typed !== "HAPUS") {
+      if (typed !== null) window.alert("Konfirmasi tidak cocok. Tidak ada data yang dihapus.");
+      return;
+    }
+    setBulkDeleting(true);
+    try {
+      const response = await fetch("/api/alumni/bulk-delete", {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: ids.map(Number), confirmation: "HAPUS" }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Gagal menghapus data alumni.");
+      const deletedIds = new Set((result.deletedIds ?? ids.map(Number)).map(String));
+      setAlumniData((previous) => previous.filter((alumni) => !deletedIds.has(String(alumni.id))));
+      window.alert(result.message || "Data alumni berhasil dihapus.");
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Gagal menghapus data alumni.");
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
 
   // Unique filter options derived from data
   const angkatanOptions = useMemo(() => {
@@ -212,6 +266,17 @@ export default function AlumniPage() {
                 </div>
 
                 <div className="flex flex-col gap-2 sm:flex-row">
+                  {isSuperAdmin && (
+                    <button
+                      type="button"
+                      onClick={handleBulkDelete}
+                      disabled={bulkDeleting || alumniData.length === 0}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <ShieldAlert size={17} />
+                      {bulkDeleting ? "Menghapus..." : "Hapus Massal"}
+                    </button>
+                  )}
                   <a
                     href="/api/alumni/export"
                     download

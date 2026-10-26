@@ -488,6 +488,11 @@ export default function ProfilUser() {
             label="Angkatan"
             value={profile.angkatan || "-"}
           />
+          <InfoItem icon={BriefcaseBusiness} label="Jabatan" value={profile.jabatan || "-"} />
+          <InfoItem icon={Building2} label="Instansi" value={profile.instansi || "-"} />
+          <InfoItem icon={MapPin} label="Wilayah" value={profile.wilayah || "-"} />
+          <InfoItem icon={Phone} label="Nomor HP" value={profile.nomorHp || "-"} />
+          <InfoItem icon={Home} label="Alamat" value={profile.alamat || "-"} />
 
           <InfoItem
             icon={ShieldCheck}

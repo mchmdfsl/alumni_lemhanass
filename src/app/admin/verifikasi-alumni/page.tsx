@@ -43,6 +43,7 @@ export default function VerifikasiAlumniPage() {
   const [page, setPage] = useState(1);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [accountLoading, setAccountLoading] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const [selectedAlumni, setSelectedAlumni] =
     useState<VerificationAlumni | null>(null);
@@ -55,6 +56,12 @@ export default function VerifikasiAlumniPage() {
 
   useEffect(() => {
     let active = true;
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json();
+        if (active && response.ok) setIsSuperAdmin(result.user?.role === "super_admin");
+      })
+      .catch(() => undefined);
     fetch("/api/alumni?status=Menunggu&limit=500", { cache: "no-store" })
       .then(async (response) => { const result = await response.json(); if (!response.ok) throw new Error(result.error || "Gagal memuat pengajuan."); if (active) setVerificationData((result.data ?? []).map((item: VerificationAlumni & { createdAt?: string }) => ({ ...item, tanggalPengajuan: item.createdAt ? new Date(item.createdAt).toLocaleDateString("id-ID") : "-" }))); })
       .catch((error) => { if (active) setLoadError(error.message || "Gagal memuat pengajuan."); });
@@ -280,30 +287,34 @@ export default function VerifikasiAlumniPage() {
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleBulkActivateAccounts}
-                  disabled={accountLoading}
-                  className="inline-flex items-center justify-center rounded-xl border border-[#0b1f3a] bg-white px-4 py-3 text-sm font-semibold text-[#0b1f3a] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {accountLoading ? "Membuat akun..." : "Aktivasi Akun Alumni & Unduh Password"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleResetPasswords}
-                  disabled={accountLoading || bulkLoading}
-                  className="inline-flex items-center justify-center rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {accountLoading ? "Memproses akun..." : "Reset Password 621 Akun & Unduh CSV"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleBulkVerifyImported}
-                  disabled={bulkLoading}
-                  className="inline-flex items-center justify-center rounded-xl bg-[#0b1f3a] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#18385f] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {bulkLoading ? "Memverifikasi..." : "Verifikasi Massal Data Impor"}
-                </button>
+{isSuperAdmin && (
+                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
+                  <button
+                    type="button"
+                    onClick={handleBulkActivateAccounts}
+                    disabled={accountLoading}
+                    className="inline-flex items-center justify-center rounded-xl border border-[#0b1f3a] bg-white px-4 py-3 text-sm font-semibold text-[#0b1f3a] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {accountLoading ? "Membuat akun..." : "Aktivasi Akun Alumni & Unduh Password"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetPasswords}
+                    disabled={accountLoading || bulkLoading}
+                    className="inline-flex items-center justify-center rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {accountLoading ? "Memproses akun..." : "Reset Password 621 Akun & Unduh CSV"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkVerifyImported}
+                    disabled={bulkLoading}
+                    className="inline-flex items-center justify-center rounded-xl bg-[#0b1f3a] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#18385f] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {bulkLoading ? "Memverifikasi..." : "Verifikasi Massal Data Impor"}
+                  </button>
+                  </div>
+                )}
 
                 {/* Pending Indicator */}
                 <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">

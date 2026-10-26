@@ -1,7 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import {
+  CheckCircle2,
+  Clock3,
+  FileCheck2,
+  LoaderCircle,
+  Mail,
+  MapPin,
+  Phone,
+  RefreshCw,
+  ShieldCheck,
+  UserRound,
+  XCircle,
+} from "lucide-react";
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminHeader from "@/components/admin/AdminHeader";
 
 type RequestItem = {
   id: number;
@@ -23,15 +37,19 @@ type RequestItem = {
   submittedAlamat: string | null;
 };
 
+const display = (value: string | null | undefined) => value?.trim() || "—";
+
 export default function PengajuanAkunPage() {
   const [items, setItems] = useState<RequestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
 
   const loadRequests = useCallback(async () => {
     setLoading(true);
     setError("");
+    setNotice("");
     try {
       const response = await fetch("/api/admin/alumni-accounts/requests", { cache: "no-store" });
       const result = await response.json();
@@ -57,6 +75,7 @@ export default function PengajuanAkunPage() {
 
     setBusyId(item.id);
     setError("");
+    setNotice("");
     try {
       const response = await fetch(`/api/admin/alumni-accounts/requests/${item.id}`, {
         method: "PATCH",
@@ -65,6 +84,7 @@ export default function PengajuanAkunPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Pengajuan gagal diproses.");
+      setNotice(status === "Disetujui" ? "Pengajuan berhasil disetujui." : "Pengajuan berhasil ditolak.");
       await loadRequests();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan.");
@@ -73,68 +93,168 @@ export default function PengajuanAkunPage() {
     }
   }
 
-  const display = (value: string | null | undefined) => value?.trim() || "—";
-
   return (
-    <main className="min-h-screen bg-slate-50 p-4 text-slate-800 sm:p-6">
-      <div className="mx-auto max-w-5xl">
-        <Link href="/admin" className="text-sm font-medium text-blue-800">← Kembali ke Dashboard</Link>
-        <header className="mb-6 mt-4">
-          <p className="text-xs font-bold uppercase tracking-widest text-amber-700">Administrasi Alumni</p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">Pengajuan Akun Alumni</h1>
-          <p className="mt-2 text-sm text-slate-600">Periksa identitas sebelum menyetujui akses akun atau membuat data alumni baru.</p>
-        </header>
+    <div className="min-h-screen bg-[#f5f7fa]">
+      <AdminSidebar />
+      <div className="lg:pl-72">
+        <AdminHeader />
+        <main className="p-4 sm:p-6 lg:p-8">
+          <div className="mx-auto max-w-7xl space-y-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#b28b16]">Administrasi Alumni</p>
+                <h1 className="text-2xl font-bold tracking-tight text-[#0b1f3a] sm:text-3xl">Pengajuan Akun Alumni</h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                  Periksa identitas alumni sebelum menyetujui klaim akun atau membuat akun untuk alumni baru.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void loadRequests()}
+                disabled={loading}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#0b1f3a] shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+                Muat ulang
+              </button>
+            </div>
 
-        <section className="mb-4 flex items-center justify-between rounded-xl border bg-white p-4">
-          <div><p className="text-sm text-slate-500">Pengajuan menunggu</p><p className="text-2xl font-bold">{items.length}</p></div>
-          <button onClick={() => void loadRequests()} disabled={loading} className="rounded-lg border px-4 py-2 text-sm font-semibold disabled:opacity-50">Muat ulang</button>
-        </section>
+            <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+                  <Clock3 size={22} />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Pengajuan menunggu</p>
+                  <p className="mt-0.5 text-2xl font-bold text-[#172033]">{items.length.toLocaleString("id-ID")}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-800">
+                  <UserRound size={22} />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Alumni baru</p>
+                  <p className="mt-0.5 text-2xl font-bold text-[#172033]">{items.filter((item) => item.requestType === "register").length.toLocaleString("id-ID")}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                  <ShieldCheck size={22} />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Klaim akun</p>
+                  <p className="mt-0.5 text-2xl font-bold text-[#172033]">{items.filter((item) => item.requestType !== "register").length.toLocaleString("id-ID")}</p>
+                </div>
+              </div>
+            </section>
 
-        {error && <p className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-        {loading ? <p className="p-6 text-center">Memuat pengajuan...</p> : items.length === 0 ? (
-          <div className="rounded-xl border bg-white p-8 text-center"><p className="font-semibold">Tidak ada pengajuan menunggu.</p></div>
-        ) : (
-          <div className="space-y-4">
-            {items.map((item) => {
-              const isNew = item.requestType === "register";
-              const nama = isNew ? item.submittedNama : item.namaAlumni;
-              const angkatan = isNew ? item.submittedAngkatan : item.angkatanAlumni;
-              return (
-                <article key={item.id} className="rounded-xl border bg-white p-4 shadow-sm">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h2 className="font-bold">{display(nama)}</h2>
-                      <p className="mt-1 break-all text-sm text-slate-600">{item.email}</p>
-                      <p className="mt-1 text-sm text-slate-500">Angkatan: {display(angkatan)}</p>
-                      <p className="mt-1 text-sm text-slate-500">Nomor alumni: {display(isNew ? item.submittedNomorAlumni : item.nomorAlumni)}</p>
-                      <p className="mt-1 text-xs text-slate-500">Jenis: {isNew ? "Alumni baru" : "Klaim akun"} · ID pengajuan: {item.id}</p>
-                    </div>
-                    <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">{item.status}</span>
-                  </div>
+            {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+            {notice && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}
 
-                  {isNew && (
-                    <dl className="mt-4 grid gap-2 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-2">
-                      <div><dt className="text-slate-500">Nomor HP</dt><dd>{display(item.submittedNomorHp)}</dd></div>
-                      <div><dt className="text-slate-500">Instansi</dt><dd>{display(item.submittedInstansi)}</dd></div>
-                      <div><dt className="text-slate-500">Jabatan</dt><dd>{display(item.submittedJabatan)}</dd></div>
-                      <div><dt className="text-slate-500">Wilayah</dt><dd>{display(item.submittedWilayah)}</dd></div>
-                      <div className="sm:col-span-2"><dt className="text-slate-500">Alamat</dt><dd>{display(item.submittedAlamat)}</dd></div>
-                    </dl>
-                  )}
+            {loading ? (
+              <div className="flex min-h-64 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-sm text-slate-500">
+                <LoaderCircle size={20} className="animate-spin" /> Memuat pengajuan akun...
+              </div>
+            ) : error && items.length === 0 ? null : items.length === 0 ? (
+              <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                  <FileCheck2 size={26} />
+                </div>
+                <h2 className="mt-4 font-bold text-[#172033]">Belum ada pengajuan menunggu</h2>
+                <p className="mt-1 max-w-md text-sm leading-6 text-slate-500">
+                  Pengajuan pendaftaran alumni baru dan klaim akun akan muncul di sini setelah dikirim.
+                </p>
+                <button type="button" onClick={() => void loadRequests()} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#0b1f3a] hover:underline">
+                  <RefreshCw size={15} /> Periksa kembali
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {items.map((item) => {
+                  const isNew = item.requestType === "register";
+                  const nama = isNew ? item.submittedNama : item.namaAlumni;
+                  const angkatan = isNew ? item.submittedAngkatan : item.angkatanAlumni;
+                  const pending = item.status === "Menunggu";
+                  return (
+                    <article key={item.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                      <div className="flex flex-col gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
+                        <div className="flex min-w-0 items-start gap-3">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0b1f3a]/5 text-[#0b1f3a]">
+                            {isNew ? <UserRound size={21} /> : <ShieldCheck size={21} />}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h2 className="break-words font-bold text-[#172033]">{display(nama)}</h2>
+                              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{isNew ? "Alumni baru" : "Klaim akun"}</span>
+                            </div>
+                            <p className="mt-1 flex items-center gap-1.5 break-all text-sm text-slate-500"><Mail size={14} className="shrink-0" />{item.email}</p>
+                            <p className="mt-2 text-xs text-slate-400">
+                              ID pengajuan: {item.id} · {item.createdAt ? new Date(item.createdAt).toLocaleString("id-ID") : "Tanggal tidak tersedia"}
+                            </p>
+                          </div>
+                        </div>
+                        <span className={`inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${item.status === "Menunggu" ? "bg-amber-50 text-amber-700" : item.status === "Disetujui" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+                          {item.status === "Menunggu" ? <Clock3 size={14} /> : item.status === "Disetujui" ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                          {item.status}
+                        </span>
+                      </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button onClick={() => void review(item, "Disetujui")} disabled={busyId !== null} className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">
-                      {busyId === item.id ? "Memproses..." : isNew ? "Verifikasi & Buat Akun" : "Setujui Klaim"}
-                    </button>
-                    <button onClick={() => void review(item, "Ditolak")} disabled={busyId !== null} className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 disabled:opacity-40">Tolak</button>
-                  </div>
-                  <p className="mt-3 text-xs text-amber-700">Pastikan identitas diperiksa secara manual sebelum disetujui.</p>
-                </article>
-              );
-            })}
+                      <div className="space-y-4 p-5 sm:p-6">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          <InfoItem label="Angkatan / kategori" value={display(angkatan)} />
+                          <InfoItem label="Nomor alumni" value={display(isNew ? item.submittedNomorAlumni : item.nomorAlumni)} />
+                          {isNew && <InfoItem label="Nomor HP" value={display(item.submittedNomorHp)} icon={<Phone size={15} />} />}
+                          {isNew && <InfoItem label="Instansi" value={display(item.submittedInstansi)} />}
+                          {isNew && <InfoItem label="Jabatan" value={display(item.submittedJabatan)} />}
+                          {isNew && <InfoItem label="Wilayah" value={display(item.submittedWilayah)} icon={<MapPin size={15} />} />}
+                          {isNew && <InfoItem label="Alamat" value={display(item.submittedAlamat)} wide />}
+                        </div>
+
+                        {pending && (
+                          <div className="flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
+                            <button
+                              type="button"
+                              onClick={() => void review(item, "Ditolak")}
+                              disabled={busyId !== null}
+                              className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {busyId === item.id ? <LoaderCircle size={16} className="animate-spin" /> : <XCircle size={16} />}
+                              Tolak pengajuan
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void review(item, "Disetujui")}
+                              disabled={busyId !== null}
+                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#18385f] disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {busyId === item.id ? <LoaderCircle size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                              {isNew ? "Verifikasi & buat akun" : "Setujui klaim akun"}
+                            </button>
+                          </div>
+                        )}
+                        {pending && <p className="text-xs leading-5 text-amber-700">Pastikan identitas pemohon sudah diperiksa secara manual sebelum menyetujui pengajuan.</p>}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
+        </main>
       </div>
-    </main>
+    </div>
+  );
+}
+
+function InfoItem({ label, value, icon, wide = false }: { label: string; value: string; icon?: React.ReactNode; wide?: boolean }) {
+  return (
+    <div className={`rounded-xl border border-slate-100 bg-slate-50/70 p-3.5 ${wide ? "sm:col-span-2 lg:col-span-3" : ""}`}>
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="mt-1 flex items-start gap-1.5 break-words text-sm font-semibold leading-6 text-[#475569]">
+        {icon && <span className="mt-1 shrink-0 text-slate-400">{icon}</span>}
+        <span>{value}</span>
+      </p>
+    </div>
   );
 }

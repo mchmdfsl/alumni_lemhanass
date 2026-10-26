@@ -84,7 +84,12 @@ export default function AlumniPage() {
 
   // Unique filter options derived from data
   const angkatanOptions = useMemo(() => {
-    const opts = Array.from(new Set(alumniData.map((a) => a.angkatan).filter(Boolean))).sort();
+    const order = ["P3N", "P4N", "PPNK", "TOT"];
+    const opts = Array.from(new Set([...order, ...alumniData.map((a) => a.angkatan).filter(Boolean)])).sort((a, b) => {
+      const ai = order.indexOf(a); const bi = order.indexOf(b);
+      if (ai >= 0 || bi >= 0) return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+      return a.localeCompare(b, "id");
+    });
     return ["Semua Angkatan", ...opts];
   }, [alumniData]);
 

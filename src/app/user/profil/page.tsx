@@ -65,6 +65,10 @@ export default function ProfilUser() {
     fotoProfil: null,
   });
 
+  const [savedProfile, setSavedProfile] = useState<Profile>({
+    nama: "", angkatan: "", jabatan: "", instansi: "", wilayah: "", alamat: "", nomorHp: "", fotoProfil: null,
+  });
+
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -108,7 +112,7 @@ export default function ProfilUser() {
 
         const data = profileResult.data;
 
-        setProfile({
+        const loadedProfile: Profile = {
           id: data.id,
           nomorAlumni: data.nomorAlumni || "",
           nama: data.nama || "",
@@ -120,7 +124,9 @@ export default function ProfilUser() {
           nomorHp: data.nomorHp || "",
           status: data.status || "",
           fotoProfil: data.fotoProfil || null,
-        });
+        };
+        setProfile(loadedProfile);
+        setSavedProfile(loadedProfile);
 
         setEmail(accountResult.user.email || "");
       } catch (error) {
@@ -242,10 +248,8 @@ export default function ProfilUser() {
         );
       }
 
-      setProfile((previous) => ({
-        ...previous,
-        fotoProfil: photoUrl,
-      }));
+      setProfile((previous) => ({ ...previous, fotoProfil: photoUrl }));
+      setSavedProfile((previous) => ({ ...previous, fotoProfil: photoUrl }));
 
       setNotice({
         type: "success",
@@ -357,10 +361,10 @@ export default function ProfilUser() {
             {/* Foto profil */}
             <div className="relative shrink-0">
               <div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-white/80 bg-slate-100 shadow-lg sm:h-32 sm:w-32">
-                {profile.fotoProfil ? (
+                {savedProfile.fotoProfil ? (
                   <Image
-                    key={profile.fotoProfil}
-                    src={profile.fotoProfil}
+                    key={savedProfile.fotoProfil}
+                    src={savedProfile.fotoProfil}
                     alt="Foto profil alumni"
                     fill
                     unoptimized
@@ -419,7 +423,7 @@ export default function ProfilUser() {
               <h2 className="mt-2 break-words text-xl font-bold text-white sm:text-2xl">
                 {loading
                   ? "Memuat profil..."
-                  : profile.nama || "Alumni"}
+                  : savedProfile.nama || "Alumni"}
               </h2>
 
               <p className="mt-2 break-all text-sm text-slate-200">
@@ -429,12 +433,12 @@ export default function ProfilUser() {
               <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white">
                   <ShieldCheck size={14} />
-                  {profile.status || "Alumni"}
+                  {savedProfile.status || "Alumni"}
                 </span>
 
-                {profile.nomorAlumni && (
+                {savedProfile.nomorAlumni && (
                   <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white">
-                    No. Alumni: {profile.nomorAlumni}
+                    No. Alumni: {savedProfile.nomorAlumni}
                   </span>
                 )}
               </div>
@@ -456,7 +460,7 @@ export default function ProfilUser() {
                 ) : (
                   <>
                     <Upload size={17} />
-                    {profile.fotoProfil
+                    {savedProfile.fotoProfil
                       ? "Ganti Foto"
                       : "Upload Foto"}
                   </>
@@ -474,7 +478,7 @@ export default function ProfilUser() {
           <InfoItem
             icon={GraduationCap}
             label="Nomor Alumni"
-            value={profile.nomorAlumni || "-"}
+            value={savedProfile.nomorAlumni || "-"}
           />
 
           <InfoItem
@@ -486,18 +490,18 @@ export default function ProfilUser() {
           <InfoItem
             icon={GraduationCap}
             label="Angkatan"
-            value={profile.angkatan || "-"}
+            value={savedProfile.angkatan || "-"}
           />
-          <InfoItem icon={BriefcaseBusiness} label="Jabatan" value={profile.jabatan || "-"} />
-          <InfoItem icon={Building2} label="Instansi" value={profile.instansi || "-"} />
-          <InfoItem icon={MapPin} label="Wilayah" value={profile.wilayah || "-"} />
-          <InfoItem icon={Phone} label="Nomor HP" value={profile.nomorHp || "-"} />
-          <InfoItem icon={Home} label="Alamat" value={profile.alamat || "-"} />
+          <InfoItem icon={BriefcaseBusiness} label="Jabatan" value={savedProfile.jabatan || "-"} />
+          <InfoItem icon={Building2} label="Instansi" value={savedProfile.instansi || "-"} />
+          <InfoItem icon={MapPin} label="Wilayah" value={savedProfile.wilayah || "-"} />
+          <InfoItem icon={Phone} label="Nomor HP" value={savedProfile.nomorHp || "-"} />
+          <InfoItem icon={Home} label="Alamat" value={savedProfile.alamat || "-"} />
 
           <InfoItem
             icon={ShieldCheck}
             label="Status Alumni"
-            value={profile.status || "-"}
+            value={savedProfile.status || "-"}
           />
         </div>
       </section>

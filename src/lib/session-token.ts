@@ -24,7 +24,7 @@ export function verifySessionToken(token?: string) {
   if (!token) return false;
   try {
     const [payload, suppliedSignature] = token.split(".");
-    if (!payload || !suppliedSignature || !/^\d+$/.test(payload)) return false;
+    if (!payload || !suppliedSignature || !/^\d+:(admin|super_admin)$/.test(payload)) return false;
     const expected = Buffer.from(signature(payload));
     const supplied = Buffer.from(suppliedSignature);
     if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) return false;

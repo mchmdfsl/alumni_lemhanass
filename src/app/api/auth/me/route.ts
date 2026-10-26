@@ -1,5 +1,7 @@
 
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { COOKIE_NAME, getSessionAdminUserId } from "@/lib/session-token";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { getAlumniSession } from "@/lib/alumni-session";
 import { db } from "@/lib/db";
@@ -12,6 +14,20 @@ export async function GET() {
     // Periksa sesi admin terlebih dahulu.
     const adminRole = await isAdminAuthenticated();
     if (adminRole) {
+      const token = (await cookies()).get(COOKIE_NAME)?.value;
+      const adminUserId = getSessionAdminUserId(token);
+      if (adminRole === "admin" && adminUserId !== null) {
+        const [databaseAdmin] = await db()`
+          SELECT id, username, email FROM admin_users
+          WHERE id = ${adminUserId} AND role = ${"admin"} AND is_active = TRUE
+          LIMIT 1
+        `;
+        if (!databaseAdmin) return NextResponse.json({ authenticated: false }, { status: 401 });
+        return NextResponse.json({
+          authenticated: true,
+          user: { id: databaseAdmin.id, username: databaseAdmin.username, email: databaseAdmin.email, role: "admin" },
+        });
+      }
       return NextResponse.json({
         authenticated: true,
         user: {

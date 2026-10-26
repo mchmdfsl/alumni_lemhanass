@@ -21,7 +21,10 @@ Jangan commit `.env.local`, kredensial database, atau file CSV berisi data priba
 ## API
 - `POST /api/auth/login` — login admin menggunakan `identifier` dan `password`.
 - `POST /api/auth/logout` — menghapus sesi admin.
-- `GET /api/auth/me` — status sesi admin/alumni.\n- `POST /api/auth/forgot-password` — meminta tautan reset password lewat email terdaftar.\n- `POST /api/auth/reset-password` — mengganti password memakai token satu kali yang kedaluwarsa dalam 30 menit.\n- `PATCH /api/user/password` — mengganti password alumni setelah memverifikasi password saat ini.
+- `GET /api/auth/me` — status sesi admin/alumni.
+- `POST /api/auth/forgot-password` — meminta tautan reset password lewat email terdaftar.
+- `POST /api/auth/reset-password` — mengganti password memakai token satu kali yang kedaluwarsa dalam 30 menit.
+- `PATCH /api/user/password` — mengganti password alumni setelah memverifikasi password saat ini.
 - `GET /api/alumni` — daftar alumni (wajib login); query opsional `search`, `status`, `angkatan`, `wilayah`, `limit`, `offset`.
 - `POST /api/alumni` — tambah data alumni secara manual (wajib login).
 - `PATCH /api/alumni/:id` — edit data alumni (nama, email, angkatan, instansi, jabatan, wilayah, alamat, nomorHp, status, nomorAlumni); wajib login.

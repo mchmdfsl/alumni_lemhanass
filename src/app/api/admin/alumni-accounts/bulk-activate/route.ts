@@ -44,28 +44,16 @@ export async function POST() {
         );
         const password = makePassword();
         const passwordHash = await hashPassword(password);
-        // Existing records may not have email. A reserved internal address satisfies
-        // schemas requiring email while login by alumni number remains available.
-        // Email belum dikumpulkan untuk distribusi akun. Gunakan alamat internal non-deliverable
-        // hanya untuk memenuhi skema database; login tetap memakai nomor alumni.
-        const suppliedEmail = "";
-        const accountEmail = `alumni-${alumniId}@akun.invalid`;
-        const fallbackOwner = await tx`
-          SELECT id FROM alumni_accounts WHERE lower(email) = lower(${accountEmail}) LIMIT 1
-        `;
-        if (fallbackOwner.length) {
-          throw new Error(`Alamat internal akun untuk alumni ID ${alumniId} sudah digunakan.`);
-        }
-
+        // Email sengaja NULL sampai alumni sendiri mengisinya melalui halaman profil.
         await tx`
           INSERT INTO alumni_accounts (alumni_id, email, password_hash, is_active)
-          VALUES (${alumniId}, ${accountEmail}, ${passwordHash}, TRUE)
+          VALUES (${alumniId}, NULL, ${passwordHash}, TRUE)
         `;
         created.push({
           nama: String(row.nama ?? ""),
           angkatan,
           nomorAlumni,
-          email: suppliedEmail,
+          email: "",
           password,
         });
       }

@@ -14,6 +14,7 @@ function labelAction(action: string) {
     edit: "Edit data alumni",
     delete: "Hapus alumni",
     bulk_delete: "Hapus alumni massal",
+    bulk_verify: "Verifikasi alumni massal",
     "status:Terverifikasi": "Verifikasi alumni",
     "status:Ditolak": "Tolak alumni",
     "status:Menunggu": "Kembalikan ke menunggu",

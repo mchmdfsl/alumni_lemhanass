@@ -28,11 +28,13 @@ export async function GET() {
       ORDER BY COUNT(*) DESC`;
 
     const categories = ["P3N", "P4N", "PPNK", "TOT"];
-    const existing = new Set(rows.map((row: { angkatan: string }) => row.angkatan));
+    type AngkatanStat = { angkatan: string; total: number; terverifikasi: number; menunggu: number; ditolak: number; wilayahDominan: string | null };
+    const typedRows = rows as unknown as AngkatanStat[];
+    const existing = new Set(typedRows.map((row) => row.angkatan));
     const emptyCategories = categories.filter((category) => !existing.has(category)).map((angkatan) => ({
       angkatan, total: 0, terverifikasi: 0, menunggu: 0, ditolak: 0, wilayahDominan: "-",
     }));
-    const data = [...emptyCategories, ...rows].sort((a, b) => {
+    const data: AngkatanStat[] = [...emptyCategories, ...typedRows].sort((a, b) => {
       const order = categories.indexOf(a.angkatan);
       const other = categories.indexOf(b.angkatan);
       if (order >= 0 || other >= 0) return (order < 0 ? 99 : order) - (other < 0 ? 99 : other);

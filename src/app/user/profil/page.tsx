@@ -16,6 +16,9 @@ import {
   GraduationCap,
   BriefcaseBusiness,
   Building2,
+  MapPin,
+  Phone,
+  Home,
   Save,
   LoaderCircle,
   CheckCircle2,
@@ -33,6 +36,9 @@ type Profile = {
   angkatan: string;
   jabatan: string;
   instansi: string;
+  wilayah: string;
+  alamat: string;
+  nomorHp: string;
   status?: string;
   fotoProfil?: string | null;
 };
@@ -53,6 +59,9 @@ export default function ProfilUser() {
     angkatan: "",
     jabatan: "",
     instansi: "",
+    wilayah: "",
+    alamat: "",
+    nomorHp: "",
     fotoProfil: null,
   });
 
@@ -106,6 +115,9 @@ export default function ProfilUser() {
           angkatan: String(data.angkatan || ""),
           jabatan: data.jabatan || "",
           instansi: data.instansi || "",
+          wilayah: data.wilayah || "",
+          alamat: data.alamat || "",
+          nomorHp: data.nomorHp || "",
           status: data.status || "",
           fotoProfil: data.fotoProfil || null,
         });
@@ -287,6 +299,9 @@ export default function ProfilUser() {
           angkatan: profile.angkatan.trim(),
           jabatan: profile.jabatan.trim(),
           instansi: profile.instansi.trim(),
+          wilayah: profile.wilayah.trim(),
+          alamat: profile.alamat.trim(),
+          nomorHp: profile.nomorHp.trim(),
         }),
       });
 
@@ -643,6 +658,18 @@ export default function ProfilUser() {
                 className={inputClass}
                 placeholder="Masukkan instansi atau perusahaan"
               />
+            </Field>
+
+            <Field label="Wilayah / Provinsi" icon={MapPin}>
+              <input type="text" value={profile.wilayah} onChange={(event) => updateField("wilayah", event.target.value)} maxLength={150} className={inputClass} placeholder="Contoh: Jawa Barat" />
+            </Field>
+
+            <Field label="Nomor Telepon / HP" icon={Phone}>
+              <input type="tel" value={profile.nomorHp} onChange={(event) => updateField("nomorHp", event.target.value)} maxLength={50} className={inputClass} placeholder="Masukkan nomor telepon aktif" />
+            </Field>
+
+            <Field label="Alamat Lengkap" icon={Home}>
+              <textarea value={profile.alamat} onChange={(event) => updateField("alamat", event.target.value)} maxLength={5000} rows={3} className={inputClass} placeholder="Masukkan alamat lengkap" />
             </Field>
 
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">

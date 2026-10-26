@@ -22,7 +22,7 @@ export default function DaftarPage() {
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
 
-  function updateField(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function updateField(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value } = event.target;
     setForm((previous) => ({ ...previous, [name]: name === "angkatan" ? value.toLocaleUpperCase("id-ID") : value }));
   }

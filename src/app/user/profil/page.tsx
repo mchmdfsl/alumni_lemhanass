@@ -146,7 +146,7 @@ export default function ProfilUser() {
     event.preventDefault();
     setNotice(null);
     const normalizedEmail = email.trim().toLowerCase();
-    if (normalizedEmail && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(normalizedEmail)) {
+    if (normalizedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       setNotice({ type: "error", message: "Format email tidak valid." });
       return;
     }

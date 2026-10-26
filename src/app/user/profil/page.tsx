@@ -509,6 +509,23 @@ export default function ProfilUser() {
         </div>
       )}
 
+      {/* Pengaturan keamanan akun */}
+      <section className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-[#0b1f3a]">
+            <ShieldCheck size={21} />
+          </div>
+          <div>
+            <h2 className="font-bold text-[#172033]">Keamanan Akun</h2>
+            <p className="mt-1 text-sm text-slate-500">Ganti password akun secara langsung menggunakan password lama dan password baru.</p>
+          </div>
+        </div>
+        <Link href="/user/ubah-password" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#18385f]">
+          <ShieldCheck size={17} />
+          Ganti Password
+        </Link>
+      </section>
+
       {/* Form email akun: diisi sendiri oleh alumni */ }
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-5 py-5 sm:px-6">

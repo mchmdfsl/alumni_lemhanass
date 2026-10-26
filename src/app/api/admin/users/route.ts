@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
+import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,6 +39,8 @@ export async function POST(request: Request) {
       VALUES (${username}, ${email}, ${passwordHash}, ${"admin"}, TRUE)
       RETURNING id, username, email, is_active AS "isActive", created_at AS "createdAt"
     `;
+    const actor = await getAdminActor();
+    if (actor) await writeAdminAudit(actor, "admin_created", { targetUsername: user.username, targetEmail: user.email });
     return NextResponse.json({ ok: true, user }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";

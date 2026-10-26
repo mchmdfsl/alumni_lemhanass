@@ -15,7 +15,10 @@ export async function GET() {
       SELECT r.id, r.alumni_id AS "alumniId", r.request_type AS "requestType",
         r.payload, r.message, r.status, r.admin_note AS "adminNote",
         r.created_at AS "createdAt", a.nama, a.nomor_alumni AS "nomorAlumni",
-        a.angkatan
+        a.angkatan, a.nama AS "currentNama", a.angkatan AS "currentAngkatan",
+        a.jabatan AS "currentJabatan", a.instansi AS "currentInstansi",
+        a.wilayah AS "currentWilayah", a.nomor_hp AS "currentNomorHp",
+        a.alamat AS "currentAlamat"
       FROM alumni_user_requests r
       INNER JOIN alumni a ON a.id = r.alumni_id
       ORDER BY CASE WHEN r.status = 'Menunggu' THEN 0 ELSE 1 END,

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ClipboardCheck,
+  Activity,
   FileBarChart,
   GraduationCap,
   LayoutDashboard,
@@ -35,6 +36,7 @@ const menuItems = [
   { label: "Laporan", href: "/admin/laporan", icon: FileBarChart },
   { label: "Pengaturan", href: "/admin/pengaturan", icon: Settings },
   { label: "Manajemen Admin", href: "/admin/manajemen-admin", icon: ShieldCheck, superAdminOnly: true },
+  { label: "Log Aktivitas", href: "/admin/log-aktivitas", icon: Activity },
 ];
 
 export default function AdminSidebar() {

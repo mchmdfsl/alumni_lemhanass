@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 
@@ -65,9 +66,8 @@ export async function PATCH(
     if (!row)
       return NextResponse.json({ error: "Data alumni tidak ditemukan." }, { status: 404 });
 
-    await db()`
-      INSERT INTO admin_audit_log (action, alumni_id, details)
-      VALUES ('edit', ${Number(id)}, ${JSON.stringify({ fields: Object.keys(body) })}::jsonb)`;
+    const actor = await getAdminActor();
+    if (actor) await writeAdminAudit(actor, "edit", { alumniName: row.nama, fields: Object.keys(body) }, Number(id));
 
     return NextResponse.json({ data: row });
   } catch (error) {
@@ -91,6 +91,7 @@ export async function DELETE(
     return NextResponse.json({ error: "ID alumni tidak valid." }, { status: 400 });
 
   try {
+    const actor = await getAdminActor();
     const result = await db().begin(async (tx) => {
       const [row] = await tx`
         SELECT id, nama FROM alumni WHERE id = ${Number(id)} FOR UPDATE
@@ -100,8 +101,8 @@ export async function DELETE(
       await tx`DELETE FROM alumni_accounts WHERE alumni_id = ${Number(id)}`;
       await tx`DELETE FROM alumni WHERE id = ${Number(id)}`;
       await tx`
-        INSERT INTO admin_audit_log (action, alumni_id, details)
-        VALUES (${'delete'}, NULL, ${JSON.stringify({ alumniId: Number(id), nama: row.nama })}::jsonb)
+        INSERT INTO admin_audit_log (action, alumni_id, actor, details)
+        VALUES (${"delete"}, NULL, ${actor?.actor || "admin"}, ${JSON.stringify({ alumniId: Number(id), nama: row.nama, actorRole: actor?.role || "unknown" })}::jsonb)
       `;
       return row;
     });

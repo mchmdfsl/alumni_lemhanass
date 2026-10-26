@@ -50,8 +50,8 @@ export async function GET(request: NextRequest) {
     const escape = (v: unknown) => {
       let s = v == null ? "" : String(v);
       // Prevent spreadsheet formula injection from user-controlled alumni fields.
-      if (/^[\\t\\r ]*[=+@-]/.test(s)) s = "'" + s;
-      if (s.includes(",") || s.includes('"') || s.includes("\\n") || s.includes("\\r")) {
+      if (/^[\t\r ]*[=+@-]/.test(s)) s = "'" + s;
+      if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")) {
         return '"' + s.replace(/"/g, '""') + '"';
       }
       return s;

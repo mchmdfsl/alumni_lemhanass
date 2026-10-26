@@ -1,12 +1,35 @@
 import { cookies } from "next/headers";
-import { COOKIE_NAME, createSessionToken, getSessionRole, SESSION_SECONDS_MAX_AGE, verifySessionToken, type AdminRole } from "@/lib/session-token";
+import { COOKIE_NAME, createSessionToken, getSessionAdminUserId, getSessionRole, SESSION_SECONDS_MAX_AGE, verifySessionToken, type AdminRole } from "@/lib/session-token";
 import { timingSafeEqual } from "crypto";
+import { db } from "@/lib/db";
 
 export { createSessionToken, verifySessionToken };
 
 export async function isAdminAuthenticated(): Promise<AdminRole | null> {
   const cookieStore = await cookies();
-  return getSessionRole(cookieStore.get(COOKIE_NAME)?.value);
+  const token = cookieStore.get(COOKIE_NAME)?.value;
+  const role = getSessionRole(token);
+  if (!role) return null;
+
+  // Token lama dari kredensial ENV tetap kompatibel. Akun admin database
+  // wajib diperiksa ulang agar akun nonaktif tidak terus memakai sesi lama.
+  const adminUserId = getSessionAdminUserId(token);
+  if (adminUserId !== null) {
+    try {
+      const [user] = await db()`
+        SELECT id, role
+        FROM admin_users
+        WHERE id = ${adminUserId} AND is_active = TRUE
+        LIMIT 1
+      `;
+      if (!user || user.role !== "admin" || role !== "admin") return null;
+      return "admin";
+    } catch (error) {
+      console.error("Gagal memvalidasi sesi admin database:", error);
+      return null;
+    }
+  }
+  return role;
 }
 
 export const sessionCookie = {

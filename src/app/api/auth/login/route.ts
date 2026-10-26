@@ -41,7 +41,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 0. Akun admin database yang dibuat oleh Super Admin.
+    // Kredensial Super Admin dari ENV selalu diperiksa lebih dahulu.
+    try {
+      if (verifySuperAdminCredentials(identifier, password)) {
+        const response = NextResponse.json({ ok: true, role: "super_admin" });
+        response.cookies.set(alumniSessionCookie.name, "", { ...alumniSessionCookie, maxAge: 0 });
+        response.cookies.set(sessionCookie.name, createSessionToken("super_admin"), sessionCookie);
+        return response;
+      }
+    } catch (error) {
+      console.error("Konfigurasi Super Admin bermasalah:", error);
+      return NextResponse.json({ error: "Konfigurasi autentikasi admin belum lengkap." }, { status: 503 });
+    }
+
+    // Akun Admin database yang dibuat oleh Super Admin.
     try {
       const [databaseAdmin] = await db()`
         SELECT id, username, email, password_hash AS "passwordHash"
@@ -57,45 +70,21 @@ export async function POST(request: NextRequest) {
         return response;
       }
     } catch (error) {
-      // Tabel migrasi bisa belum diterapkan; login ENV tetap harus tersedia.
       console.error("Pemeriksaan akun admin database gagal:", error);
     }
 
-    // 1. Coba Super Admin terlebih dahulu, lalu admin biasa.
-    let role: "super_admin" | "admin" | null = null;
-
+    // Akun Admin lama dari ENV tetap didukung.
     try {
-      if (verifySuperAdminCredentials(identifier, password)) role = "super_admin";
-      else if (verifyAdminCredentials(identifier, password)) role = "admin";
+      if (verifyAdminCredentials(identifier, password)) {
+        const response = NextResponse.json({ ok: true, role: "admin" });
+        response.cookies.set(alumniSessionCookie.name, "", { ...alumniSessionCookie, maxAge: 0 });
+        response.cookies.set(sessionCookie.name, createSessionToken("admin"), sessionCookie);
+        return response;
+      }
     } catch (error) {
-      console.error("Konfigurasi login admin bermasalah:", error);
-      return NextResponse.json(
-        { error: "Konfigurasi autentikasi admin belum lengkap." },
-        { status: 503 },
-      );
+      console.error("Konfigurasi Admin bermasalah:", error);
+      return NextResponse.json({ error: "Konfigurasi autentikasi admin belum lengkap." }, { status: 503 });
     }
-
-    if (role) {
-      const response = NextResponse.json({
-        ok: true,
-        role,
-      });
-
-      response.cookies.set(
-        alumniSessionCookie.name,
-        "",
-        { ...alumniSessionCookie, maxAge: 0 },
-      );
-
-      response.cookies.set(
-        sessionCookie.name,
-        createSessionToken(role),
-        sessionCookie,
-      );
-
-      return response;
-    }
-
     // 2. Jika bukan admin, periksa akun alumni.
     const sql = db();
 

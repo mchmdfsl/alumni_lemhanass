@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assignAlumniNumber } from "@/lib/alumni-number";
+import { getAdminActor } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ export async function POST() {
   }
 
   try {
+    const actor = await getAdminActor();
     const updated = await db().begin(async (tx) => {
       const rows = await tx`
         SELECT id, angkatan, nomor_alumni AS "nomorAlumni"
@@ -46,6 +48,9 @@ export async function POST() {
         `;
       }
 
+      if (rows.length > 0) {
+        await tx`INSERT INTO admin_audit_log (action, actor, details) VALUES (${"bulk_verify"}, ${actor?.actor || "super-admin"}, ${JSON.stringify({ actorRole: actor?.role || "super_admin", total: rows.length, alumniIds: rows.map((row) => Number(row.id)) })}::jsonb)`;
+      }
       return rows.length;
     });
 

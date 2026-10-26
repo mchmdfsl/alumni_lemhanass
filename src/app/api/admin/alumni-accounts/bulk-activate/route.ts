@@ -14,8 +14,15 @@ function makePassword() {
 }
 
 export async function POST() {
-  if (!(await isAdminAuthenticated())) {
+  const role = await isAdminAuthenticated();
+  if (!role) {
     return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  }
+  if (role !== "super_admin") {
+    return NextResponse.json(
+      { error: "Hanya Super Admin yang boleh membuat akun secara massal." },
+      { status: 403 },
+    );
   }
 
   try {
@@ -60,8 +67,8 @@ export async function POST() {
       return created;
     });
 
-    // Passwords are returned only in this admin-authorized response so they can be
-    // saved once by the administrator; only hashes are persisted in the database.
+    // Passwords are returned only in this super-admin-authorized response so they can be
+    // saved once; only hashes are persisted in the database.
     return NextResponse.json({
       ok: true,
       created: credentials.length,

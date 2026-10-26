@@ -10,13 +10,14 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     // Periksa sesi admin terlebih dahulu.
-    if (await isAdminAuthenticated()) {
+    const adminRole = await isAdminAuthenticated();
+    if (adminRole) {
       return NextResponse.json({
         authenticated: true,
         user: {
           username: process.env.ADMIN_USERNAME || "admin",
           email: process.env.ADMIN_EMAIL || null,
-          role: "admin",
+          role: adminRole,
         },
       });
     }

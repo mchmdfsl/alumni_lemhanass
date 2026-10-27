@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
         ) ILIKE ${"%" + search + "%"}
       )
       AND (${status} = '' OR status = ${status})
-      AND (${angkatan} = '' OR angkatan = ${angkatan})
+      AND (${angkatan} = '' OR COALESCE(NULLIF(trim(kategori_program), ''), angkatan) = ${angkatan})
       AND (${wilayah} = '' OR wilayah = ${wilayah})
       ORDER BY updated_at DESC, id DESC
       LIMIT ${limit}

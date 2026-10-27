@@ -291,7 +291,7 @@ export default function ProfilUser() {
       return;
     }
 
-    if (!profile.kategoriProgram.trim() || !profile.nomorAngkatan.trim() || !/^\\d{4}$/.test(profile.tahunAngkatan)) {
+    if (!profile.kategoriProgram.trim() || !profile.nomorAngkatan.trim() || !/^\d{4}$/.test(profile.tahunAngkatan)) {
       setNotice({
         type: "error",
         message: "Kategori program, nomor angkatan, dan tahun angkatan wajib diisi dengan benar.",

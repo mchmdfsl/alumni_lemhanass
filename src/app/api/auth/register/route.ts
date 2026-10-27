@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const kategoriProgram = value("kategoriProgram", 80).toLocaleUpperCase("id-ID");
     const nomorAngkatan = value("nomorAngkatan", 40);
     const tahunAngkatanRaw = value("tahunAngkatan", 4);
-    const tahunAngkatan = /^\\d{4}$/.test(tahunAngkatanRaw) ? Number(tahunAngkatanRaw) : NaN;
+    const tahunAngkatan = /^\d{4}$/.test(tahunAngkatanRaw) ? Number(tahunAngkatanRaw) : NaN;
     const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"]);
     const nomorHp = value("nomorHp", 50);
     const nomorAlumni = value("nomorAlumni", 80);
@@ -31,6 +31,12 @@ export async function POST(request: NextRequest) {
         { error: "Nama, kategori program, nomor angkatan, tahun angkatan, email, dan password wajib diisi." },
         { status: 400 },
       );
+    }
+    if (!allowedCategories.has(kategoriProgram)) {
+      return NextResponse.json({ error: "Kategori program tidak valid." }, { status: 400 });
+    }
+    if (nomorAngkatan.length > 40 || tahunAngkatan < 1900 || tahunAngkatan > new Date().getFullYear() + 5) {
+      return NextResponse.json({ error: "Nomor atau tahun angkatan tidak valid." }, { status: 400 });
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: "Format email tidak valid." }, { status: 400 });

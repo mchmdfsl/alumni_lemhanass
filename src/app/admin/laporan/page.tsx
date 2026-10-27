@@ -18,6 +18,9 @@ import AdminHeader from "@/components/admin/AdminHeader";
 
 interface AngkatanStat {
   angkatan: string;
+  kategoriProgram: string;
+  nomorAngkatan: string;
+  tahunAngkatan: number | null;
   total: number;
   terverifikasi: number;
   menunggu: number;
@@ -64,7 +67,8 @@ export default function LaporanPage() {
   const filteredData = useMemo(() => {
     const keyword = search.toLowerCase().trim();
     return angkatanData.filter((item) =>
-      item.angkatan.toLowerCase().includes(keyword)
+      [item.kategoriProgram, item.nomorAngkatan, item.tahunAngkatan == null ? "" : String(item.tahunAngkatan), item.angkatan]
+        .some((value) => String(value ?? "").toLowerCase().includes(keyword))
     );
   }, [search, angkatanData]);
 
@@ -189,7 +193,7 @@ export default function LaporanPage() {
                   type="text"
                   value={search}
                   onChange={(event) => { setSearch(event.target.value); setPage(1); }}
-                  placeholder="Cari berdasarkan angkatan..."
+                  placeholder="Cari kategori, nomor, atau tahun angkatan..."
                   className="h-11 w-full rounded-xl border border-slate-200 bg-[#fafbfc] pl-10 pr-4 text-sm text-[#172033] outline-none transition placeholder:text-[#94a3b8] focus:border-[#0b1f3a] focus:bg-white focus:ring-4 focus:ring-[#0b1f3a]/5"
                 />
               </div>
@@ -221,7 +225,7 @@ export default function LaporanPage() {
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/60">
                       <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">
-                        Angkatan
+                        Kategori / Angkatan
                       </th>
 
                       <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">
@@ -260,7 +264,7 @@ export default function LaporanPage() {
                     ) : paginatedData.length > 0 ? (
                       paginatedData.map((item) => (
                         <tr
-                          key={item.angkatan}
+                          key={`${item.kategoriProgram}-${item.nomorAngkatan}-${item.tahunAngkatan ?? "na"}`}
                           className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50"
                         >
                           <td className="px-6 py-4">
@@ -270,7 +274,7 @@ export default function LaporanPage() {
                               </div>
 
                               <span className="text-sm font-bold text-[#172033]">
-                                {item.angkatan}
+                                {item.kategoriProgram || item.angkatan}<span className="mt-1 block text-xs font-normal text-slate-500">Nomor: {item.nomorAngkatan || "-"} · Tahun: {item.tahunAngkatan ?? "-"}</span>
                               </span>
                             </div>
                           </td>

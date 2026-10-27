@@ -46,6 +46,9 @@ export async function GET(request: NextRequest) {
         id,
         COALESCE(nomor_alumni, '') AS "nomorAlumni",
         nama,
+        COALESCE(kategori_program, angkatan) AS "kategoriProgram",
+        COALESCE(nomor_angkatan, '') AS "nomorAngkatan",
+        tahun_angkatan AS "tahunAngkatan",
         angkatan,
         COALESCE(instansi, '') AS instansi,
         COALESCE(jabatan, '') AS jabatan,
@@ -127,21 +130,25 @@ export async function POST(request: NextRequest) {
     const nama =
       typeof body.nama === "string" ? body.nama.trim() : "";
 
-    const angkatan =
-      typeof body.angkatan === "string"
-        ? body.angkatan.trim()
-        : String(body.angkatan ?? "").trim();
+    const kategoriProgram = typeof body.kategoriProgram === "string" ? body.kategoriProgram.trim().toLocaleUpperCase("id-ID") : "";
+    const nomorAngkatan = typeof body.nomorAngkatan === "string" ? body.nomorAngkatan.trim() : "";
+    const tahunAngkatan = Number(body.tahunAngkatan);
+    const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"]);
 
     if (
       nama.length < 2 ||
       nama.length > 200 ||
-      !angkatan ||
-      angkatan.length > 100
+      !allowedCategories.has(kategoriProgram) ||
+      !nomorAngkatan ||
+      nomorAngkatan.length > 40 ||
+      !Number.isInteger(tahunAngkatan) ||
+      tahunAngkatan < 1900 ||
+      tahunAngkatan > new Date().getFullYear() + 5
     ) {
       return NextResponse.json(
         {
           error:
-            "Nama dan angkatan wajib diisi dengan format yang benar.",
+            "Nama, kategori program, nomor angkatan, dan tahun angkatan wajib diisi dengan format yang benar.",
         },
         { status: 400 }
       );
@@ -183,7 +190,10 @@ export async function POST(request: NextRequest) {
       INSERT INTO alumni (
         nomor_alumni,
         nama,
-        angkatan,
+        angkatan: kategoriProgram,
+        kategori_program: kategoriProgram,
+        nomor_angkatan: nomorAngkatan,
+        tahun_angkatan: tahunAngkatan,
         instansi,
         jabatan,
         wilayah,
@@ -196,7 +206,10 @@ export async function POST(request: NextRequest) {
       VALUES (
         ${nomorAlumni},
         ${nama},
-        ${angkatan},
+        ${kategoriProgram},
+        ${kategoriProgram},
+        ${nomorAngkatan},
+        ${tahunAngkatan},
         ${instansi},
         ${jabatan},
         ${wilayah},
@@ -210,6 +223,9 @@ export async function POST(request: NextRequest) {
         id,
         COALESCE(nomor_alumni, '') AS "nomorAlumni",
         nama,
+        COALESCE(kategori_program, angkatan) AS "kategoriProgram",
+        COALESCE(nomor_angkatan, '') AS "nomorAngkatan",
+        tahun_angkatan AS "tahunAngkatan",
         angkatan,
         COALESCE(instansi, '') AS instansi,
         COALESCE(jabatan, '') AS jabatan,

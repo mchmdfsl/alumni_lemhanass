@@ -59,7 +59,8 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     const result: ReviewResult = await sql.begin(async (tx) => {
       const rows = await tx`
         SELECT id, alumni_id, email, password_hash, request_type, status,
-          submitted_nama, submitted_angkatan, submitted_nomor_hp,
+          submitted_nama, submitted_angkatan, submitted_kategori_program,
+          submitted_nomor_angkatan, submitted_tahun_angkatan, submitted_nomor_hp,
           submitted_nomor_alumni, submitted_instansi, submitted_jabatan,
           submitted_wilayah, submitted_alamat
         FROM alumni_account_requests WHERE id = ${id} FOR UPDATE
@@ -112,8 +113,10 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
         alumniId = Number(req.alumni_id);
       } else if (req.request_type === "register") {
         const nama = typeof req.submitted_nama === "string" ? req.submitted_nama.trim() : "";
-        const angkatan = typeof req.submitted_angkatan === "string" ? req.submitted_angkatan.trim() : "";
-        if (!nama || !angkatan) return { error: "INVALID_NEW_ALUMNI" };
+        const kategoriProgram = typeof req.submitted_kategori_program === "string" ? req.submitted_kategori_program.trim() : typeof req.submitted_angkatan === "string" ? req.submitted_angkatan.trim() : "";
+        const nomorAngkatan = typeof req.submitted_nomor_angkatan === "string" ? req.submitted_nomor_angkatan.trim() : "";
+        const tahunAngkatan = Number(req.submitted_tahun_angkatan);
+        if (!nama || !kategoriProgram || !nomorAngkatan || !Number.isInteger(tahunAngkatan)) return { error: "INVALID_NEW_ALUMNI" };
 
         const emailOwner = await tx`
           SELECT id FROM alumni WHERE lower(trim(coalesce(email, ''))) = lower(${req.email}) LIMIT 1
@@ -135,10 +138,10 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
         const inserted = await tx`
           INSERT INTO alumni (
-            nomor_alumni, nama, angkatan, instansi, jabatan, wilayah, alamat,
-            email, nomor_hp, status, sumber_data, verified_at, updated_at
+            nomor_alumni, nama, angkatan, kategori_program, nomor_angkatan, tahun_angkatan,
+            instansi, jabatan, wilayah, alamat, email, nomor_hp, status, sumber_data, verified_at, updated_at
           ) VALUES (
-            ${nomorAlumni || null}, ${nama}, ${angkatan},
+            ${nomorAlumni || null}, ${nama}, ${kategoriProgram}, ${kategoriProgram}, ${nomorAngkatan}, ${tahunAngkatan},
             ${req.submitted_instansi || ""}, ${req.submitted_jabatan || ""},
             ${req.submitted_wilayah || ""}, ${req.submitted_alamat || ""},
             ${req.email}, ${req.submitted_nomor_hp || ""}, 'Terverifikasi',

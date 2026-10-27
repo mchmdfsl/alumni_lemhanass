@@ -55,7 +55,7 @@ const data = await db()`
     angkatan,
     jabatan,
     instansi,
-    foto_profil AS "fotoProfil"
+    to_jsonb(alumni)->>'foto_profil' AS "fotoProfil"
   FROM alumni
   WHERE status = 'Terverifikasi'
     AND (

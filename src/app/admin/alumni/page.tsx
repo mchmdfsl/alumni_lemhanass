@@ -49,7 +49,9 @@ const STATUS_OPTIONS = ["Semua Status", "Terverifikasi", "Menunggu", "Ditolak"];
 export default function AlumniPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("Semua Status");
-  const [angkatan, setAngkatan] = useState("Semua Angkatan");
+  const [kategori, setKategori] = useState("Semua Kategori Program");
+  const [nomorAngkatanFilter, setNomorAngkatanFilter] = useState("Semua Nomor Angkatan");
+  const [tahunAngkatanFilter, setTahunAngkatanFilter] = useState("Semua Tahun Angkatan");
   const [wilayah, setWilayah] = useState("Semua Wilayah");
   const [page, setPage] = useState(1);
 
@@ -70,7 +72,7 @@ export default function AlumniPage() {
     const w = params.get("wilayah");
     const a = params.get("angkatan");
     if (w) setWilayah(w);
-    if (a) setAngkatan(a);
+    if (a) setKategori(a);
   }, []);
 
   const loadAlumni = () => {
@@ -139,15 +141,27 @@ export default function AlumniPage() {
     }
   };
 
-  // Unique filter options derived from data
-  const angkatanOptions = useMemo(() => {
-    const order = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"];
-    const opts = Array.from(new Set([...order, ...alumniData.map((a) => a.angkatan).filter(Boolean)])).sort((a, b) => {
-      const ai = order.indexOf(a); const bi = order.indexOf(b);
-      if (ai >= 0 || bi >= 0) return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
-      return a.localeCompare(b, "id");
-    });
-    return ["Semua Angkatan", ...opts];
+  // Keep program category, cohort number, and cohort year as independent filters.
+  const categoryOrder = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"];
+  const kategoriOptions = useMemo(() => {
+    const found = new Set(alumniData.map((a) => a.kategoriProgram || a.angkatan).filter(Boolean));
+    const ordered = [
+      ...categoryOrder.filter((item) => found.has(item)),
+      ...Array.from(found).filter((item) => !categoryOrder.includes(item)).sort((a, b) => a.localeCompare(b, "id")),
+    ];
+    return ["Semua Kategori Program", ...ordered];
+  }, [alumniData]);
+
+  const nomorAngkatanOptions = useMemo(() => {
+    const values = Array.from(new Set(alumniData.map((a) => a.nomorAngkatan).filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b, "id", { numeric: true }));
+    return ["Semua Nomor Angkatan", ...values];
+  }, [alumniData]);
+
+  const tahunAngkatanOptions = useMemo(() => {
+    const values = Array.from(new Set(alumniData.map((a) => String(a.tahunAngkatan || "")).filter(Boolean)))
+      .sort((a, b) => Number(b) - Number(a));
+    return ["Semua Tahun Angkatan", ...values];
   }, [alumniData]);
 
   const wilayahOptions = useMemo(() => {
@@ -169,17 +183,20 @@ export default function AlumniPage() {
         (a.nomorAngkatan || "").toLowerCase().includes(kw) ||
         String(a.tahunAngkatan || "").includes(kw);
       const matchesStatus = status === "Semua Status" || a.status === status;
-      const matchesAngkatan = angkatan === "Semua Angkatan" || a.angkatan === angkatan;
+      const categoryValue = a.kategoriProgram || a.angkatan;
+      const matchesKategori = kategori === "Semua Kategori Program" || categoryValue === kategori;
+      const matchesNomorAngkatan = nomorAngkatanFilter === "Semua Nomor Angkatan" || a.nomorAngkatan === nomorAngkatanFilter;
+      const matchesTahunAngkatan = tahunAngkatanFilter === "Semua Tahun Angkatan" || String(a.tahunAngkatan || "") === tahunAngkatanFilter;
       const matchesWilayah = wilayah === "Semua Wilayah" || a.wilayah === wilayah;
-      return matchesSearch && matchesStatus && matchesAngkatan && matchesWilayah;
+      return matchesSearch && matchesStatus && matchesKategori && matchesNomorAngkatan && matchesTahunAngkatan && matchesWilayah;
     });
-  }, [search, status, angkatan, wilayah, alumniData]);
+  }, [search, status, kategori, nomorAngkatanFilter, tahunAngkatanFilter, wilayah, alumniData]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAlumni.length / ITEMS_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
   const paginatedAlumni = filteredAlumni.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  const resetFilter = () => { setSearch(""); setStatus("Semua Status"); setAngkatan("Semua Angkatan"); setWilayah("Semua Wilayah"); setPage(1); };
+  const resetFilter = () => { setSearch(""); setStatus("Semua Status"); setKategori("Semua Kategori Program"); setNomorAngkatanFilter("Semua Nomor Angkatan"); setTahunAngkatanFilter("Semua Tahun Angkatan"); setWilayah("Semua Wilayah"); setPage(1); };
 
   // Edit alumni
   const handleSaveEdit = async (updated: Partial<Alumni>) => {
@@ -318,7 +335,7 @@ export default function AlumniPage() {
                   </div>
                 </div>
 
-                {(search || status !== "Semua Status" || angkatan !== "Semua Angkatan" || wilayah !== "Semua Wilayah") && (
+                {(search || status !== "Semua Status" || kategori !== "Semua Kategori Program" || nomorAngkatanFilter !== "Semua Nomor Angkatan" || tahunAngkatanFilter !== "Semua Tahun Angkatan" || wilayah !== "Semua Wilayah") && (
                   <button
                     type="button"
                     onClick={resetFilter}
@@ -330,7 +347,7 @@ export default function AlumniPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <div className="relative">
                   <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
                   <input
@@ -343,7 +360,9 @@ export default function AlumniPage() {
                 </div>
 
                 <FilterSelect value={status} onChange={(v) => { setStatus(v); setPage(1); }} options={STATUS_OPTIONS} />
-                <FilterSelect value={angkatan} onChange={(v) => { setAngkatan(v); setPage(1); }} options={angkatanOptions} />
+                <FilterSelect value={kategori} onChange={(v) => { setKategori(v); setPage(1); }} options={kategoriOptions} />
+                <FilterSelect value={nomorAngkatanFilter} onChange={(v) => { setNomorAngkatanFilter(v); setPage(1); }} options={nomorAngkatanOptions} />
+                <FilterSelect value={tahunAngkatanFilter} onChange={(v) => { setTahunAngkatanFilter(v); setPage(1); }} options={tahunAngkatanOptions} />
                 <FilterSelect value={wilayah} onChange={(v) => { setWilayah(v); setPage(1); }} options={wilayahOptions} />
               </div>
             </div>

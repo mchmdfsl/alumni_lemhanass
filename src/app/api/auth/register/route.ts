@@ -49,6 +49,21 @@ export async function POST(request: NextRequest) {
     const sql = db();
 
     const result = await sql.begin(async (tx) => {
+      // Serialize registrations for the same email and identity. Without these
+      // transaction-scoped locks, two concurrent requests could both pass the
+      // duplicate checks before either one inserts its pending request.
+      await tx`
+        SELECT pg_advisory_xact_lock(hashtextextended(${"register-email:" + email}, 0))
+      `;
+      const identityKey = [
+        nama.toLocaleLowerCase("id-ID"),
+        kategoriProgram,
+        nomorAngkatan,
+      ].join("|");
+      await tx`
+        SELECT pg_advisory_xact_lock(hashtextextended(${"register-identity:" + identityKey}, 0))
+      `;
+
       const existingAccount = await tx`
         SELECT id FROM alumni_accounts WHERE lower(email) = ${email} LIMIT 1
       `;

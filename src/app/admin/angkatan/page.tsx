@@ -15,6 +15,9 @@ import AdminHeader from "@/components/admin/AdminHeader";
 
 interface AngkatanStat {
   angkatan: string;
+  kategoriProgram: string;
+  nomorAngkatan: string;
+  tahunAngkatan: number | null;
   total: number;
   terverifikasi: number;
   menunggu: number;
@@ -47,7 +50,10 @@ export default function AngkatanPage() {
 
   const filtered = useMemo(() => {
     const kw = search.toLowerCase().trim();
-    return angkatanData.filter((a) => a.angkatan.toLowerCase().includes(kw));
+    return angkatanData.filter((a) =>
+      [a.kategoriProgram, a.nomorAngkatan, a.tahunAngkatan == null ? "" : String(a.tahunAngkatan), a.angkatan]
+        .some((value) => String(value ?? "").toLowerCase().includes(kw))
+    );
   }, [search, angkatanData]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
@@ -96,9 +102,9 @@ export default function AngkatanPage() {
                 <p className="mt-1 text-2xl font-bold text-[#0b1f3a]">{loading ? "—" : angkatanData.length}</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">Angkatan Terbaru</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">Kategori Program</p>
                 <p className="mt-1 text-lg font-bold text-[#0b1f3a] truncate">
-                  {loading ? "—" : angkatanData[0]?.angkatan ?? "-"}
+                  {loading ? "—" : angkatanData[0]?.kategoriProgram ?? "-"}
                 </p>
               </div>
             </div>
@@ -112,7 +118,7 @@ export default function AngkatanPage() {
                     type="text"
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                    placeholder="Cari nama angkatan atau program..."
+                    placeholder="Cari kategori, nomor, atau tahun angkatan..."
                     className="h-11 w-full rounded-xl border border-slate-200 bg-[#fafbfc] pl-10 pr-4 text-sm text-[#172033] outline-none transition placeholder:text-[#94a3b8] focus:border-[#0b1f3a] focus:bg-white focus:ring-4 focus:ring-[#0b1f3a]/5"
                   />
                 </div>
@@ -147,7 +153,7 @@ export default function AngkatanPage() {
                 <table className="w-full min-w-[800px]">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/60">
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">Angkatan</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">Kategori / Angkatan</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">Total</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">Terverifikasi</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">Menunggu</th>
@@ -167,13 +173,13 @@ export default function AngkatanPage() {
                       ))
                     ) : paginated.length > 0 ? (
                       paginated.map((item) => (
-                        <tr key={item.angkatan} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                        <tr key={`${item.kategoriProgram}-${item.nomorAngkatan}-${item.tahunAngkatan ?? "na"}`} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0b1f3a]/5">
                                 <GraduationCap size={15} className="text-[#0b1f3a]" />
                               </div>
-                              <span className="text-sm font-bold text-[#172033]">{item.angkatan}</span>
+                              <div className="space-y-1"><p className="text-sm font-bold text-[#172033]">{item.kategoriProgram || item.angkatan}</p><p className="text-xs text-slate-500">Nomor angkatan: {item.nomorAngkatan || "-"}</p><p className="text-xs text-slate-500">Tahun angkatan: {item.tahunAngkatan ?? "-"}</p></div>
                             </div>
                           </td>
                           <td className="px-4 py-4 text-center">

@@ -26,7 +26,7 @@ export async function POST() {
         SELECT id, angkatan, nomor_alumni AS "nomorAlumni"
         FROM alumni
         WHERE sumber_data = 'impor'
-          AND status IS DISTINCT FROM 'Terverifikasi'
+          AND status = 'Menunggu'
         ORDER BY angkatan ASC NULLS LAST, id ASC
         FOR UPDATE
       `;

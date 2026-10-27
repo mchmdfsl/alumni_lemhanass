@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
         COALESCE(alamat, '') AS alamat,
         COALESCE(email, '') AS email,
         COALESCE(nomor_hp, '') AS "nomorHp",
-        foto_profil AS "fotoProfil",
+        to_jsonb(alumni)->>'foto_profil' AS "fotoProfil",
         status
     `;
 

@@ -6,12 +6,12 @@ import { LoaderCircle } from "lucide-react";
 import AuthShell from "@/components/auth/AuthShell";
 
 type FormState = {
-  nama: string; angkatan: string; nomorHp: string; nomorAlumni: string;
+  nama: string; kategoriProgram: string; nomorAngkatan: string; tahunAngkatan: string; nomorHp: string; nomorAlumni: string;
   instansi: string; jabatan: string; wilayah: string; alamat: string;
   email: string; password: string; konfirmasi: string;
 };
 const initialForm: FormState = {
-  nama: "", angkatan: "", nomorHp: "", nomorAlumni: "", instansi: "",
+  nama: "", kategoriProgram: "", nomorAngkatan: "", tahunAngkatan: "", nomorHp: "", nomorAlumni: "", instansi: "",
   jabatan: "", wilayah: "", alamat: "", email: "", password: "", konfirmasi: "",
 };
 const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#0b1f3a] focus:ring-2 focus:ring-[#0b1f3a]/10";
@@ -24,7 +24,7 @@ export default function DaftarPage() {
 
   function updateField(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value } = event.target;
-    setForm((previous) => ({ ...previous, [name]: name === "angkatan" ? value.toLocaleUpperCase("id-ID") : value }));
+    setForm((previous) => ({ ...previous, [name]: name === "kategoriProgram" ? value.toLocaleUpperCase("id-ID") : value }));
   }
 
   async function handleDaftar(event: FormEvent<HTMLFormElement>) {
@@ -39,7 +39,7 @@ export default function DaftarPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nama: form.nama, angkatan: form.angkatan, nomorHp: form.nomorHp,
+          nama: form.nama, kategoriProgram: form.kategoriProgram, nomorAngkatan: form.nomorAngkatan, tahunAngkatan: form.tahunAngkatan, nomorHp: form.nomorHp,
           nomorAlumni: form.nomorAlumni, instansi: form.instansi, jabatan: form.jabatan,
           wilayah: form.wilayah, alamat: form.alamat, email: form.email, password: form.password,
         }),
@@ -71,16 +71,22 @@ export default function DaftarPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {renderField("Nama lengkap *", "nama", "text", true, 200)}
         <div>
-          <label htmlFor="angkatan" className="mb-1.5 block text-sm font-semibold text-slate-700">Kategori program / angkatan *</label>
-          <input id="angkatan" name="angkatan" list="kategori-program" value={form.angkatan} onChange={updateField} required maxLength={100} placeholder="Pilih atau ketik kategori baru" className={inputClass} />
-          <datalist id="kategori-program">
-            <option value="P3N" />
-            <option value="P4N" />
-            <option value="PPNK" />
-            <option value="TOT" />
-          </datalist>
-          <p className="mt-1 text-xs text-slate-500">Kategori baru bisa langsung diketik; tidak perlu menambah pilihan di kode.</p>
+          <label htmlFor="kategoriProgram" className="mb-1.5 block text-sm font-semibold text-slate-700">Kategori program *</label>
+          <select id="kategoriProgram" name="kategoriProgram" value={form.kategoriProgram} onChange={updateField} required className={inputClass}>
+            <option value="">Pilih kategori program</option>
+            <option value="KRA">KRA</option>
+            <option value="PPRA">PPRA</option>
+            <option value="P4N">P4N</option>
+            <option value="KSA">KSA</option>
+            <option value="PPSA">PPSA</option>
+            <option value="P3N">P3N</option>
+            <option value="PPNK">PPNK</option>
+            <option value="PPNK KOLABORASI">PPNK KOLABORASI</option>
+            <option value="TOT">TOT</option>
+          </select>
         </div>
+        {renderField("Nomor angkatan *", "nomorAngkatan", "text", true, 40)}
+        {renderField("Tahun angkatan *", "tahunAngkatan", "number", true, 4)}
         {renderField("Nomor HP", "nomorHp", "text", false, 50)}
         {renderField("Nomor alumni (jika ada)", "nomorAlumni", "text", false, 80)}
         {renderField("Instansi", "instansi", "text", false, 250)}

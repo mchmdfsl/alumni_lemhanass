@@ -49,6 +49,9 @@ const data = await db()`
   SELECT
     id,
     nama,
+    COALESCE(kategori_program, angkatan) AS "kategoriProgram",
+    COALESCE(nomor_angkatan, '') AS "nomorAngkatan",
+    tahun_angkatan AS "tahunAngkatan",
     angkatan,
     jabatan,
     instansi,
@@ -58,11 +61,13 @@ const data = await db()`
     AND (
       ${search} = ''
       OR COALESCE(nama, '') ILIKE ${keyword}
-      OR COALESCE(angkatan::text, '') ILIKE ${keyword}
+      OR COALESCE(kategori_program, angkatan, '') ILIKE ${keyword}
+      OR COALESCE(nomor_angkatan, '') ILIKE ${keyword}
+      OR COALESCE(tahun_angkatan::text, '') ILIKE ${keyword}
       OR COALESCE(jabatan, '') ILIKE ${keyword}
       OR COALESCE(instansi, '') ILIKE ${keyword}
     )
-  ORDER BY angkatan ASC NULLS LAST, nama ASC
+  ORDER BY kategori_program ASC NULLS LAST, nomor_angkatan ASC NULLS LAST, tahun_angkatan ASC NULLS LAST, nama ASC
   LIMIT 200
 `;
 

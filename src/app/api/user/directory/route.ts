@@ -50,22 +50,7 @@ const offset = Number.isFinite(requestedOffset)
   : 0;
 const keyword = `%${search}%`;
 
-const where = `
-  status = 'Terverifikasi'
-  AND (
-    ${search} = ''
-    OR COALESCE(nama, '') ILIKE ${keyword}
-    OR COALESCE(kategori_program, angkatan, '') ILIKE ${keyword}
-    OR COALESCE(nomor_angkatan, '') ILIKE ${keyword}
-    OR COALESCE(tahun_angkatan::text, '') ILIKE ${keyword}
-    OR COALESCE(jabatan, '') ILIKE ${keyword}
-    OR COALESCE(instansi, '') ILIKE ${keyword}
-  )
-  AND (
-    ${category} = ''
-    OR COALESCE(NULLIF(trim(kategori_program), ''), angkatan) = ${category}
-  )
-`;
+
 
 const data = await db()`
   SELECT
@@ -79,7 +64,20 @@ const data = await db()`
     instansi,
     to_jsonb(alumni)->>'foto_profil' AS "fotoProfil"
   FROM alumni
-  WHERE ${where}
+  WHERE status = 'Terverifikasi'
+    AND (
+      ${search} = ''
+      OR COALESCE(nama, '') ILIKE ${keyword}
+      OR COALESCE(kategori_program, angkatan, '') ILIKE ${keyword}
+      OR COALESCE(nomor_angkatan, '') ILIKE ${keyword}
+      OR COALESCE(tahun_angkatan::text, '') ILIKE ${keyword}
+      OR COALESCE(jabatan, '') ILIKE ${keyword}
+      OR COALESCE(instansi, '') ILIKE ${keyword}
+    )
+    AND (
+      ${category} = ''
+      OR COALESCE(NULLIF(trim(kategori_program), ''), angkatan) = ${category}
+    )
   ORDER BY kategori_program ASC NULLS LAST, nomor_angkatan ASC NULLS LAST, tahun_angkatan ASC NULLS LAST, nama ASC
   LIMIT ${limit}
   OFFSET ${offset}
@@ -88,7 +86,20 @@ const data = await db()`
 const [count] = await db()`
   SELECT COUNT(*)::int AS total
   FROM alumni
-  WHERE ${where}
+  WHERE status = 'Terverifikasi'
+    AND (
+      ${search} = ''
+      OR COALESCE(nama, '') ILIKE ${keyword}
+      OR COALESCE(kategori_program, angkatan, '') ILIKE ${keyword}
+      OR COALESCE(nomor_angkatan, '') ILIKE ${keyword}
+      OR COALESCE(tahun_angkatan::text, '') ILIKE ${keyword}
+      OR COALESCE(jabatan, '') ILIKE ${keyword}
+      OR COALESCE(instansi, '') ILIKE ${keyword}
+    )
+    AND (
+      ${category} = ''
+      OR COALESCE(NULLIF(trim(kategori_program), ''), angkatan) = ${category}
+    )
 `;
 
 return NextResponse.json(

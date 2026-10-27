@@ -21,8 +21,13 @@ export async function PATCH(
 
     const nama =
       typeof body.nama === "string" ? body.nama.trim().slice(0, 200) : undefined;
-    const angkatan =
-      typeof body.angkatan === "string" ? body.angkatan.trim().slice(0, 100) : undefined;
+    const kategoriProgram =
+      typeof body.kategoriProgram === "string" ? body.kategoriProgram.trim().toLocaleUpperCase("id-ID").slice(0, 80) : undefined;
+    const nomorAngkatan =
+      typeof body.nomorAngkatan === "string" ? body.nomorAngkatan.trim().slice(0, 40) : undefined;
+    const tahunAngkatan =
+      body.tahunAngkatan === undefined ? undefined : Number(body.tahunAngkatan);
+    const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"]);
     const instansi =
       typeof body.instansi === "string" ? body.instansi.trim().slice(0, 250) : undefined;
     const jabatan =
@@ -38,11 +43,20 @@ export async function PATCH(
 
     if (nama !== undefined && (nama.length < 2 || nama.length > 200))
       return NextResponse.json({ error: "Nama harus 2–200 karakter." }, { status: 400 });
+    if (kategoriProgram !== undefined && !allowedCategories.has(kategoriProgram))
+      return NextResponse.json({ error: "Kategori program tidak valid." }, { status: 400 });
+    if (nomorAngkatan !== undefined && (!nomorAngkatan || nomorAngkatan.length > 40))
+      return NextResponse.json({ error: "Nomor angkatan tidak valid." }, { status: 400 });
+    if (tahunAngkatan !== undefined && (!Number.isInteger(tahunAngkatan) || tahunAngkatan < 1900 || tahunAngkatan > new Date().getFullYear() + 5))
+      return NextResponse.json({ error: "Tahun angkatan tidak valid." }, { status: 400 });
 
     const [row] = await db()`
       UPDATE alumni SET
         nama        = COALESCE(${nama ?? null}::varchar, nama),
-        angkatan    = COALESCE(${angkatan ?? null}::varchar, angkatan),
+        angkatan    = COALESCE(${kategoriProgram ?? null}::varchar, angkatan),
+        kategori_program = COALESCE(${kategoriProgram ?? null}::varchar, kategori_program),
+        nomor_angkatan = COALESCE(${nomorAngkatan ?? null}::varchar, nomor_angkatan),
+        tahun_angkatan = COALESCE(${tahunAngkatan ?? null}::integer, tahun_angkatan),
         instansi    = COALESCE(${instansi ?? null}::varchar, instansi),
         jabatan     = COALESCE(${jabatan ?? null}::varchar, jabatan),
         wilayah     = COALESCE(${wilayah ?? null}::varchar, wilayah),
@@ -51,7 +65,9 @@ export async function PATCH(
         email       = email,
         updated_at  = NOW()
       WHERE id = ${Number(id)}
-      RETURNING id, COALESCE(nomor_alumni, '') AS "nomorAlumni", nama, angkatan,
+      RETURNING id, COALESCE(nomor_alumni, '') AS "nomorAlumni", nama,
+        COALESCE(kategori_program, angkatan) AS "kategoriProgram",
+        COALESCE(nomor_angkatan, '') AS "nomorAngkatan", tahun_angkatan AS "tahunAngkatan", angkatan,
         instansi, jabatan, wilayah, alamat, COALESCE(email, '') AS email,
         nomor_hp AS "nomorHp", status, updated_at AS "updatedAt"`;
 

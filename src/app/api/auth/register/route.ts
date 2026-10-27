@@ -12,8 +12,11 @@ export async function POST(request: NextRequest) {
       typeof body[key] === "string" ? body[key].trim().slice(0, max) : "";
 
     const nama = value("nama", 200);
-    const angkatan = value("angkatan", 100).toLocaleUpperCase("id-ID");
-    const kategori = angkatan;
+    const kategoriProgram = value("kategoriProgram", 80).toLocaleUpperCase("id-ID");
+    const nomorAngkatan = value("nomorAngkatan", 40);
+    const tahunAngkatanRaw = value("tahunAngkatan", 4);
+    const tahunAngkatan = /^\\d{4}$/.test(tahunAngkatanRaw) ? Number(tahunAngkatanRaw) : NaN;
+    const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"]);
     const nomorHp = value("nomorHp", 50);
     const nomorAlumni = value("nomorAlumni", 80);
     const instansi = value("instansi", 250);
@@ -23,9 +26,9 @@ export async function POST(request: NextRequest) {
     const email = value("email", 254).toLowerCase();
     const password = typeof body.password === "string" ? body.password : "";
 
-    if (!nama || !angkatan || !email || !password) {
+    if (!nama || !kategoriProgram || !nomorAngkatan || !Number.isInteger(tahunAngkatan) || !email || !password) {
       return NextResponse.json(
-        { error: "Nama lengkap, angkatan, email, dan password wajib diisi." },
+        { error: "Nama, kategori program, nomor angkatan, tahun angkatan, email, dan password wajib diisi." },
         { status: 400 },
       );
     }
@@ -64,7 +67,8 @@ export async function POST(request: NextRequest) {
         WHERE status = 'Menunggu'
           AND request_type = 'register'
           AND lower(trim(coalesce(submitted_nama, ''))) = lower(${nama})
-          AND trim(coalesce(submitted_angkatan, '')) = ${angkatan}
+          AND trim(coalesce(submitted_kategori_program, submitted_angkatan, '')) = ${kategoriProgram}
+          AND trim(coalesce(submitted_nomor_angkatan, '')) = ${nomorAngkatan}
         LIMIT 1
       `;
       if (pendingIdentity.length) return { kind: "identity_pending" as const };
@@ -72,13 +76,14 @@ export async function POST(request: NextRequest) {
       await tx`
         INSERT INTO alumni_account_requests (
           alumni_id, email, password_hash, request_type, status,
-          submitted_nama, submitted_angkatan, submitted_nomor_hp,
+          submitted_nama, submitted_angkatan, submitted_kategori_program,
+          submitted_nomor_angkatan, submitted_tahun_angkatan, submitted_nomor_hp,
           submitted_nomor_alumni, submitted_instansi, submitted_jabatan,
           submitted_wilayah, submitted_alamat
         ) VALUES (
           NULL, ${email}, ${passwordHash}, 'register', 'Menunggu',
-          ${nama}, ${kategori}, ${nomorHp || null}, ${nomorAlumni || null},
-          ${instansi}, ${jabatan}, ${wilayah}, ${alamat}
+          ${nama}, ${kategoriProgram}, ${kategoriProgram}, ${nomorAngkatan}, ${tahunAngkatan},
+          ${nomorHp || null}, ${nomorAlumni || null}, ${instansi}, ${jabatan}, ${wilayah}, ${alamat}
         )
       `;
       return { kind: "created" as const };

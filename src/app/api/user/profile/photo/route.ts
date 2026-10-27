@@ -247,3 +247,90 @@ export async function POST(request: NextRequest) {
     );
   }
       }
+
+export async function DELETE() {
+  try {
+    const session = await getAlumniSession();
+    if (!session) {
+      return NextResponse.json(
+        { message: "Sesi login berakhir. Silakan login kembali." },
+        { status: 401 }
+      );
+    }
+
+    const [alumni] = await db()`
+      SELECT a.id, to_jsonb(a)->>'foto_profil' AS "fotoProfil"
+      FROM alumni_accounts aa
+      INNER JOIN alumni a ON a.id = aa.alumni_id
+      WHERE aa.id = ${session.accountId}
+        AND a.id = ${session.alumniId}
+        AND aa.is_active = TRUE
+        AND a.status = 'Terverifikasi'
+      LIMIT 1
+    `;
+
+    if (!alumni) {
+      return NextResponse.json(
+        { message: "Akun alumni tidak aktif atau belum terverifikasi." },
+        { status: 403 }
+      );
+    }
+
+    const [photoSchema] = await db()`
+      SELECT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = 'alumni'
+          AND column_name = 'foto_profil'
+      ) AS "hasPhotoColumn"
+    `;
+
+    if (!photoSchema?.hasPhotoColumn) {
+      return NextResponse.json(
+        { message: "Fitur foto profil belum diaktifkan pada database." },
+        { status: 503 }
+      );
+    }
+
+    const photoUrl = typeof alumni.fotoProfil === "string"
+      ? alumni.fotoProfil
+      : null;
+
+    await db()`
+      UPDATE alumni
+      SET foto_profil = NULL
+      WHERE id = ${alumni.id}
+    `;
+
+    // Hapus file dari R2 hanya jika URL-nya berasal dari bucket publik
+    // yang dikonfigurasi dan key-nya milik direktori alumni ini.
+    if (photoUrl && r2PublicUrl && photoUrl.startsWith(`${r2PublicUrl}/profiles/${alumni.id}/`)) {
+      try {
+        const key = decodeURIComponent(
+          photoUrl.slice(r2PublicUrl.length + 1)
+        );
+        await r2.send(
+          new DeleteObjectCommand({
+            Bucket: r2Bucket,
+            Key: key,
+          })
+        );
+      } catch (storageError) {
+        // Database sudah dilepas dari foto; kegagalan penghapusan file
+        // tidak boleh membuat profil kembali menunjuk ke foto lama.
+        console.error("Gagal menghapus file foto dari R2:", storageError);
+      }
+    }
+
+    return NextResponse.json({
+      message: "Foto profil berhasil dihapus.",
+      data: { fotoProfil: null },
+    });
+  } catch (error) {
+    console.error("DELETE /api/user/profile/photo:", error);
+    return NextResponse.json(
+      { message: "Gagal menghapus foto profil. Silakan coba lagi." },
+      { status: 500 }
+    );
+  }
+}

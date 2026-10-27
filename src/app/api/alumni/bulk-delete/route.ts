@@ -6,6 +6,13 @@ import { getAdminActor } from "@/lib/admin-audit";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+class MissingAlumniIdsError extends Error {
+  constructor() {
+    super("Sebagian ID alumni tidak ditemukan. Tidak ada data yang dihapus.");
+    this.name = "MissingAlumniIdsError";
+  }
+}
+
 export async function POST(request: NextRequest) {
   const role = await isAdminAuthenticated();
   if (!role) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
@@ -28,6 +35,9 @@ export async function POST(request: NextRequest) {
   if (ids.some((id) => !Number.isSafeInteger(id) || id <= 0)) {
     return NextResponse.json({ error: "Daftar ID alumni tidak valid." }, { status: 400 });
   }
+  if (ids.length < 2) {
+    return NextResponse.json({ error: "Pilih minimal 2 ID alumni yang berbeda." }, { status: 400 });
+  }
 
   try {
     const actor = await getAdminActor();
@@ -38,7 +48,7 @@ export async function POST(request: NextRequest) {
         FOR UPDATE
       `) as unknown as { id: number | string; nama: string }[];
       if (rows.length !== ids.length) {
-        throw new Error("Sebagian ID alumni tidak ditemukan. Tidak ada data yang dihapus.");
+        throw new MissingAlumniIdsError();
       }
       await tx`
         INSERT INTO admin_audit_log (action, alumni_id, actor, details)
@@ -61,9 +71,12 @@ export async function POST(request: NextRequest) {
       message: `Berhasil menghapus ${result.total} data alumni beserta akun yang terhubung.`,
     });
   } catch (error) {
+    if (error instanceof MissingAlumniIdsError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
     console.error("POST /api/alumni/bulk-delete failed:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Gagal menghapus data alumni secara massal." },
+      { error: "Gagal menghapus data alumni secara massal. Periksa log server." },
       { status: 500 },
     );
   }

@@ -34,6 +34,9 @@ type Profile = {
   nomorAlumni?: string | null;
   nama: string;
   angkatan: string;
+  kategoriProgram: string;
+  nomorAngkatan: string;
+  tahunAngkatan: string;
   jabatan: string;
   instansi: string;
   wilayah: string;
@@ -57,6 +60,9 @@ export default function ProfilUser() {
   const [profile, setProfile] = useState<Profile>({
     nama: "",
     angkatan: "",
+    kategoriProgram: "",
+    nomorAngkatan: "",
+    tahunAngkatan: "",
     jabatan: "",
     instansi: "",
     wilayah: "",
@@ -66,7 +72,7 @@ export default function ProfilUser() {
   });
 
   const [savedProfile, setSavedProfile] = useState<Profile>({
-    nama: "", angkatan: "", jabatan: "", instansi: "", wilayah: "", alamat: "", nomorHp: "", fotoProfil: null,
+    nama: "", angkatan: "", kategoriProgram: "", nomorAngkatan: "", tahunAngkatan: "", jabatan: "", instansi: "", wilayah: "", alamat: "", nomorHp: "", fotoProfil: null,
   });
 
   const [email, setEmail] = useState("");
@@ -117,6 +123,9 @@ export default function ProfilUser() {
           nomorAlumni: data.nomorAlumni || "",
           nama: data.nama || "",
           angkatan: String(data.angkatan || ""),
+          kategoriProgram: String(data.kategoriProgram || data.angkatan || ""),
+          nomorAngkatan: String(data.nomorAngkatan || ""),
+          tahunAngkatan: String(data.tahunAngkatan || ""),
           jabatan: data.jabatan || "",
           instansi: data.instansi || "",
           wilayah: data.wilayah || "",
@@ -282,10 +291,10 @@ export default function ProfilUser() {
       return;
     }
 
-    if (!profile.angkatan.trim()) {
+    if (!profile.kategoriProgram.trim() || !profile.nomorAngkatan.trim() || !/^\\d{4}$/.test(profile.tahunAngkatan)) {
       setNotice({
         type: "error",
-        message: "Tahun angkatan wajib diisi.",
+        message: "Kategori program, nomor angkatan, dan tahun angkatan wajib diisi dengan benar.",
       });
       return;
     }
@@ -300,7 +309,9 @@ export default function ProfilUser() {
         },
         body: JSON.stringify({
           nama: profile.nama.trim(),
-          angkatan: profile.angkatan.trim(),
+          kategoriProgram: profile.kategoriProgram.trim(),
+          nomorAngkatan: profile.nomorAngkatan.trim(),
+          tahunAngkatan: Number(profile.tahunAngkatan),
           jabatan: profile.jabatan.trim(),
           instansi: profile.instansi.trim(),
           wilayah: profile.wilayah.trim(),
@@ -487,11 +498,9 @@ export default function ProfilUser() {
             value={email || "-"}
           />
 
-          <InfoItem
-            icon={GraduationCap}
-            label="Angkatan"
-            value={savedProfile.angkatan || "-"}
-          />
+          <InfoItem icon={GraduationCap} label="Kategori Program" value={savedProfile.kategoriProgram || savedProfile.angkatan || "-"} />
+          <InfoItem icon={GraduationCap} label="Nomor Angkatan" value={savedProfile.nomorAngkatan || "-"} />
+          <InfoItem icon={GraduationCap} label="Tahun Angkatan" value={savedProfile.tahunAngkatan || "-"} />
           <InfoItem icon={BriefcaseBusiness} label="Jabatan" value={savedProfile.jabatan || "-"} />
           <InfoItem icon={Building2} label="Instansi" value={savedProfile.instansi || "-"} />
           <InfoItem icon={MapPin} label="Wilayah" value={savedProfile.wilayah || "-"} />
@@ -619,26 +628,19 @@ export default function ProfilUser() {
               />
             </Field>
 
-            <Field
-              label="Kategori Program"
-              icon={GraduationCap}
-              required
-            >
-              <select
-                value={profile.angkatan}
-                onChange={(event) => updateField("angkatan", event.target.value)}
-                required
-                className={inputClass}
-              >
-                {!["P3N", "P4N", "PPNK", "TOT"].includes(profile.angkatan) && profile.angkatan && (
-                  <option value={profile.angkatan}>{profile.angkatan}</option>
-                )}
+            <Field label="Kategori Program" icon={GraduationCap} required>
+              <select value={profile.kategoriProgram} onChange={(event) => updateField("kategoriProgram", event.target.value)} required className={inputClass}>
                 <option value="">Pilih kategori program</option>
-                <option value="P3N">P3N</option>
-                <option value="P4N">P4N</option>
-                <option value="PPNK">PPNK</option>
-                <option value="TOT">TOT</option>
+                <option value="KRA">KRA</option><option value="PPRA">PPRA</option><option value="P4N">P4N</option>
+                <option value="KSA">KSA</option><option value="PPSA">PPSA</option><option value="P3N">P3N</option>
+                <option value="PPNK">PPNK</option><option value="PPNK KOLABORASI">PPNK KOLABORASI</option><option value="TOT">TOT</option>
               </select>
+            </Field>
+            <Field label="Nomor Angkatan" icon={GraduationCap} required>
+              <input type="text" value={profile.nomorAngkatan} onChange={(event) => updateField("nomorAngkatan", event.target.value)} maxLength={40} required className={inputClass} placeholder="Contoh: 22" />
+            </Field>
+            <Field label="Tahun Angkatan" icon={GraduationCap} required>
+              <input type="number" value={profile.tahunAngkatan} onChange={(event) => updateField("tahunAngkatan", event.target.value)} min={1900} max={new Date().getFullYear() + 5} required className={inputClass} placeholder="Contoh: 2022" />
             </Field>
 
             <Field

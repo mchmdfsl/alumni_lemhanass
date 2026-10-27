@@ -164,7 +164,10 @@ export default function AlumniPage() {
         a.email.toLowerCase().includes(kw) ||
         a.instansi.toLowerCase().includes(kw) ||
         a.nomorHp.toLowerCase().includes(kw) ||
-        a.alamat.toLowerCase().includes(kw);
+        a.alamat.toLowerCase().includes(kw) ||
+        (a.kategoriProgram || "").toLowerCase().includes(kw) ||
+        (a.nomorAngkatan || "").toLowerCase().includes(kw) ||
+        String(a.tahunAngkatan || "").includes(kw);
       const matchesStatus = status === "Semua Status" || a.status === status;
       const matchesAngkatan = angkatan === "Semua Angkatan" || a.angkatan === angkatan;
       const matchesWilayah = wilayah === "Semua Wilayah" || a.wilayah === wilayah;
@@ -556,7 +559,9 @@ function AlumniMobileCard({ alumni, onDetail, onEdit, onDelete }: { alumni: Alum
       </div>
 
       <div className="mt-4 space-y-3 rounded-xl bg-slate-50 p-4">
-        <MobileInfo icon={<UserRound size={14} />} label="Angkatan" value={alumni.angkatan} />
+        <MobileInfo icon={<UserRound size={14} />} label="Kategori Program" value={alumni.kategoriProgram || alumni.angkatan} />
+        <MobileInfo icon={<UserRound size={14} />} label="Nomor Angkatan" value={alumni.nomorAngkatan || "—"} />
+        <MobileInfo icon={<UserRound size={14} />} label="Tahun Angkatan" value={String(alumni.tahunAngkatan || "—")} />
         <MobileInfo icon={<MapPin size={14} />} label="Wilayah" value={alumni.wilayah} />
         <MobileInfo icon={<UserRound size={14} />} label="Instansi" value={`${alumni.instansi} — ${alumni.jabatan}`} />
         <MobileInfo icon={<Phone size={14} />} label="Nomor HP" value={alumni.nomorHp} />

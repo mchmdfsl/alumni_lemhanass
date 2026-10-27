@@ -7,6 +7,9 @@ type Alumni = {
   id: string | number;
   nama: string | null;
   angkatan: string | number | null;
+  kategoriProgram: string | null;
+  nomorAngkatan: string | number | null;
+  tahunAngkatan: string | number | null;
   jabatan: string | null;
   instansi: string | null;
   fotoProfil: string | null;
@@ -53,8 +56,14 @@ export default function ListAngkatan() {
     return () => controller.abort();
   }, [query, reloadKey]);
 
-  const angkatanOptions = useMemo(() => Array.from(new Set(["P3N", "P4N", "PPNK", "TOT", ...alumni.map((person) => String(person.angkatan ?? "").trim()).filter(Boolean)])).sort((a, b) => { const order = ["P3N", "P4N", "PPNK", "TOT"]; const ai = order.indexOf(a); const bi = order.indexOf(b); if (ai >= 0 || bi >= 0) return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi); return a.localeCompare(b, "id"); }), [alumni]);
-  const filteredAlumni = useMemo(() => alumni.filter((person) => selectedAngkatan === "Semua Angkatan" || String(person.angkatan ?? "") === selectedAngkatan), [alumni, selectedAngkatan]);
+  const categories = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"];
+  const angkatanOptions = useMemo(() => Array.from(new Set([...categories, ...alumni.map((person) => String(person.kategoriProgram || person.angkatan || "").trim()).filter(Boolean)])).sort((a, b) => {
+    const ai = categories.indexOf(a);
+    const bi = categories.indexOf(b);
+    if (ai >= 0 || bi >= 0) return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+    return a.localeCompare(b, "id");
+  }), [alumni]);
+  const filteredAlumni = useMemo(() => alumni.filter((person) => selectedAngkatan === "Semua Angkatan" || String(person.kategoriProgram || person.angkatan || "") === selectedAngkatan), [alumni, selectedAngkatan]);
   const totalPages = Math.max(1, Math.ceil(filteredAlumni.length / pageSize));
   const visibleAlumni = filteredAlumni.slice((page - 1) * pageSize, page * pageSize);
 
@@ -86,7 +95,7 @@ export default function ListAngkatan() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               maxLength={100}
-              placeholder="Nama, angkatan, jabatan, atau instansi..."
+              placeholder="Nama, kategori, angkatan, jabatan, atau instansi..."
               className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm outline-none transition focus:border-[#0b1f3a] focus:ring-4 focus:ring-[#0b1f3a]/10"
             />
           </div>
@@ -132,7 +141,7 @@ export default function ListAngkatan() {
               <thead className="bg-slate-50">
                 <tr className="border-b border-slate-200">
                   <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Alumni</th>
-                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Angkatan</th>
+                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Kategori / Angkatan</th>
                   <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Jabatan</th>
                   <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Instansi</th>
                 </tr>
@@ -146,7 +155,7 @@ export default function ListAngkatan() {
                         <span className="font-semibold text-[#172033]">{person.nama || "Nama tidak tersedia"}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-sm text-slate-600">{person.angkatan ?? "-"}</td>
+                    <td className="px-5 py-4 text-sm text-slate-600">{[person.kategoriProgram || person.angkatan, person.nomorAngkatan, person.tahunAngkatan].filter(Boolean).join(" · ") || "-"}</td>
                     <td className="px-5 py-4 text-sm text-slate-600">{person.jabatan || "-"}</td>
                     <td className="px-5 py-4 text-sm text-slate-600">{person.instansi || "-"}</td>
                   </tr>
@@ -155,13 +164,13 @@ export default function ListAngkatan() {
             </table>
           </div>
           <div className="grid gap-3 p-4 md:hidden">
-            {alumni.map((person) => (
+            {visibleAlumni.map((person) => (
               <article key={person.id} className="rounded-xl border border-slate-200 p-4">
                 <div className="flex items-start gap-3">
                   <Avatar person={person} />
                   <div className="min-w-0 flex-1">
                     <h2 className="break-words font-bold text-[#172033]">{person.nama || "Nama tidak tersedia"}</h2>
-                    <p className="mt-1 text-xs font-semibold text-[#b28b16]">Angkatan: {person.angkatan ?? "-"}</p>
+                    <p className="mt-1 text-xs font-semibold text-[#b28b16]">{[person.kategoriProgram || person.angkatan, person.nomorAngkatan ? `Angkatan ${person.nomorAngkatan}` : null, person.tahunAngkatan].filter(Boolean).join(" · ") || "Angkatan belum diisi"}</p>
                     <div className="mt-3 space-y-2 text-sm text-slate-600">
                       <p className="flex gap-2"><BriefcaseBusiness size={16} className="mt-0.5 shrink-0 text-slate-400" /><span>{person.jabatan || "Jabatan belum diisi"}</span></p>
                       <p className="flex gap-2"><Building2 size={16} className="mt-0.5 shrink-0 text-slate-400" /><span>{person.instansi || "Instansi belum diisi"}</span></p>

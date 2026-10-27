@@ -22,6 +22,9 @@ interface VerificationAlumni {
   nomorAlumni: string;
   nama: string;
   angkatan: string;
+  kategoriProgram?: string;
+  nomorAngkatan?: string;
+  tahunAngkatan?: string | number | null;
   instansi: string;
   jabatan: string;
   wilayah: string;
@@ -79,7 +82,7 @@ export default function VerifikasiAlumniPage() {
         alumni.instansi.toLowerCase().includes(keyword);
 
       const matchesAngkatan =
-        angkatan === "Semua Angkatan" || alumni.angkatan === angkatan;
+        angkatan === "Semua Angkatan" || (alumni.kategoriProgram || alumni.angkatan) === angkatan;
 
       const matchesWilayah =
         wilayah === "Semua Wilayah" || alumni.wilayah === wilayah;
@@ -396,12 +399,15 @@ export default function VerifikasiAlumniPage() {
                   }}
                   options={[
                     "Semua Angkatan",
-                    "PPRA LX",
-                    "PPRA LIX",
-                    "PPRA LVIII",
-                    "PPRA LVII",
-                    "PPRA LVI",
-                    "PPRA LV",
+                    "KRA",
+                    "PPRA",
+                    "P4N",
+                    "KSA",
+                    "PPSA",
+                    "P3N",
+                    "PPNK",
+                    "PPNK KOLABORASI",
+                    "TOT",
                   ]}
                 />
 
@@ -457,7 +463,7 @@ export default function VerifikasiAlumniPage() {
                           </th>
 
                           <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">
-                            Angkatan
+                            Kategori / Angkatan
                           </th>
 
                           <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">
@@ -625,7 +631,7 @@ function VerificationRow({
       </td>
 
       <td className="px-4 py-4 text-sm font-medium text-[#475569]">
-        {alumni.angkatan}
+        {[alumni.kategoriProgram || alumni.angkatan, alumni.nomorAngkatan ? `Angkatan ${alumni.nomorAngkatan}` : null, alumni.tahunAngkatan].filter(Boolean).join(" · ")}
       </td>
 
       <td className="max-w-[230px] px-4 py-4">
@@ -703,7 +709,9 @@ function VerificationMobileCard({
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3">
-        <InfoItem label="Angkatan" value={alumni.angkatan} />
+        <InfoItem label="Kategori Program" value={alumni.kategoriProgram || alumni.angkatan} />
+        <InfoItem label="Nomor Angkatan" value={alumni.nomorAngkatan || "—"} />
+        <InfoItem label="Tahun Angkatan" value={String(alumni.tahunAngkatan || "—")} />
 
         <InfoItem label="Wilayah" value={alumni.wilayah} />
 
@@ -822,7 +830,9 @@ function VerificationDetailModal({
 
             <DetailItem label="Nomor Alumni" value={alumni.nomorAlumni} />
 
-            <DetailItem label="Angkatan" value={alumni.angkatan} />
+            <DetailItem label="Kategori Program" value={alumni.kategoriProgram || alumni.angkatan} />
+            <DetailItem label="Nomor Angkatan" value={alumni.nomorAngkatan || "—"} />
+            <DetailItem label="Tahun Angkatan" value={String(alumni.tahunAngkatan || "—")} />
 
             <DetailItem label="Status" value={alumni.status} />
 

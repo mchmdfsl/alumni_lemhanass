@@ -21,6 +21,7 @@ export default function ListAngkatan() {
   const [page, setPage] = useState(1);
   const pageSize = 12;
   const [alumni, setAlumni] = useState<Alumni[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
@@ -34,6 +35,9 @@ export default function ListAngkatan() {
       try {
         const params = new URLSearchParams();
         if (query.trim()) params.set("q", query.trim());
+        if (selectedAngkatan !== "Semua Angkatan") params.set("kategori", selectedAngkatan);
+        params.set("limit", String(pageSize));
+        params.set("offset", String((page - 1) * pageSize));
         const response = await fetch(`/api/user/directory?${params.toString()}`, {
           method: "GET",
           cache: "no-store",
@@ -44,6 +48,7 @@ export default function ListAngkatan() {
           throw new Error(result.message || "Direktori alumni gagal dimuat.");
         }
         setAlumni(Array.isArray(result.data) ? result.data : []);
+        setTotalCount(Number.isFinite(Number(result.total)) ? Number(result.total) : 0);
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") return;
         setError(err instanceof Error ? err.message : "Terjadi kesalahan saat memuat data.");
@@ -54,7 +59,7 @@ export default function ListAngkatan() {
 
     loadDirectory();
     return () => controller.abort();
-  }, [query, reloadKey]);
+  }, [query, selectedAngkatan, page, pageSize, reloadKey]);
 
   const categories = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"];
   const angkatanOptions = useMemo(() => Array.from(new Set([...categories, ...alumni.map((person) => String(person.kategoriProgram || person.angkatan || "").trim()).filter(Boolean)])).sort((a, b) => {
@@ -63,11 +68,9 @@ export default function ListAngkatan() {
     if (ai >= 0 || bi >= 0) return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
     return a.localeCompare(b, "id");
   }), [alumni]);
-  const filteredAlumni = useMemo(() => alumni.filter((person) => selectedAngkatan === "Semua Angkatan" || String(person.kategoriProgram || person.angkatan || "") === selectedAngkatan), [alumni, selectedAngkatan]);
-  const totalPages = Math.max(1, Math.ceil(filteredAlumni.length / pageSize));
-  const visibleAlumni = filteredAlumni.slice((page - 1) * pageSize, page * pageSize);
-
-  useEffect(() => { setPage(1); }, [query, selectedAngkatan]);
+  const filteredAlumni = alumni;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const visibleAlumni = filteredAlumni;
 
   return (
     <div className="space-y-6">
@@ -93,7 +96,7 @@ export default function ListAngkatan() {
               id="directory-search"
               type="search"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => { setQuery(event.target.value); setPage(1); }}
               maxLength={100}
               placeholder="Nama, kategori, angkatan, jabatan, atau instansi..."
               className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm outline-none transition focus:border-[#0b1f3a] focus:ring-4 focus:ring-[#0b1f3a]/10"
@@ -102,13 +105,13 @@ export default function ListAngkatan() {
           <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <div>
               <label htmlFor="directory-angkatan" className="mb-2 block text-sm font-semibold text-[#172033]">Filter angkatan</label>
-              <select id="directory-angkatan" value={selectedAngkatan} onChange={(event) => setSelectedAngkatan(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:border-[#0b1f3a] focus:ring-4 focus:ring-[#0b1f3a]/10">
+              <select id="directory-angkatan" value={selectedAngkatan} onChange={(event) => { setSelectedAngkatan(event.target.value); setPage(1); }} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:border-[#0b1f3a] focus:ring-4 focus:ring-[#0b1f3a]/10">
                 <option>Semua Angkatan</option>
                 {angkatanOptions.map((option) => <option key={option} value={option}>{option}</option>)}
               </select>
             </div>
             <div className="flex items-center justify-between gap-3 pb-1 text-xs text-slate-500 sm:justify-end">
-              <span>{loading ? "Memuat data alumni..." : `${filteredAlumni.length} alumni ditemukan`}</span>
+              <span>{loading ? "Memuat data alumni..." : `${totalCount} alumni ditemukan`}</span>
               {loading && <RefreshCw size={15} className="animate-spin" aria-label="Memuat" />}
             </div>
           </div>
@@ -182,7 +185,7 @@ export default function ListAngkatan() {
           </div>
         </section>
       )}
-      {filteredAlumni.length > pageSize && (
+      {totalCount > pageSize && (
         <nav aria-label="Halaman direktori alumni" className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-500">Halaman {page} dari {totalPages}</p>
           <div className="flex items-center gap-2">

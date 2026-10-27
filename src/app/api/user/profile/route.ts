@@ -16,6 +16,9 @@ async function getVerifiedAlumni() {
       a.nomor_alumni AS "nomorAlumni",
       a.nama,
       a.angkatan,
+      COALESCE(a.kategori_program, a.angkatan) AS "kategoriProgram",
+      COALESCE(a.nomor_angkatan, '') AS "nomorAngkatan",
+      a.tahun_angkatan AS "tahunAngkatan",
       a.jabatan,
       a.instansi,
       a.wilayah,
@@ -74,11 +77,10 @@ export async function PATCH(request: NextRequest) {
     const nama =
       typeof body.nama === "string" ? body.nama.trim() : "";
 
-    const angkatan =
-      typeof body.angkatan === "string" ||
-      typeof body.angkatan === "number"
-        ? String(body.angkatan).trim()
-        : "";
+    const kategoriProgram = typeof body.kategoriProgram === "string" ? body.kategoriProgram.trim().toLocaleUpperCase("id-ID") : "";
+    const nomorAngkatan = typeof body.nomorAngkatan === "string" ? body.nomorAngkatan.trim() : "";
+    const tahunAngkatan = Number(body.tahunAngkatan);
+    const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"]);
 
     const jabatan =
       typeof body.jabatan === "string" ? body.jabatan.trim() : "";
@@ -99,9 +101,9 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (!angkatan || angkatan.length > 100) {
+    if (!allowedCategories.has(kategoriProgram) || !nomorAngkatan || nomorAngkatan.length > 40 || !Number.isInteger(tahunAngkatan) || tahunAngkatan < 1900 || tahunAngkatan > new Date().getFullYear() + 5) {
       return NextResponse.json(
-        { message: "Tahun angkatan wajib diisi." },
+        { message: "Kategori program, nomor angkatan, dan tahun angkatan wajib diisi dengan benar." },
         { status: 400 }
       );
     }
@@ -115,7 +117,10 @@ export async function PATCH(request: NextRequest) {
 
     const payload = {
       nama,
-      angkatan,
+      angkatan: kategoriProgram,
+      kategoriProgram,
+      nomorAngkatan,
+      tahunAngkatan,
       jabatan,
       instansi,
       wilayah,

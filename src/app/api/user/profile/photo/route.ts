@@ -85,6 +85,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Kolom foto profil belum tersedia di semua database yang sudah ada.
+    // Cek sebelum mengunggah agar file tidak terlanjur tersimpan di R2.
+    const [photoSchema] = await db()`
+      SELECT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = 'alumni'
+          AND column_name = 'foto_profil'
+      ) AS "hasPhotoColumn"
+    `;
+    if (!photoSchema?.hasPhotoColumn) {
+      return NextResponse.json(
+        { message: "Fitur foto profil belum diaktifkan pada skema database. Kolom foto_profil perlu disiapkan oleh administrator database." },
+        { status: 503 }
+      );
+    }
+
     // 3. Periksa konfigurasi Cloudflare R2.
     if (!r2PublicUrl) {
       console.error("R2_PUBLIC_URL belum dikonfigurasi.");

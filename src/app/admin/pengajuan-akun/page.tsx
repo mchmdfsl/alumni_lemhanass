@@ -27,8 +27,14 @@ type RequestItem = {
   nomorAlumni: string | null;
   namaAlumni: string | null;
   angkatanAlumni: string | null;
+  kategoriProgramAlumni: string | null;
+  nomorAngkatanAlumni: string | null;
+  tahunAngkatanAlumni: number | string | null;
   submittedNama: string | null;
   submittedAngkatan: string | null;
+  submittedKategoriProgram: string | null;
+  submittedNomorAngkatan: string | null;
+  submittedTahunAngkatan: number | string | null;
   submittedNomorHp: string | null;
   submittedNomorAlumni: string | null;
   submittedInstansi: string | null;
@@ -174,7 +180,11 @@ export default function PengajuanAkunPage() {
                 {items.map((item) => {
                   const isNew = item.requestType === "register";
                   const nama = isNew ? item.submittedNama : item.namaAlumni;
-                  const angkatan = isNew ? item.submittedAngkatan : item.angkatanAlumni;
+                  const kategoriProgram = isNew
+                    ? item.submittedKategoriProgram || item.submittedAngkatan
+                    : item.kategoriProgramAlumni || item.angkatanAlumni;
+                  const nomorAngkatan = isNew ? item.submittedNomorAngkatan : item.nomorAngkatanAlumni;
+                  const tahunAngkatan = isNew ? item.submittedTahunAngkatan : item.tahunAngkatanAlumni;
                   const pending = item.status === "Menunggu";
                   return (
                     <article key={item.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -202,7 +212,9 @@ export default function PengajuanAkunPage() {
 
                       <div className="space-y-4 p-5 sm:p-6">
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                          <InfoItem label="Angkatan / kategori" value={display(angkatan)} />
+                          <InfoItem label="Kategori program" value={display(kategoriProgram)} />
+                          <InfoItem label="Nomor angkatan" value={display(nomorAngkatan == null ? null : String(nomorAngkatan))} />
+                          <InfoItem label="Tahun angkatan" value={display(tahunAngkatan == null ? null : String(tahunAngkatan))} />
                           <InfoItem label="Nomor alumni" value={display(isNew ? item.submittedNomorAlumni : item.nomorAlumni)} />
                           {isNew && <InfoItem label="Nomor HP" value={display(item.submittedNomorHp)} icon={<Phone size={15} />} />}
                           {isNew && <InfoItem label="Instansi" value={display(item.submittedInstansi)} />}

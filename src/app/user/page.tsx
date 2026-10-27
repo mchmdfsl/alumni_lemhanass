@@ -12,7 +12,6 @@ import {
   CircleCheck,
   Clock3,
   IdCard,
-  Clock3,
 } from "lucide-react";
 
 type AlumniUser = {

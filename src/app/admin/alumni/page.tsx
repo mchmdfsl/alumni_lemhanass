@@ -30,6 +30,9 @@ interface Alumni {
   nomorAlumni: string;
   nama: string;
   angkatan: string;
+  kategoriProgram: string;
+  nomorAngkatan: string;
+  tahunAngkatan: string;
   instansi: string;
   jabatan: string;
   wilayah: string;
@@ -138,7 +141,7 @@ export default function AlumniPage() {
 
   // Unique filter options derived from data
   const angkatanOptions = useMemo(() => {
-    const order = ["P3N", "P4N", "PPNK", "TOT"];
+    const order = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"];
     const opts = Array.from(new Set([...order, ...alumniData.map((a) => a.angkatan).filter(Boolean)])).sort((a, b) => {
       const ai = order.indexOf(a); const bi = order.indexOf(b);
       if (ai >= 0 || bi >= 0) return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
@@ -505,7 +508,7 @@ function AlumniTableRow({ alumni, onDetail, onEdit, onDelete }: { alumni: Alumni
         </div>
       </td>
       <td className="px-4 py-4">
-        <span className="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-[#475569]">{alumni.angkatan}</span>
+        <div className="space-y-1"><span className="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-[#475569]">{alumni.kategoriProgram || alumni.angkatan}</span><p className="text-xs text-slate-500">Angkatan {alumni.nomorAngkatan || "—"} · {alumni.tahunAngkatan || "Tahun —"}</p></div>
       </td>
       <td className="max-w-[250px] px-4 py-4">
         <p className="line-clamp-1 text-sm font-medium text-[#475569]">{alumni.instansi}</p>
@@ -707,7 +710,9 @@ function AlumniDetailModal({ alumni, onClose, onEdit }: { alumni: Alumni; onClos
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <DetailItem label="Nama Lengkap" value={alumni.nama} />
             <DetailItem label="Nomor Alumni" value={alumni.nomorAlumni} />
-            <DetailItem label="Angkatan" value={alumni.angkatan} />
+            <DetailItem label="Kategori Program" value={alumni.kategoriProgram || alumni.angkatan} />
+            <DetailItem label="Nomor Angkatan" value={alumni.nomorAngkatan || "—"} />
+            <DetailItem label="Tahun Angkatan" value={String(alumni.tahunAngkatan || "—")} />
             <DetailItem label="Status" value={alumni.status} />
             <DetailItem label="Instansi" value={alumni.instansi} />
             <DetailItem label="Jabatan" value={alumni.jabatan} />
@@ -748,7 +753,9 @@ function AlumniEditModal({ alumni, saving, onClose, onSave }: { alumni: Alumni; 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <EditField label="Nama Lengkap *" value={form.nama} onChange={set("nama")} />
 
-            <CategorySelect label="Kategori Program *" value={form.angkatan} onChange={set("angkatan")} />
+            <CategorySelect label="Kategori Program *" value={form.kategoriProgram || form.angkatan} onChange={set("kategoriProgram")} />
+            <EditField label="Nomor Angkatan *" value={form.nomorAngkatan} onChange={set("nomorAngkatan")} required />
+            <EditField label="Tahun Angkatan *" type="number" value={String(form.tahunAngkatan || "")} onChange={set("tahunAngkatan")} required />
             <EditField label="Nomor HP" value={form.nomorHp} onChange={set("nomorHp")} />
             <EditField label="Nomor Alumni" value={form.nomorAlumni} onChange={set("nomorAlumni")} />
             <div className="flex flex-col gap-1.5">
@@ -802,7 +809,9 @@ function AlumniAddModal({ saving, onClose, onSave }: { saving: boolean; onClose:
           <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 sm:p-6">
             <EditField label="Nama Lengkap *" name="nama" required />
 
-            <CategorySelect label="Kategori Program *" name="angkatan" required />
+            <CategorySelect label="Kategori Program *" name="kategoriProgram" required />
+            <EditField label="Nomor Angkatan *" name="nomorAngkatan" required />
+            <EditField label="Tahun Angkatan *" name="tahunAngkatan" type="number" required />
             <EditField label="Nomor HP" name="nomorHp" />
             <EditField label="Nomor Alumni" name="nomorAlumni" />
             <EditField label="Instansi" name="instansi" />
@@ -827,7 +836,7 @@ function AlumniAddModal({ saving, onClose, onSave }: { saving: boolean; onClose:
 }
 
 function CategorySelect({ label, value, onChange, name, required = false }: { label: string; value?: string; onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void; name?: string; required?: boolean }) {
-  const categories = ["P3N", "P4N", "PPNK", "TOT"];
+  const categories = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"];
   const options = value && !categories.includes(value) ? [value, ...categories] : categories;
   return (
     <div className="flex flex-col gap-1.5">

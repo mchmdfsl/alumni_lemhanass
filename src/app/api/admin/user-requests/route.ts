@@ -111,6 +111,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: true, message: status === "Disetujui" ? "Permintaan disetujui." : "Permintaan ditolak." });
   } catch (error) {
     console.error("PATCH admin user request failed:", error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Gagal memproses permintaan." }, { status: 500 });
+    return NextResponse.json({ error: "Gagal memproses permintaan. Periksa data dan log server." }, { status: 500 });
   }
 }

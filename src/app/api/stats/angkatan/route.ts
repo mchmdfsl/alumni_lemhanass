@@ -3,42 +3,83 @@ import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const categories = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"];
 
 export async function GET() {
-  if (!(await isAdminAuthenticated()))
+  if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  }
+
   try {
+    type AngkatanStat = {
+      angkatan: string;
+      kategoriProgram: string;
+      nomorAngkatan: string;
+      tahunAngkatan: number | null;
+      total: number;
+      terverifikasi: number;
+      menunggu: number;
+      ditolak: number;
+      wilayahDominan: string | null;
+    };
+
     const rows = await db()`
       SELECT
-        angkatan,
+        COALESCE(NULLIF(trim(kategori_program), ''), NULLIF(trim(angkatan), ''), 'Tidak Diketahui') AS angkatan,
+        COALESCE(NULLIF(trim(kategori_program), ''), NULLIF(trim(angkatan), ''), 'Tidak Diketahui') AS "kategoriProgram",
+        COALESCE(NULLIF(trim(nomor_angkatan), ''), '-') AS "nomorAngkatan",
+        tahun_angkatan AS "tahunAngkatan",
         COUNT(*)::int AS total,
         COUNT(*) FILTER (WHERE status = 'Terverifikasi')::int AS terverifikasi,
         COUNT(*) FILTER (WHERE status = 'Menunggu')::int AS menunggu,
         COUNT(*) FILTER (WHERE status = 'Ditolak')::int AS ditolak,
         (
-          SELECT CASE WHEN wilayah = '' OR wilayah IS NULL THEN '-' ELSE wilayah END
+          SELECT CASE WHEN NULLIF(trim(a2.wilayah), '') IS NULL THEN '-' ELSE a2.wilayah END
           FROM alumni a2
-          WHERE a2.angkatan = alumni.angkatan
-          GROUP BY wilayah
+          WHERE COALESCE(NULLIF(trim(a2.kategori_program), ''), NULLIF(trim(a2.angkatan), ''), 'Tidak Diketahui')
+                = COALESCE(NULLIF(trim(alumni.kategori_program), ''), NULLIF(trim(alumni.angkatan), ''), 'Tidak Diketahui')
+            AND COALESCE(NULLIF(trim(a2.nomor_angkatan), ''), '-') = COALESCE(NULLIF(trim(alumni.nomor_angkatan), ''), '-')
+            AND a2.tahun_angkatan IS NOT DISTINCT FROM alumni.tahun_angkatan
+          GROUP BY a2.wilayah
           ORDER BY COUNT(*) DESC
           LIMIT 1
         ) AS "wilayahDominan"
       FROM alumni
-      GROUP BY angkatan
-      ORDER BY COUNT(*) DESC`;
+      GROUP BY
+        COALESCE(NULLIF(trim(kategori_program), ''), NULLIF(trim(angkatan), ''), 'Tidak Diketahui'),
+        COALESCE(NULLIF(trim(nomor_angkatan), ''), '-'),
+        tahun_angkatan
+      ORDER BY total DESC, "kategoriProgram" ASC, "nomorAngkatan" ASC, "tahunAngkatan" ASC NULLS LAST
+    `;
 
-    const categories = ["P3N", "P4N", "PPNK", "TOT"];
-    type AngkatanStat = { angkatan: string; total: number; terverifikasi: number; menunggu: number; ditolak: number; wilayahDominan: string | null };
     const typedRows = rows as unknown as AngkatanStat[];
-    const existing = new Set(typedRows.map((row) => row.angkatan));
-    const emptyCategories = categories.filter((category) => !existing.has(category)).map((angkatan) => ({
-      angkatan, total: 0, terverifikasi: 0, menunggu: 0, ditolak: 0, wilayahDominan: "-",
-    }));
-    const data: AngkatanStat[] = [...emptyCategories, ...typedRows].sort((a, b) => {
-      const order = categories.indexOf(a.angkatan);
-      const other = categories.indexOf(b.angkatan);
-      if (order >= 0 || other >= 0) return (order < 0 ? 99 : order) - (other < 0 ? 99 : other);
-      return b.total - a.total;
+    const existingCategories = new Set(typedRows.map((row) => row.kategoriProgram));
+    const emptyCategories: AngkatanStat[] = categories
+      .filter((category) => !existingCategories.has(category))
+      .map((category) => ({
+        angkatan: category,
+        kategoriProgram: category,
+        nomorAngkatan: "-",
+        tahunAngkatan: null,
+        total: 0,
+        terverifikasi: 0,
+        menunggu: 0,
+        ditolak: 0,
+        wilayahDominan: "-",
+      }));
+
+    const data = [...typedRows, ...emptyCategories].sort((a, b) => {
+      const categoryOrder = categories.indexOf(a.kategoriProgram);
+      const otherOrder = categories.indexOf(b.kategoriProgram);
+      if (categoryOrder !== otherOrder) {
+        if (categoryOrder < 0) return 1;
+        if (otherOrder < 0) return -1;
+        return categoryOrder - otherOrder;
+      }
+      return b.total - a.total || a.nomorAngkatan.localeCompare(b.nomorAngkatan, "id") ||
+        (a.tahunAngkatan ?? 9999) - (b.tahunAngkatan ?? 9999);
     });
 
     return NextResponse.json({ data });

@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         COALESCE(alamat, '') AS alamat,
         COALESCE(email, '') AS email,
         COALESCE(nomor_hp, '') AS "nomorHp",
-        foto_profil AS "fotoProfil",
+        to_jsonb(alumni)->>'foto_profil' AS "fotoProfil",
         status,
         alasan_penolakan AS "alasanPenolakan",
         sumber_data AS "sumberData",

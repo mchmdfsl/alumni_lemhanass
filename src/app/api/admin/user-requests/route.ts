@@ -15,7 +15,10 @@ export async function GET() {
       SELECT r.id, r.alumni_id AS "alumniId", r.request_type AS "requestType",
         r.payload, r.message, r.status, r.admin_note AS "adminNote",
         r.created_at AS "createdAt", a.nama, a.nomor_alumni AS "nomorAlumni",
-        a.angkatan, a.nama AS "currentNama", a.angkatan AS "currentAngkatan",
+        a.angkatan, COALESCE(a.kategori_program, a.angkatan) AS "currentKategoriProgram",
+        COALESCE(a.nomor_angkatan, '') AS "currentNomorAngkatan",
+        a.tahun_angkatan AS "currentTahunAngkatan",
+        a.nama AS "currentNama", a.angkatan AS "currentAngkatan",
         a.jabatan AS "currentJabatan", a.instansi AS "currentInstansi",
         a.wilayah AS "currentWilayah", a.nomor_hp AS "currentNomorHp",
         a.alamat AS "currentAlamat"
@@ -66,12 +69,18 @@ export async function PATCH(request: NextRequest) {
       if (status === "Disetujui" && req.requestType === "profile_update") {
         const payload = typeof req.payload === "string" ? JSON.parse(req.payload) : (req.payload ?? {});
         const nama = typeof payload.nama === "string" ? payload.nama.trim().slice(0, 200) : "";
-        const angkatan = typeof payload.angkatan === "string" ? payload.angkatan.trim().slice(0, 100) : "";
-        if (!nama || !angkatan) throw new Error("Payload perubahan profil tidak lengkap.");
+        const kategoriProgram = typeof payload.kategoriProgram === "string" ? payload.kategoriProgram.trim().toLocaleUpperCase("id-ID").slice(0, 80) : "";
+        const nomorAngkatan = typeof payload.nomorAngkatan === "string" ? payload.nomorAngkatan.trim().slice(0, 40) : "";
+        const tahunAngkatan = Number(payload.tahunAngkatan);
+        const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"]);
+        if (!nama || !allowedCategories.has(kategoriProgram) || !nomorAngkatan || !Number.isInteger(tahunAngkatan)) throw new Error("Payload perubahan profil tidak lengkap.");
         await tx`
           UPDATE alumni SET
             nama = ${nama},
-            angkatan = ${angkatan},
+            angkatan = ${kategoriProgram},
+            kategori_program = ${kategoriProgram},
+            nomor_angkatan = ${nomorAngkatan},
+            tahun_angkatan = ${tahunAngkatan},
             jabatan = ${String(payload.jabatan ?? "").trim().slice(0, 200)},
             instansi = ${String(payload.instansi ?? "").trim().slice(0, 250)},
             wilayah = ${String(payload.wilayah ?? "").trim().slice(0, 150)},

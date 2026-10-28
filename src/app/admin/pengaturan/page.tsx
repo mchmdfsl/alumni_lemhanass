@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import {
   Database,
-  Download,
   KeyRound,
   Lock,
   Server,
@@ -27,7 +26,6 @@ export default function PengaturanPage() {
     ditolak: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [exportLimit, setExportLimit] = useState("all");
 
   useEffect(() => {
     let active = true;
@@ -198,53 +196,6 @@ export default function PengaturanPage() {
                   </div>
                 </div>
 
-                {/* Backup & Export Data */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                      <Download size={20} />
-                    </div>
-                    <div>
-                      <h2 className="text-base font-bold text-[#172033]">
-                        Cadangan Data (Backup)
-                      </h2>
-                      <p className="text-xs text-[#94a3b8]">
-                        Unduh seluruh data alumni ke format CSV
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="mb-4 text-xs leading-relaxed text-slate-600">
-                    Pilih jumlah baris alumni yang ingin diunduh. Filter kategori, nama, dan status juga tetap bisa ditambahkan ke URL ekspor bila diperlukan.
-                  </p>
-
-                  <div className="mb-4 max-w-xs">
-                    <label htmlFor="export-limit" className="mb-1.5 block text-xs font-semibold text-slate-700">
-                      Jumlah data
-                    </label>
-                    <select
-                      id="export-limit"
-                      value={exportLimit}
-                      onChange={(event) => setExportLimit(event.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#b28b16] focus:ring-2 focus:ring-[#b28b16]/20"
-                    >
-                      <option value="1">1 data alumni</option>
-                      <option value="3">3 data alumni</option>
-                      <option value="all">Semua data alumni</option>
-                    </select>
-                  </div>
-
-                  <a
-                    href={`/api/alumni/export?format=csv&limit=${exportLimit}`}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#1a365d]"
-                  >
-                    <Download size={15} />
-                    Unduh CSV {exportLimit === "all" ? "Semua Data" : `${exportLimit} Data`}
-                  </a>
-                  <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
-                    CSV berisi data alumni dan informasi akun yang tersedia seperti email. Password asli tidak diekspor demi keamanan akun.
-                  </p>
-                </div>
               </div>
 
               {/* Right Column: Database & Server Stats */}

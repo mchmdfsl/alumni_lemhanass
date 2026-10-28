@@ -113,19 +113,27 @@ export default function AngkatanPage() {
               </div>
             </div>
 
-            {/* CATEGORY FILTER */}
-            <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="mb-3 text-sm font-bold text-[#172033]">Filter kategori program</p>
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {["Semua", ...categories].map((category) => (
-                  <button key={category} type="button" onClick={() => { setSelectedCategory(category); setPage(1); }}
-                    className={'shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold transition ' + (selectedCategory === category ? 'bg-[#0b1f3a] text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50')}>
-                    {category}
-                  </button>
-                ))}
+            {!selectedCategory ? (
+              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {categories.map((category) => {
+                  const rows = angkatanData.filter((item) => item.kategoriProgram === category && item.total > 0);
+                  const count = rows.reduce((sum, item) => sum + item.total, 0);
+                  return <button key={category} type="button" onClick={() => { setSelectedCategory(category); setSearch(""); setPage(1); }} className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-[#b28b16] hover:shadow-md">
+                    <div className="flex items-center justify-between"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0b1f3a]/5 text-[#0b1f3a]"><GraduationCap size={21} /></span><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{rows.length} angkatan</span></div>
+                    <h2 className="mt-4 text-lg font-bold text-[#0b1f3a]">{category}</h2>
+                    <p className="mt-1 text-sm text-slate-500">{count.toLocaleString("id-ID")} alumni terdaftar</p>
+                    <p className="mt-4 text-sm font-semibold text-[#9b7815]">Lihat daftar angkatan →</p>
+                  </button>;
+                })}
+              </section>
+            ) : (
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div><p className="text-xs font-semibold uppercase tracking-wide text-[#b28b16]">Kategori terpilih</p><h2 className="mt-1 text-xl font-bold text-[#0b1f3a]">{selectedCategory}</h2></div>
+                <button type="button" onClick={() => { setSelectedCategory(""); setSearch(""); setPage(1); }} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-[#0b1f3a] hover:bg-slate-50"><ChevronLeft size={16} /> Semua Kategori</button>
               </div>
-            </div>
+            )}
 
+            {selectedCategory && <>
             {/* SEARCH */}
             <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-center justify-between gap-3">
@@ -156,7 +164,7 @@ export default function AngkatanPage() {
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
                 <div>
-                  <h2 className="font-bold text-[#172033]">Daftar Angkatan</h2>
+                  <h2 className="font-bold text-[#172033]">Daftar Angkatan {selectedCategory}</h2>
                   <p className="mt-1 text-xs text-[#94a3b8]">
                     {loading ? "Memuat..." : `${filtered.length} angkatan ditemukan`}
                   </p>
@@ -222,7 +230,7 @@ export default function AngkatanPage() {
                           </td>
                           <td className="px-6 py-4 text-center">
                             <a
-                              href={`/admin/alumni?angkatan=${encodeURIComponent(item.angkatan)}`}
+                              href={`/admin/alumni?kategori=${encodeURIComponent(item.kategoriProgram)}&angkatan=${encodeURIComponent(item.nomorAngkatan)}&back=angkatan`}
                               className="inline-flex items-center gap-1.5 rounded-lg bg-[#0b1f3a]/5 px-3 py-1.5 text-xs font-semibold text-[#0b1f3a] transition hover:bg-[#0b1f3a]/10"
                             >
                               <Users size={13} />
@@ -271,6 +279,7 @@ export default function AngkatanPage() {
                 </div>
               )}
             </div>
+            </>}
           </div>
         </main>
       </div>

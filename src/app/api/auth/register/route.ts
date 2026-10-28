@@ -14,7 +14,6 @@ export async function POST(request: NextRequest) {
 
     const nama = value("nama", 200);
     const kategoriProgram = value("kategoriProgram", 80).toLocaleUpperCase("id-ID");
-    const nomorAngkatanInput = value("nomorAngkatan", 40);
     const tahunAngkatanRaw = value("tahunAngkatan", 4);
     const tahunAngkatan = /^\d{4}$/.test(tahunAngkatanRaw) ? Number(tahunAngkatanRaw) : NaN;
     const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"]);
@@ -35,8 +34,8 @@ export async function POST(request: NextRequest) {
     if (!allowedCategories.has(kategoriProgram)) {
       return NextResponse.json({ error: "Kategori program tidak valid." }, { status: 400 });
     }
-    if (nomorAngkatanInput.length > 40 || tahunAngkatan < 1900 || tahunAngkatan > new Date().getFullYear() + 5) {
-      return NextResponse.json({ error: "Nomor atau tahun angkatan tidak valid." }, { status: 400 });
+    if (tahunAngkatan < 1900 || tahunAngkatan > new Date().getFullYear() + 5) {
+      return NextResponse.json({ error: "Tahun angkatan tidak valid." }, { status: 400 });
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: "Format email tidak valid." }, { status: 400 });
@@ -62,17 +61,35 @@ export async function POST(request: NextRequest) {
     const sql = db();
 
     const result = await sql.begin(async (tx) => {
-      // Serialize registrations for the same email and identity. Without these
-      // transaction-scoped locks, two concurrent requests could both pass the
-      // duplicate checks before either one inserts its pending request.
+      // Serialize by category so concurrent registrations cannot receive the same
+      // next cohort number. The server recalculates the number; client input is never trusted.
+      await tx`
+        SELECT pg_advisory_xact_lock(hashtextextended(${"register-category:" + kategoriProgram}, 0))
+      `;
+      const cohortRows = await tx`
+        SELECT nomor_angkatan AS "nomorAngkatan"
+        FROM alumni
+        WHERE upper(trim(coalesce(kategori_program, angkatan, ''))) = ${kategoriProgram}
+        UNION ALL
+        SELECT submitted_nomor_angkatan AS "nomorAngkatan"
+        FROM alumni_account_requests
+        WHERE status = 'Menunggu'
+          AND request_type = 'register'
+          AND upper(trim(coalesce(submitted_kategori_program, submitted_angkatan, ''))) = ${kategoriProgram}
+      `;
+      const highestCohort = cohortRows.reduce((highest, row) => {
+        const raw = String(row.nomorAngkatan ?? "").trim();
+        if (!/^\\d+$/.test(raw)) return highest;
+        const parsed = Number(raw);
+        return Number.isSafeInteger(parsed) ? Math.max(highest, parsed) : highest;
+      }, 0);
+      const nomorAngkatan = String(highestCohort + 1);
+
+      // Also serialize requests with the same email and identity.
       await tx`
         SELECT pg_advisory_xact_lock(hashtextextended(${"register-email:" + email}, 0))
       `;
-      const identityKey = [
-        nama.toLocaleLowerCase("id-ID"),
-        kategoriProgram,
-        nomorAngkatan,
-      ].join("|");
+      const identityKey = [nama.toLocaleLowerCase("id-ID"), kategoriProgram, nomorAngkatan].join("|");
       await tx`
         SELECT pg_advisory_xact_lock(hashtextextended(${"register-identity:" + identityKey}, 0))
       `;

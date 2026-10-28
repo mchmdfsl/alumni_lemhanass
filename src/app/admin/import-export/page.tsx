@@ -155,6 +155,9 @@ export default function ImportExportPage() {
   async function handleFileChange(selected: File | null) {
     setFile(selected);
     setImportRows([]);
+    setImportSearch("");
+    setImportCategory("");
+    setImportCohortNumber("");
     setSelectedImportKey("");
     setImportError("");
     setImportStatus("");

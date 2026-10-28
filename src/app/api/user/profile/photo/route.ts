@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
       const previousKey = ownedPhotoKey(Number(alumni.id), previousPhotoUrl);
       if (previousKey && previousKey !== key) {
         try {
-          await r2.send(new DeleteObjectCommand({
+          await getR2Client().send(new DeleteObjectCommand({
             Bucket: r2Bucket,
             Key: previousKey,
           }));
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
     console.error("POST /api/user/profile/photo failed:", error);
     if (uploadedKey && !databaseUpdated) {
       try {
-        await r2.send(new DeleteObjectCommand({
+        await getR2Client().send(new DeleteObjectCommand({
           Bucket: r2Bucket,
           Key: uploadedKey,
         }));
@@ -245,7 +245,7 @@ export async function DELETE() {
       const key = ownedPhotoKey(Number(alumni.id), photoUrl);
       if (key) {
         try {
-          await r2.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: key }));
+          await getR2Client().send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: key }));
         } catch (storageError) {
           // URL di database sudah dilepas; kegagalan R2 tidak memulihkan foto lama.
           console.error("Gagal menghapus file foto dari R2:", storageError);

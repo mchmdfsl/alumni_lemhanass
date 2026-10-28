@@ -32,6 +32,7 @@ export default function AngkatanPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -50,16 +51,19 @@ export default function AngkatanPage() {
 
   const filtered = useMemo(() => {
     const kw = search.toLowerCase().trim();
-    return angkatanData.filter((a) =>
-      [a.kategoriProgram, a.nomorAngkatan, a.tahunAngkatan == null ? "" : String(a.tahunAngkatan), a.angkatan]
-        .some((value) => String(value ?? "").toLowerCase().includes(kw))
-    );
-  }, [search, angkatanData]);
+    return angkatanData.filter((a) => {
+      const categoryMatch = selectedCategory === "Semua" || a.kategoriProgram === selectedCategory;
+      const searchMatch = [a.kategoriProgram, a.nomorAngkatan, a.tahunAngkatan == null ? "" : String(a.tahunAngkatan), a.angkatan].some((value) => String(value ?? "").toLowerCase().includes(kw));
+      return a.total > 0 && categoryMatch && searchMatch;
+    });
+  }, [search, selectedCategory, angkatanData]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-  const totalAlumni = angkatanData.reduce((s, a) => s + a.total, 0);
+  const realCohorts = angkatanData.filter((a) => a.total > 0);
+  const totalAlumni = realCohorts.reduce((s, a) => s + a.total, 0);
+  const categories = Array.from(new Set(realCohorts.map((a) => a.kategoriProgram))).sort();
 
   return (
     <div className="min-h-screen bg-[#f5f7fa]">
@@ -99,13 +103,26 @@ export default function AngkatanPage() {
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">Jumlah Angkatan</p>
-                <p className="mt-1 text-2xl font-bold text-[#0b1f3a]">{loading ? "—" : angkatanData.length}</p>
+                <p className="mt-1 text-2xl font-bold text-[#0b1f3a]">{loading ? "—" : realCohorts.length}</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">Kategori Program</p>
                 <p className="mt-1 text-lg font-bold text-[#0b1f3a] truncate">
-                  {loading ? "—" : angkatanData[0]?.kategoriProgram ?? "-"}
+                  {loading ? "—" : ([...realCohorts].sort((a, b) => b.total - a.total)[0]?.kategoriProgram ?? "-")}
                 </p>
+              </div>
+            </div>
+
+            {/* CATEGORY FILTER */}
+            <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="mb-3 text-sm font-bold text-[#172033]">Filter kategori program</p>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {["Semua", ...categories].map((category) => (
+                  <button key={category} type="button" onClick={() => { setSelectedCategory(category); setPage(1); }}
+                    className={'shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold transition ' + (selectedCategory === category ? 'bg-[#0b1f3a] text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50')}>
+                    {category}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -118,14 +135,14 @@ export default function AngkatanPage() {
                     type="text"
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                    placeholder="Cari kategori, nomor, atau tahun angkatan..."
+                    placeholder="Cari program, nomor angkatan, atau tahun..."
                     className="h-11 w-full rounded-xl border border-slate-200 bg-[#fafbfc] pl-10 pr-4 text-sm text-[#172033] outline-none transition placeholder:text-[#94a3b8] focus:border-[#0b1f3a] focus:bg-white focus:ring-4 focus:ring-[#0b1f3a]/5"
                   />
                 </div>
-                {search && (
+                {(search || selectedCategory !== "Semua") && (
                   <button
                     type="button"
-                    onClick={() => { setSearch(""); setPage(1); }}
+                    onClick={() => { setSearch(""); setSelectedCategory("Semua"); setPage(1); }}
                     className="flex items-center gap-1.5 text-xs font-semibold text-[#9e1b32] hover:underline"
                   >
                     <RefreshCcw size={13} />

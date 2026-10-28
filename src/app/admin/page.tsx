@@ -141,19 +141,6 @@ export default function AdminDashboardPage() {
                 <DashboardAction href="/admin/permintaan-alumni" title="Permintaan Alumni" description="Tinjau permintaan perubahan data" />
               )}
             </section>
-
-            {adminRole === "super_admin" && (
-              <section className="mt-4 flex flex-col gap-3 rounded-2xl border border-[#c9a227]/25 bg-[#c9a227]/5 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-                <div>
-                  <h2 className="font-bold text-[#0b1f3a]">Kontrol Superadmin</h2>
-                  <p className="mt-1 text-sm text-[#64748b]">Akses khusus untuk pengelolaan administrator dan penelusuran aktivitas sistem.</p>
-                </div>
-                <Link href="/admin/log-aktivitas" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#18385f]">
-                  Buka log aktivitas
-                </Link>
-              </section>
-            )}
-
             {/* =====================================
                 MAIN GRID
             ===================================== */}

@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
   const query = request.nextUrl.searchParams;
   const status = query.get("status") ?? "";
-  const angkatan = query.get("angkatan") ?? "";
+  const angkatan = query.get("kategoriProgram") ?? query.get("angkatan") ?? "";
   const wilayah = query.get("wilayah") ?? "";
   const nama = (query.get("nama") ?? query.get("search") ?? "").trim().slice(0, 120);
   const nomorAlumni = (query.get("nomorAlumni") ?? "").trim().slice(0, 80);
@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
         COALESCE(nomor_alumni, '') AS "nomorAlumni",
         nama,
         angkatan,
+        COALESCE(NULLIF(trim(kategori_program), ''), '') AS "kategoriProgram",
+        COALESCE(NULLIF(trim(nomor_angkatan), ''), '') AS "nomorAngkatan",
         COALESCE(tahun_angkatan::text, '') AS "tahunAngkatan",
         instansi,
         jabatan,
@@ -51,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     // Build CSV
     const headers = [
-      "Nomor Alumni", "Nama", "Angkatan", "Tahun Angkatan", "Instansi",
+      "Nomor Alumni", "Nama", "Angkatan", "Kategori Program", "Nomor Angkatan", "Tahun Angkatan", "Instansi",
       "Jabatan", "Wilayah", "Alamat", "Email", "Nomor HP", "Status",
       "Alasan Penolakan", "Sumber Data", "Tanggal Input", "Tanggal Update", "Tanggal Verifikasi",
     ];
@@ -69,7 +71,7 @@ export async function GET(request: NextRequest) {
     const csvLines: string[] = [headers.map(escape).join(",")];
     for (const r of rows) {
       csvLines.push([
-        r.nomorAlumni, r.nama, r.angkatan, r.tahunAngkatan, r.instansi,
+        r.nomorAlumni, r.nama, r.angkatan, r.kategoriProgram, r.nomorAngkatan, r.tahunAngkatan, r.instansi,
         r.jabatan, r.wilayah, r.alamat, r.email, r.nomorHp, r.status,
         r.alasanPenolakan, r.sumberData, r.createdAt, r.updatedAt, r.verifiedAt,
       ].map(escape).join(","));

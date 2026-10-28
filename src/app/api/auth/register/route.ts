@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
     const kategoriProgram = value("kategoriProgram", 80).toLocaleUpperCase("id-ID");
     const tahunAngkatanRaw = value("tahunAngkatan", 4);
     const tahunAngkatan = /^\d{4}$/.test(tahunAngkatanRaw) ? Number(tahunAngkatanRaw) : NaN;
-    const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"]);
     const nomorHp = value("nomorHp", 50);
     const instansi = value("instansi", 250);
     const jabatan = value("jabatan", 200);
@@ -31,7 +30,7 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    if (!allowedCategories.has(kategoriProgram)) {
+    if (!/^[A-Z0-9]+(?:[ ][A-Z0-9]+){0,3}$/.test(kategoriProgram)) {
       return NextResponse.json({ error: "Kategori program tidak valid." }, { status: 400 });
     }
     if (tahunAngkatan < 1900 || tahunAngkatan > new Date().getFullYear() + 5) {

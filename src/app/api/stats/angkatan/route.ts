@@ -28,41 +28,40 @@ export async function GET() {
     // Agregasikan data terlebih dahulu. Subquery wilayah membaca hasil agregasi,
     // bukan kolom alumni yang belum dikelompokkan.
     const rows = await db() `
-      WITH grouped AS (
+      WITH normalized AS (
+        SELECT a.*, regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|PPNK|TOT)[[:space:]]+([0-9]+)') AS legacy_parts
+        FROM alumni a
+      ),
+      resolved AS (
         SELECT
-          COALESCE(NULLIF(trim(kategori_program), ''), NULLIF(trim(angkatan), ''), 'Tidak Diketahui') AS angkatan,
-          COALESCE(NULLIF(trim(kategori_program), ''), NULLIF(trim(angkatan), ''), 'Tidak Diketahui') AS "kategoriProgram",
-          COALESCE(NULLIF(trim(nomor_angkatan), ''), '-') AS "nomorAngkatan",
-          tahun_angkatan AS "tahunAngkatan",
+          CASE WHEN legacy_parts[1] IS NOT NULL AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, ''))))
+            THEN legacy_parts[1]
+            ELSE COALESCE(NULLIF(upper(trim(kategori_program)), ''), legacy_parts[1], NULLIF(trim(angkatan), ''), 'Tidak Diketahui')
+          END AS "kategoriProgram",
+          COALESCE(NULLIF(trim(nomor_angkatan), ''), legacy_parts[2], '-') AS "nomorAngkatan",
+          tahun_angkatan AS "tahunAngkatan", status, wilayah
+        FROM normalized
+      ),
+      grouped AS (
+        SELECT "kategoriProgram" AS angkatan, "kategoriProgram", "nomorAngkatan", "tahunAngkatan",
           COUNT(*)::int AS total,
           COUNT(*) FILTER (WHERE status = 'Terverifikasi')::int AS terverifikasi,
           COUNT(*) FILTER (WHERE status = 'Menunggu')::int AS menunggu,
           COUNT(*) FILTER (WHERE status = 'Ditolak')::int AS ditolak
-        FROM alumni
-        GROUP BY
-          COALESCE(NULLIF(trim(kategori_program), ''), NULLIF(trim(angkatan), ''), 'Tidak Diketahui'),
-          COALESCE(NULLIF(trim(nomor_angkatan), ''), '-'),
-          tahun_angkatan
+        FROM resolved
+        GROUP BY "kategoriProgram", "nomorAngkatan", "tahunAngkatan"
       )
-      SELECT
-        g.angkatan,
-        g."kategoriProgram",
-        g."nomorAngkatan",
-        g."tahunAngkatan",
-        g.total,
-        g.terverifikasi,
-        g.menunggu,
-        g.ditolak,
-        COALESCE(w.wilayah, '-') AS "wilayahDominan"
+      SELECT g.angkatan, g."kategoriProgram", g."nomorAngkatan", g."tahunAngkatan",
+        g.total, g.terverifikasi, g.menunggu, g.ditolak, COALESCE(w.wilayah, '-') AS "wilayahDominan"
       FROM grouped g
       LEFT JOIN LATERAL (
-        SELECT NULLIF(trim(a2.wilayah), '') AS wilayah
-        FROM alumni a2
-        WHERE COALESCE(NULLIF(trim(a2.kategori_program), ''), NULLIF(trim(a2.angkatan), ''), 'Tidak Diketahui') = g."kategoriProgram"
-          AND COALESCE(NULLIF(trim(a2.nomor_angkatan), ''), '-') = g."nomorAngkatan"
-          AND a2.tahun_angkatan IS NOT DISTINCT FROM g."tahunAngkatan"
-        GROUP BY a2.wilayah
-        ORDER BY COUNT(*) DESC, a2.wilayah ASC NULLS LAST
+        SELECT NULLIF(trim(r.wilayah), '') AS wilayah
+        FROM resolved r
+        WHERE r."kategoriProgram" = g."kategoriProgram"
+          AND r."nomorAngkatan" = g."nomorAngkatan"
+          AND r."tahunAngkatan" IS NOT DISTINCT FROM g."tahunAngkatan"
+        GROUP BY r.wilayah
+        ORDER BY COUNT(*) DESC, r.wilayah ASC NULLS LAST
         LIMIT 1
       ) w ON TRUE
       ORDER BY g.total DESC, g."kategoriProgram" ASC, g."nomorAngkatan" ASC, g."tahunAngkatan" ASC NULLS LAST

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download, FileUp, FileSpreadsheet, ShieldCheck } from "lucide-react";
+import { Download, FileUp, FileSpreadsheet, ShieldCheck, KeyRound, UserRoundPlus } from "lucide-react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 
@@ -56,6 +56,10 @@ function parseCsv(text: string): string[][] {
 export default function ImportExportPage() {
   const router = useRouter();
   const [roleChecked, setRoleChecked] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [accountLoading, setAccountLoading] = useState(false);
+  const [accountStatus, setAccountStatus] = useState("");
+  const [accountError, setAccountError] = useState("");
   const [exportScope, setExportScope] = useState("all");
   const [exportNama, setExportNama] = useState("");
   const [exportKategori, setExportKategori] = useState("");
@@ -77,6 +81,62 @@ export default function ImportExportPage() {
   const [importError, setImportError] = useState("");
   const [importStatus, setImportStatus] = useState("");
   const [busy, setBusy] = useState(false);
+
+
+  async function handleBulkActivateAccounts() {
+    if (!window.confirm("Buat akun untuk seluruh alumni terverifikasi yang belum memiliki akun? Proses berjalan per 20 akun. Password baru akan diunduh dalam CSV. Lanjutkan?")) return;
+    setAccountLoading(true); setAccountStatus(""); setAccountError("");
+    const all: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string}> = [];
+    try {
+      let more = true, batches = 0;
+      while (more) {
+        if (++batches > 500) throw new Error("Batas 10.000 akun tercapai. Jalankan lagi untuk melanjutkan.");
+        const response = await fetch("/api/admin/alumni-accounts/bulk-activate", {method:"POST",cache:"no-store"});
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Aktivasi akun gagal.");
+        const credentials = Array.isArray(result.credentials) ? result.credentials : [];
+        all.push(...credentials); more = credentials.length === 20;
+        if (!credentials.length) break;
+      }
+      if (!all.length) { setAccountStatus("Tidak ada alumni terverifikasi tanpa akun. Tidak ada perubahan dilakukan."); return; }
+      downloadCredentialsCsv("kredensial-alumni", all);
+      setAccountStatus(`Berhasil membuat ${all.length} akun. CSV password telah diunduh. Simpan file dengan aman.`);
+    } catch(e) { setAccountError(e instanceof Error ? e.message : "Aktivasi akun gagal."); }
+    finally { setAccountLoading(false); }
+  }
+
+  async function handleResetPasswords() {
+    if (!window.confirm("PERINGATAN: password semua akun alumni aktif dan terverifikasi akan diganti. Password lama tidak berlaku lagi. CSV berisi password baru. Lanjutkan?")) return;
+    setAccountLoading(true); setAccountStatus(""); setAccountError("");
+    const all: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string;accountId?:number}> = [];
+    try {
+      let afterId = 0, more = true;
+      while (more) {
+        const response = await fetch("/api/admin/alumni-accounts/reset-passwords", {method:"POST",cache:"no-store",headers:{"Content-Type":"application/json"},body:JSON.stringify({afterId})});
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Reset password gagal.");
+        const credentials = Array.isArray(result.credentials) ? result.credentials : [];
+        all.push(...credentials); afterId = Number(result.lastId) || afterId; more = Boolean(result.hasMore);
+        if (more && !credentials.length) throw new Error("Batch kosong, proses dihentikan demi keamanan.");
+      }
+      if (!all.length) { setAccountStatus("Tidak ada akun aktif terverifikasi. Password tidak diubah."); return; }
+      downloadCredentialsCsv("password-baru-alumni", all);
+      setAccountStatus(`Password ${all.length} akun berhasil direset. CSV password baru telah diunduh. Simpan file dengan aman.`);
+    } catch(e) {
+      if (all.length) downloadCredentialsCsv("password-baru-alumni-parsial", all);
+      setAccountError((e instanceof Error ? e.message : "Reset password gagal.") + (all.length ? ` CSV parsial berisi ${all.length} akun yang passwordnya sudah berubah.` : ""));
+    } finally { setAccountLoading(false); }
+  }
+
+  function downloadCredentialsCsv(prefix: string, rows: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string}>) {
+    const headers = ["Nama","Angkatan","ID Alumni","Email","Password"];
+    const esc = (value: unknown) => '"' + String(value ?? "").replace(/"/g,'""') + '"';
+    const csv = [headers, ...rows.map(r => [r.nama,r.angkatan,r.nomorAlumni,r.email,r.password])].map(row => row.map(esc).join(",")).join("\\r\\n");
+    const blob = new Blob(["\\uFEFF",csv],{type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob); const a = document.createElement("a");
+    a.href=url; a.download=prefix+"-"+new Date().toISOString().slice(0,10)+".csv";
+    document.body.appendChild(a); a.click(); a.remove(); window.setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }
 
   const singleImportMatches = useMemo(() => {
     const term = importSearch.trim().toLocaleLowerCase("id-ID");
@@ -108,7 +168,7 @@ export default function ImportExportPage() {
           router.replace("/login");
           return;
         }
-        if (!cancelled) setRoleChecked(true);
+        if (!cancelled) { setIsSuperAdmin(result.user?.role === "super_admin"); setRoleChecked(true); }
       })
       .catch(() => router.replace("/login"));
     return () => { cancelled = true; };

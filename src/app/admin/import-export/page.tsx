@@ -332,6 +332,16 @@ export default function ImportExportPage() {
         <AdminHeader />
         <main className="p-4 sm:p-6 lg:p-8">
           <div className="mx-auto max-w-5xl space-y-6">
+            {roleChecked && isSuperAdmin && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <div className="mb-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b28b16]">Khusus Super Admin</p><h2 className="mt-1 text-lg font-bold text-[#0b1f3a]">Aktivasi Akun & Reset Password</h2><p className="mt-1 text-sm text-slate-500">CSV berisi password baru. Simpan file dengan aman.</p></div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <button type="button" disabled={accountLoading} onClick={() => void handleBulkActivateAccounts()} className="flex items-center justify-center gap-2 rounded-xl border border-[#0b1f3a] px-4 py-3 text-sm font-semibold text-[#0b1f3a] hover:bg-slate-50 disabled:opacity-50"><UserRoundPlus size={17}/>{accountLoading ? "Memproses akun..." : "Aktivasi Akun Alumni & Unduh Password"}</button>
+                <button type="button" disabled={accountLoading} onClick={() => void handleResetPasswords()} className="flex items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 hover:bg-red-100 disabled:opacity-50"><KeyRound size={17}/>{accountLoading ? "Memproses akun..." : "Reset Password 621 Akun & Unduh CSV"}</button>
+              </div>
+              {accountStatus && <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{accountStatus}</p>}
+              {accountError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{accountError}</p>}
+            </section>}
+
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#b28b16]">Pengelolaan Data</p>
               <h1 className="text-2xl font-bold tracking-tight text-[#0b1f3a] sm:text-3xl">Import & Export Data</h1>

@@ -20,6 +20,8 @@ export default function DaftarPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
+  const [nomorAngkatan, setNomorAngkatan] = useState("");
+  const [cohortLoading, setCohortLoading] = useState(false);
 
   async function handleDaftar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -28,7 +30,7 @@ export default function DaftarPage() {
     const form: FormState = {
       nama: String(submitted.get("nama") ?? "").trim(),
       kategoriProgram: String(submitted.get("kategoriProgram") ?? "").trim().toLocaleUpperCase("id-ID"),
-      nomorAngkatan: String(submitted.get("nomorAngkatan") ?? "").trim(),
+      nomorAngkatan: nomorAngkatan.trim(),
       tahunAngkatan: String(submitted.get("tahunAngkatan") ?? "").trim(),
       nomorHp: String(submitted.get("nomorHp") ?? "").trim(),
       instansi: String(submitted.get("instansi") ?? "").trim(),
@@ -59,10 +61,27 @@ export default function DaftarPage() {
       setSuccess(true);
       setMessage(result.message || "Pengajuan berhasil dikirim dan menunggu pemeriksaan admin.");
       formElement.reset();
+      setNomorAngkatan("");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Terjadi kesalahan.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleKategoriChange(category: string) {
+    setNomorAngkatan("");
+    if (!category) return;
+    setCohortLoading(true);
+    try {
+      const response = await fetch(`/api/auth/next-cohort?kategori=${encodeURIComponent(category)}`, { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Nomor angkatan belum dapat ditentukan.");
+      setNomorAngkatan(String(result.nomorAngkatan));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Gagal menentukan nomor angkatan.");
+    } finally {
+      setCohortLoading(false);
     }
   }
 
@@ -82,7 +101,7 @@ export default function DaftarPage() {
         {renderField("Nama lengkap *", "nama", "text", true, 200)}
         <div>
           <label htmlFor="kategoriProgram" className="mb-1.5 block text-sm font-semibold text-slate-700">Kategori program *</label>
-          <select id="kategoriProgram" name="kategoriProgram" defaultValue={initialForm.kategoriProgram} required className={inputClass}>
+          <select id="kategoriProgram" name="kategoriProgram" defaultValue={initialForm.kategoriProgram} required onChange={(event) => void handleKategoriChange(event.target.value)} className={inputClass}>
             <option value="">Pilih kategori program</option>
             <option value="KRA">KRA</option>
             <option value="PPRA">PPRA</option>
@@ -95,7 +114,7 @@ export default function DaftarPage() {
             <option value="TOT">TOT</option>
           </select>
         </div>
-        {renderField("Nomor angkatan *", "nomorAngkatan", "text", true, 40)}
+        <div><label htmlFor="nomorAngkatan" className="mb-1.5 block text-sm font-semibold text-slate-700">Nomor angkatan *</label><input id="nomorAngkatan" name="nomorAngkatan" type="text" value={nomorAngkatan} readOnly required placeholder={cohortLoading ? "Menentukan nomor angkatan..." : "Pilih kategori terlebih dahulu"} className={inputClass} />{cohortLoading && <p className="mt-1 text-xs text-slate-500">Menentukan nomor berikutnya...</p>}</div>
         {renderField("Tahun angkatan *", "tahunAngkatan", "number", true, 4)}
         {renderField("Nomor HP", "nomorHp", "text", false, 50)}
         {renderField("Instansi", "instansi", "text", false, 250)}

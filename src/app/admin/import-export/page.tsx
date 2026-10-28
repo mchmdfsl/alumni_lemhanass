@@ -301,24 +301,7 @@ export default function ImportExportPage() {
         <AdminHeader />
         <main className="p-4 sm:p-6 lg:p-8">
           <div className="mx-auto max-w-5xl space-y-6">
-            {roleChecked && isSuperAdmin && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-              <div className="mb-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b28b16]">Khusus Super Admin</p><h2 className="mt-1 text-lg font-bold text-[#0b1f3a]">Aktivasi Akun & Reset Password</h2><p className="mt-1 text-sm text-slate-500">CSV berisi password baru. Simpan file dengan aman.</p></div>
-              <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                <label className="block text-xs font-semibold text-slate-700">Cakupan akun<select value={accountScope} onChange={(e) => { setAccountScope(e.target.value); setAccountAlumniId(""); setAccountError(""); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="single">Satu alumni</option><option value="cohort">Angkatan tertentu</option><option value="category">Kategori program</option><option value="year">Tahun angkatan</option><option value="all">Semua alumni yang memenuhi syarat</option></select></label>
-                {["cohort", "category"].includes(accountScope) && <label className="block text-xs font-semibold text-slate-700">Kategori program<select value={accountCategory} onChange={(e) => setAccountCategory(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Pilih kategori</option>{["KRA","PPRA","P4N","KSA","PPSA","P3N","PPNK"].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>}
-                {accountScope === "cohort" && <label className="block text-xs font-semibold text-slate-700">Nomor angkatan<input value={accountCohort} onChange={(e) => setAccountCohort(e.target.value)} placeholder="Contoh: 24" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" /></label>}
-                {accountScope === "year" && <label className="block text-xs font-semibold text-slate-700">Tahun angkatan<input inputMode="numeric" maxLength={4} value={accountYear} onChange={(e) => setAccountYear(e.target.value.replace(/\D/g, "").slice(0,4))} placeholder="Contoh: 2024" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" /></label>}
-              </div>
-              {accountScope === "single" && <div className="mb-4 rounded-xl border border-slate-200 p-3"><div className="flex flex-col gap-2 sm:flex-row"><input value={accountSearch} onChange={(e) => setAccountSearch(e.target.value)} placeholder="Cari nama atau nomor alumni" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm" /><button type="button" disabled={accountSearching} onClick={() => void searchAccountAlumni()} className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold">{accountSearching ? "Mencari..." : "Cari alumni"}</button></div>
-                {accountResults.length > 0 && <div className="mt-3 space-y-2">{accountResults.map((item) => <label key={String(item.id)} className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-100 p-2.5 text-sm"><input type="radio" name="accountAlumni" checked={accountAlumniId === String(item.id)} onChange={() => setAccountAlumniId(String(item.id))} className="mt-1" /><span><span className="block font-semibold">{item.nama}</span><span className="text-xs text-slate-500">{item.nomorAlumni || "Nomor alumni belum ada"} · {item.kategoriProgram || ""} {item.nomorAngkatan || ""} {item.tahunAngkatan || ""}</span></span></label>)}</div>}{accountSearchError && <p className="mt-2 text-xs text-rose-700">{accountSearchError}</p>}{accountAlumniId && <p className="mt-2 text-xs font-semibold text-emerald-700">Alumni terpilih: {accountResults.find((item) => String(item.id) === accountAlumniId)?.nama || accountAlumniId}</p>}</div>}
-              <p className="mb-3 text-xs leading-5 text-slate-500">Aktivasi hanya membuat akun yang belum ada. Reset hanya mengganti password akun aktif. Keduanya hanya memproses alumni berstatus Terverifikasi dan mengikuti cakupan di atas.</p>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <button type="button" disabled={accountLoading} onClick={() => void handleBulkActivateAccounts()} className="flex items-center justify-center gap-2 rounded-xl border border-[#0b1f3a] px-4 py-3 text-sm font-semibold text-[#0b1f3a] hover:bg-slate-50 disabled:opacity-50"><UserRoundPlus size={17}/>{accountLoading ? "Memproses akun..." : "Aktivasi Akun & Unduh Password"}</button>
-                <button type="button" disabled={accountLoading} onClick={() => void handleResetPasswords()} className="flex items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 hover:bg-red-100 disabled:opacity-50"><KeyRound size={17}/>{accountLoading ? "Memproses akun..." : "Reset Password & Unduh CSV"}</button>
-              </div>
-              {accountStatus && <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{accountStatus}</p>}
-              {accountError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{accountError}</p>}
-            </section>}
+
 
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#b28b16]">Pengelolaan Data</p>
@@ -383,6 +366,53 @@ export default function ImportExportPage() {
                   (exportScope === "year" && !/^\\d{4}$/.test(exportTahun.trim()));
                 return <a href={invalid ? undefined : exportUrl} onClick={(e) => { if (invalid) e.preventDefault(); }} aria-disabled={invalid} className={`mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition ${invalid ? "cursor-not-allowed bg-slate-400" : "bg-[#0b1f3a] hover:bg-[#1a365d]"}`}><Download size={16} />Unduh CSV</a>;
               })()}
+            </section>}
+
+            {roleChecked && isSuperAdmin && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-700"><KeyRound size={20} /></div>
+                <div><h2 className="font-bold text-[#172033]">Aktivasi Akun & Reset Password</h2><p className="text-xs text-slate-500">Atur akun berdasarkan cakupan yang dipilih. CSV password harus disimpan dengan aman.</p></div>
+              </div>
+              <label className="block text-xs font-semibold text-slate-700">Cakupan akun
+                <select value={accountScope} onChange={(e) => { setAccountScope(e.target.value); setAccountAlumniId(""); setAccountError(""); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal sm:max-w-md">
+                  <option value="single">Satu alumni</option><option value="cohort">Angkatan tertentu</option><option value="category">Kategori program</option><option value="year">Tahun angkatan</option><option value="all">Semua alumni yang memenuhi syarat</option>
+                </select>
+              </label>
+              {accountScope === "single" && <div className="mt-4 space-y-3">
+                <label className="block text-xs font-semibold text-slate-700">Cari alumni berdasarkan nama atau nomor alumni
+                  <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
+                    <input value={accountSearch} onChange={(e) => setAccountSearch(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void searchAccountAlumni(); } }} placeholder="Masukkan nama / nomor alumni" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
+                    <button type="button" onClick={() => void searchAccountAlumni()} disabled={accountSearching} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-[#0b1f3a] disabled:opacity-50">{accountSearching ? "Mencari..." : "Cari alumni"}</button>
+                  </div>
+                </label>
+                {accountSearchError && <p role="status" className="text-sm text-rose-600">{accountSearchError}</p>}
+                {accountResults.length > 0 && <label className="block text-xs font-semibold text-slate-700">Pilih satu alumni
+                  <select value={accountAlumniId} onChange={(e) => setAccountAlumniId(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
+                    <option value="">Pilih hasil pencarian...</option>
+                    {accountResults.map((item) => <option key={item.id} value={String(item.id)}>{item.nama}{item.nomorAlumni ? " · " + item.nomorAlumni : ""}{item.kategoriProgram ? " · " + item.kategoriProgram : ""}{item.nomorAngkatan ? " Angkatan " + item.nomorAngkatan : ""}</option>)}
+                  </select>
+                </label>}
+              </div>}
+              {(accountScope === "cohort" || accountScope === "category") && <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="text-xs font-semibold text-slate-700">Kategori program
+                  <select value={accountCategory} onChange={(e) => setAccountCategory(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
+                    <option value="">Pilih kategori...</option><option>KRA</option><option>PPRA</option><option>P4N</option><option>KSA</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option>
+                  </select>
+                </label>
+                {accountScope === "cohort" && <label className="text-xs font-semibold text-slate-700">Nomor angkatan
+                  <input value={accountCohort} onChange={(e) => setAccountCohort(e.target.value)} placeholder="Mis. 1" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
+                </label>}
+              </div>}
+              {accountScope === "year" && <label className="mt-4 block text-xs font-semibold text-slate-700">Tahun angkatan
+                <input inputMode="numeric" maxLength={4} value={accountYear} onChange={(e) => setAccountYear(e.target.value.replace(/\D/g, "").slice(0,4))} placeholder="Mis. 2024" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal sm:max-w-xs" />
+              </label>}
+              <p className="mt-3 text-xs leading-5 text-slate-500">Aktivasi membuat akun yang belum ada. Reset mengganti password akun aktif. Keduanya hanya memproses alumni terverifikasi sesuai cakupan.</p>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <button type="button" disabled={accountLoading} onClick={() => void handleBulkActivateAccounts()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1a365d] disabled:opacity-50"><UserRoundPlus size={16}/>{accountLoading ? "Memproses..." : "Aktivasi akun & unduh password"}</button>
+                <button type="button" disabled={accountLoading} onClick={() => void handleResetPasswords()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"><KeyRound size={16}/>{accountLoading ? "Memproses..." : "Reset password & unduh CSV"}</button>
+              </div>
+              {accountStatus && <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{accountStatus}</p>}
+              {accountError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{accountError}</p>}
             </section>}
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">

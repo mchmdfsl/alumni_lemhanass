@@ -103,6 +103,16 @@ export default function ImportExportPage() {
         nomorHp: get(row, "nomor hp", "nomorhp", "no hp", "no. hp"),
       })).filter((row) => row.nama);
       if (!mapped.length) throw new Error("Kolom Nama tidak ditemukan atau tidak ada data alumni.");
+      const invalid = mapped.findIndex((row) =>
+        !row.kategoriProgram ||
+        !row.nomorAngkatan ||
+        !/^\\d{4}$/.test(row.tahunAngkatan) ||
+        Number(row.tahunAngkatan) < 1900 ||
+        Number(row.tahunAngkatan) > new Date().getFullYear() + 5
+      );
+      if (invalid >= 0) {
+        throw new Error("Baris data ke-" + (invalid + 2) + " belum memiliki Kategori Program, Nomor Angkatan, atau Tahun Angkatan yang valid. Lengkapi CSV sebelum import.");
+      }
       setImportRows(mapped);
     } catch (error) {
       setImportError(error instanceof Error ? error.message : "File CSV tidak bisa dibaca.");
@@ -129,7 +139,7 @@ export default function ImportExportPage() {
             nomorAlumni: row.nomorAlumni,
             nama: row.nama,
             kategoriProgram: row.kategoriProgram,
-            nomorAngkatan: row.nomorAngkatan || "1",
+            nomorAngkatan: row.nomorAngkatan,
             tahunAngkatan: Number(row.tahunAngkatan),
             instansi: row.instansi,
             jabatan: row.jabatan,

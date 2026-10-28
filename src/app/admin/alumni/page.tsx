@@ -77,7 +77,8 @@ export default function AlumniPage() {
     if (category) setKategori(category);
     if (a) setNomorAngkatanFilter(a);
     const back = params.get("back");
-    if (back === "angkatan") setCohortBackLink("/admin/angkatan");
+    const backCategory = params.get("backKategori");
+    if (back === "angkatan") setCohortBackLink(backCategory ? `/admin/angkatan?kategori=${encodeURIComponent(backCategory)}` : "/admin/angkatan");
   }, []);
 
   const loadAlumni = () => {
@@ -277,7 +278,7 @@ export default function AlumniPage() {
           <div className="mx-auto max-w-7xl">
             <div className="mb-4">
               <a href={cohortBackLink} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#0b1f3a] shadow-sm transition hover:bg-slate-50">
-                <ChevronLeft size={16} /> Kembali ke Data Angkatan
+                <ChevronLeft size={16} /> Kembali ke Angkatan
               </a>
             </div>
             {/* PAGE HEADER */}

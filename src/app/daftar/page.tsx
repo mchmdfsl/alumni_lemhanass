@@ -43,6 +43,8 @@ export default function DaftarPage() {
     };
     setMessage("");
     setSuccess(false);
+    if (!form.kategoriProgram) return setMessage("Pilih kategori program terlebih dahulu.");
+    if (cohortLoading || !form.nomorAngkatan) return setMessage("Tunggu sampai nomor angkatan berhasil ditentukan.");
     if (form.password.length < 12) return setMessage("Password minimal 12 karakter.");
     if (form.password !== form.konfirmasi) return setMessage("Konfirmasi password tidak cocok.");
     setLoading(true);
@@ -71,6 +73,7 @@ export default function DaftarPage() {
 
   async function handleKategoriChange(category: string) {
     setNomorAngkatan("");
+    setMessage("");
     if (!category) return;
     setCohortLoading(true);
     try {
@@ -100,7 +103,7 @@ export default function DaftarPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {renderField("Nama lengkap *", "nama", "text", true, 200)}
         <div>
-          <label htmlFor="kategoriProgram" className="mb-1.5 block text-sm font-semibold text-slate-700">Kategori program *</label>
+          <label htmlFor="kategoriProgram" className="mb-1.5 block text-sm font-semibold text-slate-700">1. Kategori program *</label>
           <select id="kategoriProgram" name="kategoriProgram" defaultValue={initialForm.kategoriProgram} required onChange={(event) => void handleKategoriChange(event.target.value)} className={inputClass}>
             <option value="">Pilih kategori program</option>
             <option value="KRA">KRA</option>
@@ -114,7 +117,7 @@ export default function DaftarPage() {
             <option value="TOT">TOT</option>
           </select>
         </div>
-        <div><label htmlFor="nomorAngkatan" className="mb-1.5 block text-sm font-semibold text-slate-700">Nomor angkatan *</label><input id="nomorAngkatan" name="nomorAngkatan" type="text" value={nomorAngkatan} readOnly required placeholder={cohortLoading ? "Menentukan nomor angkatan..." : "Pilih kategori terlebih dahulu"} className={inputClass} />{cohortLoading && <p className="mt-1 text-xs text-slate-500">Menentukan nomor berikutnya...</p>}</div>
+        <div><label htmlFor="nomorAngkatan" className="mb-1.5 block text-sm font-semibold text-slate-700">2. Nomor angkatan otomatis *</label><input id="nomorAngkatan" name="nomorAngkatan" type="text" value={nomorAngkatan} readOnly required aria-live="polite" placeholder={cohortLoading ? "Sedang mencari angkatan..." : "Pilih kategori terlebih dahulu"} className={inputClass} />{cohortLoading && <p className="mt-1 text-xs text-slate-500">Mencari nomor terakhir pada kategori ini...</p>}{!cohortLoading && nomorAngkatan && <p className="mt-1 text-xs text-emerald-700">Nomor angkatan berikutnya untuk kategori terpilih.</p>}</div>
         {renderField("Tahun angkatan *", "tahunAngkatan", "number", true, 4)}
         {renderField("Nomor HP", "nomorHp", "text", false, 50)}
         {renderField("Instansi", "instansi", "text", false, 250)}

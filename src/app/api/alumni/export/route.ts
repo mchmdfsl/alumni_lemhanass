@@ -19,10 +19,10 @@ export async function GET(request: NextRequest) {
   const alumniId = (query.get("alumniId") ?? "").trim();
   const requestedLimit = query.get("limit") ?? "all";
   const rowLimit = requestedLimit === "all" ? 1000000 : Number.isInteger(Number(requestedLimit)) && Number(requestedLimit) > 0 ? Math.min(Number(requestedLimit), 1000000) : 1000000;
-  if (alumniId && !/^\\d+$/.test(alumniId)) {
+  if (alumniId && !/^\d+$/.test(alumniId)) {
     return NextResponse.json({ error: "ID alumni tidak valid." }, { status: 400 });
   }
-  if (tahunAngkatan && !/^\\d{4}$/.test(tahunAngkatan)) {
+  if (tahunAngkatan && !/^\d{4}$/.test(tahunAngkatan)) {
     return NextResponse.json({ error: "Tahun angkatan harus terdiri dari 4 digit." }, { status: 400 });
   }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash, randomBytes } from "node:crypto";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +12,19 @@ export async function POST(request: NextRequest) {
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ message: "Masukkan alamat email yang valid." }, { status: 400 });
+    }
+
+    const rateLimit = await checkRateLimit(request, "forgot-password", {
+      identity: email,
+      ipLimit: 20,
+      identityLimit: 5,
+      windowSeconds: 15 * 60,
+    });
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        { message: "Terlalu banyak permintaan pemulihan. Silakan coba lagi beberapa saat." },
+        { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
+      );
     }
 
     const apiKey = process.env.RESEND_API_KEY;

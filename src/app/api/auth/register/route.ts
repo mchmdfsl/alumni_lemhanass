@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,10 +46,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Password minimal 12 karakter." }, { status: 400 });
     }
 
+    const rateLimit = await checkRateLimit(request, "register", {
+      identity: email,
+      ipLimit: 15,
+      identityLimit: 5,
+      windowSeconds: 15 * 60,
+    });
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        { error: "Terlalu banyak percobaan registrasi. Silakan coba lagi beberapa saat." },
+        { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
+      );
+    }
+
     const passwordHash = await hashPassword(password);
     const sql = db();
 
     const result = await sql.begin(async (tx) => {
+      // Serialize registrations for the same email and identity. Without these
+      // transaction-scoped locks, two concurrent requests could both pass the
+      // duplicate checks before either one inserts its pending request.
+      await tx`
+        SELECT pg_advisory_xact_lock(hashtextextended(${"register-email:" + email}, 0))
+      `;
+      const identityKey = [
+        nama.toLocaleLowerCase("id-ID"),
+        kategoriProgram,
+        nomorAngkatan,
+      ].join("|");
+      await tx`
+        SELECT pg_advisory_xact_lock(hashtextextended(${"register-identity:" + identityKey}, 0))
+      `;
+
       const existingAccount = await tx`
         SELECT id FROM alumni_accounts WHERE lower(email) = ${email} LIMIT 1
       `;

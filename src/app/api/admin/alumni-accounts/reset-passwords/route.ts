@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       for (const row of rows) {
         const password = randomBytes(18).toString("base64url");
         const passwordHash = await hashPassword(password);
-        await tx`UPDATE alumni_accounts SET password_hash = ${passwordHash} WHERE id = ${Number(row.accountId)}`;
+        await tx`UPDATE alumni_accounts SET password_hash = ${passwordHash}, updated_at = NOW() WHERE id = ${Number(row.accountId)}`;
         updated.push({
           accountId: Number(row.accountId),
           nama: String(row.nama ?? ""),

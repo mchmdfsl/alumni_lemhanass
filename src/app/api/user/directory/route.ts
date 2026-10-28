@@ -37,37 +37,73 @@ if (!account) {
   );
 }
 
-const search = (
-  request.nextUrl.searchParams.get("q") ?? ""
-)
-  .trim()
-  .slice(0, 100);
-
+const params = request.nextUrl.searchParams;
+const search = (params.get("q") ?? "").trim().slice(0, 100);
+const category = (params.get("kategori") ?? "").trim().slice(0, 80);
+const requestedLimit = Number(params.get("limit") ?? 12);
+const requestedOffset = Number(params.get("offset") ?? 0);
+const limit = Number.isFinite(requestedLimit)
+  ? Math.min(Math.max(Math.floor(requestedLimit), 1), 100)
+  : 12;
+const offset = Number.isFinite(requestedOffset)
+  ? Math.min(Math.max(Math.floor(requestedOffset), 0), 1_000_000)
+  : 0;
 const keyword = `%${search}%`;
+
+
 
 const data = await db()`
   SELECT
     id,
     nama,
+    COALESCE(kategori_program, angkatan) AS "kategoriProgram",
+    COALESCE(nomor_angkatan, '') AS "nomorAngkatan",
+    tahun_angkatan AS "tahunAngkatan",
     angkatan,
     jabatan,
     instansi,
-    foto_profil AS "fotoProfil"
+    to_jsonb(alumni)->>'foto_profil' AS "fotoProfil"
   FROM alumni
   WHERE status = 'Terverifikasi'
     AND (
       ${search} = ''
       OR COALESCE(nama, '') ILIKE ${keyword}
-      OR COALESCE(angkatan::text, '') ILIKE ${keyword}
+      OR COALESCE(kategori_program, angkatan, '') ILIKE ${keyword}
+      OR COALESCE(nomor_angkatan, '') ILIKE ${keyword}
+      OR COALESCE(tahun_angkatan::text, '') ILIKE ${keyword}
       OR COALESCE(jabatan, '') ILIKE ${keyword}
       OR COALESCE(instansi, '') ILIKE ${keyword}
     )
-  ORDER BY angkatan ASC NULLS LAST, nama ASC
-  LIMIT 200
+    AND (
+      ${category} = ''
+      OR COALESCE(NULLIF(trim(kategori_program), ''), angkatan) = ${category}
+    )
+  ORDER BY kategori_program ASC NULLS LAST, nomor_angkatan ASC NULLS LAST, tahun_angkatan ASC NULLS LAST, nama ASC
+  LIMIT ${limit}
+  OFFSET ${offset}
+`;
+
+const [count] = await db()`
+  SELECT COUNT(*)::int AS total
+  FROM alumni
+  WHERE status = 'Terverifikasi'
+    AND (
+      ${search} = ''
+      OR COALESCE(nama, '') ILIKE ${keyword}
+      OR COALESCE(kategori_program, angkatan, '') ILIKE ${keyword}
+      OR COALESCE(nomor_angkatan, '') ILIKE ${keyword}
+      OR COALESCE(tahun_angkatan::text, '') ILIKE ${keyword}
+      OR COALESCE(jabatan, '') ILIKE ${keyword}
+      OR COALESCE(instansi, '') ILIKE ${keyword}
+    )
+    AND (
+      ${category} = ''
+      OR COALESCE(NULLIF(trim(kategori_program), ''), angkatan) = ${category}
+    )
 `;
 
 return NextResponse.json(
-  { data },
+  { data, total: count?.total ?? 0, limit, offset },
   {
     headers: {
       "Cache-Control": "no-store, max-age=0",

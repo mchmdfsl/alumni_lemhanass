@@ -27,6 +27,7 @@ import {
   ArrowLeft,
   Camera,
   Upload,
+  Trash2,
 } from "lucide-react";
 
 type Profile = {
@@ -80,6 +81,7 @@ export default function ProfilUser() {
   const [saving, setSaving] = useState(false);
   const [emailSaving, setEmailSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [deletingPhoto, setDeletingPhoto] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   useEffect(() => {
@@ -277,6 +279,42 @@ export default function ProfilUser() {
     }
   }
 
+  async function handlePhotoDelete() {
+    if (!savedProfile.fotoProfil || deletingPhoto || uploadingPhoto) return;
+
+    const confirmed = window.confirm("Hapus foto profil saat ini?");
+    if (!confirmed) return;
+
+    setDeletingPhoto(true);
+    setNotice(null);
+
+    try {
+      const response = await fetch("/api/user/profile/photo", {
+        method: "DELETE",
+        cache: "no-store",
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Gagal menghapus foto profil.");
+      }
+
+      setProfile((previous) => ({ ...previous, fotoProfil: null }));
+      setSavedProfile((previous) => ({ ...previous, fotoProfil: null }));
+      setNotice({
+        type: "success",
+        message: result.message || "Foto profil berhasil dihapus.",
+      });
+    } catch (error) {
+      setNotice({
+        type: "error",
+        message: error instanceof Error ? error.message : "Terjadi kesalahan saat menghapus foto.",
+      });
+    } finally {
+      setDeletingPhoto(false);
+    }
+  }
+
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
   ) {
@@ -291,7 +329,7 @@ export default function ProfilUser() {
       return;
     }
 
-    if (!profile.kategoriProgram.trim() || !profile.nomorAngkatan.trim() || !/^\\d{4}$/.test(profile.tahunAngkatan)) {
+    if (!profile.kategoriProgram.trim() || !profile.nomorAngkatan.trim() || !/^\d{4}$/.test(profile.tahunAngkatan)) {
       setNotice({
         type: "error",
         message: "Kategori program, nomor angkatan, dan tahun angkatan wajib diisi dengan benar.",
@@ -477,6 +515,22 @@ export default function ProfilUser() {
                   </>
                 )}
               </button>
+
+              {savedProfile.fotoProfil && (
+                <button
+                  type="button"
+                  onClick={handlePhotoDelete}
+                  disabled={uploadingPhoto || deletingPhoto || loading}
+                  className="mt-2 inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {deletingPhoto ? (
+                    <LoaderCircle size={17} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={17} />
+                  )}
+                  {deletingPhoto ? "Menghapus foto..." : "Hapus Foto"}
+                </button>
+              )}
 
               <p className="mt-2 text-xs text-slate-300">
                 JPG, PNG, atau WebP. Maksimal 5 MB.

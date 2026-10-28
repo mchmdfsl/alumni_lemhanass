@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         COALESCE(alamat, '') AS alamat,
         COALESCE(email, '') AS email,
         COALESCE(nomor_hp, '') AS "nomorHp",
-        foto_profil AS "fotoProfil",
+        to_jsonb(alumni)->>'foto_profil' AS "fotoProfil",
         status,
         alasan_penolakan AS "alasanPenolakan",
         sumber_data AS "sumberData",
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
         ) ILIKE ${"%" + search + "%"}
       )
       AND (${status} = '' OR status = ${status})
-      AND (${angkatan} = '' OR angkatan = ${angkatan})
+      AND (${angkatan} = '' OR COALESCE(NULLIF(trim(kategori_program), ''), angkatan) = ${angkatan})
       AND (${wilayah} = '' OR wilayah = ${wilayah})
       ORDER BY updated_at DESC, id DESC
       LIMIT ${limit}
@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
         COALESCE(alamat, '') AS alamat,
         COALESCE(email, '') AS email,
         COALESCE(nomor_hp, '') AS "nomorHp",
-        foto_profil AS "fotoProfil",
+        to_jsonb(alumni)->>'foto_profil' AS "fotoProfil",
         status
     `;
 

@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
           ELSE '' END AS "verifiedAt"
       FROM alumni
       WHERE (${status} = '' OR status = ${status})
-        AND (${angkatan} = '' OR angkatan = ${angkatan})
+        AND (${angkatan} = '' OR COALESCE(NULLIF(trim(kategori_program), ''), angkatan) = ${angkatan})
         AND (${wilayah} = '' OR wilayah = ${wilayah})
       ORDER BY created_at ASC`;
 

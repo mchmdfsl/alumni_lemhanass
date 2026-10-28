@@ -25,6 +25,7 @@ type AlumniUser = {
 export default function UserDashboardPage() {
   const [user, setUser] = useState<AlumniUser>({});
   const [loading, setLoading] = useState(true);
+  const [pendingRequests, setPendingRequests] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -54,6 +55,17 @@ export default function UserDashboardPage() {
     }
 
     loadUser();
+
+    fetch("/api/user/requests", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const result = await response.json();
+        const pending = Array.isArray(result.data)
+          ? result.data.filter((item: { status?: string }) => item.status === "Menunggu").length
+          : 0;
+        if (active) setPendingRequests(pending);
+      })
+      .catch((error) => console.error("Gagal memuat status pengajuan:", error));
 
     return () => {
       active = false;
@@ -122,10 +134,10 @@ export default function UserDashboardPage() {
         />
 
         <InfoCard
-          title="Akses Portal"
-          value="Aktif"
-          description="Akses layanan alumni"
-          icon={GraduationCap}
+          title="Pengajuan Menunggu"
+          value={loading ? "..." : pendingRequests.toLocaleString("id-ID")}
+          description="Permintaan yang masih ditinjau admin"
+          icon={Clock3}
         />
       </section>
 

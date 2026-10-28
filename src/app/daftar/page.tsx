@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent, type ChangeEvent } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { LoaderCircle } from "lucide-react";
 import AuthShell from "@/components/auth/AuthShell";
@@ -17,18 +17,29 @@ const initialForm: FormState = {
 const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#0b1f3a] focus:ring-2 focus:ring-[#0b1f3a]/10";
 
 export default function DaftarPage() {
-  const [form, setForm] = useState<FormState>(initialForm);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
 
-  function updateField(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
-    const { name, value } = event.target;
-    setForm((previous) => ({ ...previous, [name]: name === "kategoriProgram" ? value.toLocaleUpperCase("id-ID") : value }));
-  }
-
   async function handleDaftar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formElement = event.currentTarget;
+    const submitted = new FormData(formElement);
+    const form: FormState = {
+      nama: String(submitted.get("nama") ?? "").trim(),
+      kategoriProgram: String(submitted.get("kategoriProgram") ?? "").trim().toLocaleUpperCase("id-ID"),
+      nomorAngkatan: String(submitted.get("nomorAngkatan") ?? "").trim(),
+      tahunAngkatan: String(submitted.get("tahunAngkatan") ?? "").trim(),
+      nomorHp: String(submitted.get("nomorHp") ?? "").trim(),
+      nomorAlumni: String(submitted.get("nomorAlumni") ?? "").trim(),
+      instansi: String(submitted.get("instansi") ?? "").trim(),
+      jabatan: String(submitted.get("jabatan") ?? "").trim(),
+      wilayah: String(submitted.get("wilayah") ?? "").trim(),
+      alamat: String(submitted.get("alamat") ?? "").trim(),
+      email: String(submitted.get("email") ?? "").trim(),
+      password: String(submitted.get("password") ?? ""),
+      konfirmasi: String(submitted.get("konfirmasi") ?? ""),
+    };
     setMessage("");
     setSuccess(false);
     if (form.password.length < 12) return setMessage("Password minimal 12 karakter.");
@@ -48,7 +59,7 @@ export default function DaftarPage() {
       if (!response.ok) throw new Error(result.error || "Pendaftaran gagal diproses.");
       setSuccess(true);
       setMessage(result.message || "Pengajuan berhasil dikirim dan menunggu pemeriksaan admin.");
-      setForm(initialForm);
+      formElement.reset();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Terjadi kesalahan.");
     } finally {
@@ -59,7 +70,7 @@ export default function DaftarPage() {
   const renderField = (label: string, name: keyof FormState, type = "text", required = false, maxLength?: number) => (
     <div>
       <label htmlFor={name} className="mb-1.5 block text-sm font-semibold text-slate-700">{label}</label>
-      <input id={name} name={name} type={type} value={form[name]} onChange={updateField} required={required}
+      <input id={name} name={name} type={type} defaultValue={initialForm[name]} required={required}
         maxLength={maxLength} autoComplete={name === "email" ? "email" : name === "password" || name === "konfirmasi" ? "new-password" : "off"} className={inputClass} />
     </div>
   );
@@ -72,7 +83,7 @@ export default function DaftarPage() {
         {renderField("Nama lengkap *", "nama", "text", true, 200)}
         <div>
           <label htmlFor="kategoriProgram" className="mb-1.5 block text-sm font-semibold text-slate-700">Kategori program *</label>
-          <select id="kategoriProgram" name="kategoriProgram" value={form.kategoriProgram} onChange={updateField} required className={inputClass}>
+          <select id="kategoriProgram" name="kategoriProgram" defaultValue={initialForm.kategoriProgram} required className={inputClass}>
             <option value="">Pilih kategori program</option>
             <option value="KRA">KRA</option>
             <option value="PPRA">PPRA</option>
@@ -95,7 +106,7 @@ export default function DaftarPage() {
         {renderField("Email aktif *", "email", "email", true, 254)}
       </div>
       <div><label htmlFor="alamat" className="mb-1.5 block text-sm font-semibold text-slate-700">Alamat</label>
-        <textarea id="alamat" name="alamat" value={form.alamat} onChange={updateField} rows={3} maxLength={5000} className={inputClass} /></div>
+        <textarea id="alamat" name="alamat" defaultValue={initialForm.alamat} rows={3} maxLength={5000} className={inputClass} /></div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {renderField("Password (minimal 12 karakter) *", "password", "password", true, 1024)}
         {renderField("Konfirmasi password *", "konfirmasi", "password", true, 1024)}

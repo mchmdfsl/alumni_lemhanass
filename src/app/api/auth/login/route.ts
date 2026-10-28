@@ -7,6 +7,7 @@ import {
   verifySuperAdminCredentials,
 } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { verifyPassword } from "@/lib/password";
 import {
   createAlumniSessionToken,
@@ -50,6 +51,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Email/ID alumni dan password wajib diisi." },
         { status: 400 },
+      );
+    }
+
+    const rateLimit = await checkRateLimit(request, "login", {
+      identity: identifier,
+      ipLimit: 60,
+      identityLimit: 10,
+      windowSeconds: 15 * 60,
+    });
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        { error: "Terlalu banyak percobaan login. Coba lagi beberapa saat." },
+        { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
       );
     }
 

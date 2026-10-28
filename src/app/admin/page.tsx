@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 import {
   Users,
@@ -129,6 +130,29 @@ export default function AdminDashboardPage() {
                 icon={XCircle}
               />
             </section>
+
+            <section aria-label="Akses cepat administrasi" className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <DashboardAction href="/admin/verifikasi-alumni" title="Verifikasi Alumni" description="Tinjau data yang menunggu verifikasi" />
+              <DashboardAction href="/admin/pengajuan-akun" title="Pengajuan Akun" description="Periksa permohonan pembuatan akun" />
+              <DashboardAction href="/admin/alumni" title="Kelola Data Alumni" description="Cari dan perbarui data alumni" />
+              {adminRole === "super_admin" ? (
+                <DashboardAction href="/admin/manajemen-admin" title="Manajemen Admin" description="Kelola akun dan akses administrator" />
+              ) : (
+                <DashboardAction href="/admin/permintaan-alumni" title="Permintaan Alumni" description="Tinjau permintaan perubahan data" />
+              )}
+            </section>
+
+            {adminRole === "super_admin" && (
+              <section className="mt-4 flex flex-col gap-3 rounded-2xl border border-[#c9a227]/25 bg-[#c9a227]/5 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                <div>
+                  <h2 className="font-bold text-[#0b1f3a]">Kontrol Superadmin</h2>
+                  <p className="mt-1 text-sm text-[#64748b]">Akses khusus untuk pengelolaan administrator dan penelusuran aktivitas sistem.</p>
+                </div>
+                <Link href="/admin/log-aktivitas" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#18385f]">
+                  Buka log aktivitas
+                </Link>
+              </section>
+            )}
 
             {/* =====================================
                 MAIN GRID
@@ -282,5 +306,16 @@ function ActivityItem({ label, value }: { label: string; value: string }) {
 
       <span className="text-sm font-bold text-[#172033]">{value}</span>
     </div>
+  );
+}
+
+
+function DashboardAction({ href, title, description }: { href: string; title: string; description: string }) {
+  return (
+    <Link href={href} className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#c9a227]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b28b16]">
+      <span className="block font-bold text-[#0b1f3a]">{title}</span>
+      <span className="mt-1 block text-sm leading-5 text-[#64748b]">{description}</span>
+      <span className="mt-3 inline-flex text-xs font-semibold text-[#b28b16] group-hover:text-[#0b1f3a]">Buka menu →</span>
+    </Link>
   );
 }

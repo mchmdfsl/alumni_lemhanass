@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
     const tahunAngkatan = /^\d{4}$/.test(tahunAngkatanRaw) ? Number(tahunAngkatanRaw) : NaN;
     const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"]);
     const nomorHp = value("nomorHp", 50);
-    const nomorAlumni = value("nomorAlumni", 80);
     const instansi = value("instansi", 250);
     const jabatan = value("jabatan", 200);
     const wilayah = value("wilayah", 150);

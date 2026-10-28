@@ -103,7 +103,7 @@ export default function DaftarPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {renderField("Nama lengkap *", "nama", "text", true, 200)}
         <div>
-          <label htmlFor="kategoriProgram" className="mb-1.5 block text-sm font-semibold text-slate-700">1. Kategori program *</label>
+          <label htmlFor="kategoriProgram" className="mb-1.5 block text-sm font-semibold text-slate-700">Kategori program *</label>
           <select id="kategoriProgram" name="kategoriProgram" defaultValue={initialForm.kategoriProgram} required onChange={(event) => void handleKategoriChange(event.target.value)} className={inputClass}>
             <option value="">Pilih kategori program</option>
             <option value="KRA">KRA</option>
@@ -117,8 +117,8 @@ export default function DaftarPage() {
             <option value="TOT">TOT</option>
           </select>
         </div>
-        <div><label htmlFor="nomorAngkatan" className="mb-1.5 block text-sm font-semibold text-slate-700">2. Nomor angkatan otomatis *</label><input id="nomorAngkatan" name="nomorAngkatan" type="text" value={nomorAngkatan} readOnly required aria-live="polite" placeholder={cohortLoading ? "Sedang mencari angkatan..." : "Pilih kategori terlebih dahulu"} className={inputClass} />{cohortLoading && <p className="mt-1 text-xs text-slate-500">Mencari nomor terakhir pada kategori ini...</p>}{!cohortLoading && nomorAngkatan && <p className="mt-1 text-xs text-emerald-700">Nomor angkatan berikutnya untuk kategori terpilih.</p>}</div>
         {renderField("Tahun angkatan *", "tahunAngkatan", "number", true, 4)}
+        <div><label htmlFor="nomorAngkatan" className="mb-1.5 block text-sm font-semibold text-slate-700">Nomor angkatan otomatis *</label><input id="nomorAngkatan" name="nomorAngkatan" type="text" value={nomorAngkatan} readOnly required aria-live="polite" placeholder={cohortLoading ? "Sedang mencari angkatan..." : "Pilih kategori terlebih dahulu"} className={inputClass} />{cohortLoading && <p className="mt-1 text-xs text-slate-500">Mencari nomor terakhir pada kategori ini...</p>}{!cohortLoading && nomorAngkatan && <p className="mt-1 text-xs text-emerald-700">Nomor angkatan berikutnya untuk kategori terpilih.</p>}</div>
         {renderField("Nomor HP", "nomorHp", "text", false, 50)}
         {renderField("Instansi", "instansi", "text", false, 250)}
         {renderField("Jabatan", "jabatan", "text", false, 200)}

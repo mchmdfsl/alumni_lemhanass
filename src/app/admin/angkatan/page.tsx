@@ -32,7 +32,7 @@ export default function AngkatanPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Semua");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function AngkatanPage() {
   const filtered = useMemo(() => {
     const kw = search.toLowerCase().trim();
     return angkatanData.filter((a) => {
-      const categoryMatch = selectedCategory === "Semua" || a.kategoriProgram === selectedCategory;
+      const categoryMatch = !selectedCategory || a.kategoriProgram === selectedCategory;
       const searchMatch = [a.kategoriProgram, a.nomorAngkatan, a.tahunAngkatan == null ? "" : String(a.tahunAngkatan), a.angkatan].some((value) => String(value ?? "").toLowerCase().includes(kw));
       return a.total > 0 && categoryMatch && searchMatch;
     });
@@ -63,7 +63,7 @@ export default function AngkatanPage() {
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
   const realCohorts = angkatanData.filter((a) => a.total > 0);
   const totalAlumni = realCohorts.reduce((s, a) => s + a.total, 0);
-  const categories = Array.from(new Set(realCohorts.map((a) => a.kategoriProgram))).sort();
+  const categories = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"];
 
   return (
     <div className="min-h-screen bg-[#f5f7fa]">

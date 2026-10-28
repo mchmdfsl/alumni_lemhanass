@@ -45,8 +45,10 @@ export function verifyAdminCredentials(identifier: string, password: string) {
   const configuredUser = process.env.ADMIN_USERNAME;
   const configuredEmail = process.env.ADMIN_EMAIL;
   const configuredPassword = process.env.ADMIN_PASSWORD;
+  // Konfigurasi admin ENV yang kosong tidak boleh menghentikan login alumni.
+  // Admin database tetap diperiksa oleh endpoint login sebelum fungsi ini dipanggil.
   if (!configuredPassword || (!configuredUser && !configuredEmail)) {
-    throw new Error("ADMIN_USERNAME atau ADMIN_EMAIL dan ADMIN_PASSWORD wajib dikonfigurasi.");
+    return false;
   }
   const userMatches = [configuredUser, configuredEmail].filter(Boolean).some((value) => safeEqual(identifier.toLowerCase(), value!.toLowerCase()));
   return userMatches && safeEqual(password, configuredPassword);

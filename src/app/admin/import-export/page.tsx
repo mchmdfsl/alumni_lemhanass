@@ -234,31 +234,64 @@ export default function ImportExportPage() {
               <p className="mt-1 text-sm text-slate-500">Pusat khusus administrator untuk memasukkan data alumni dan mengunduh CSV berdasarkan cakupan yang dipilih. Hasil import masuk ke antrean verifikasi.</p>
             </div>
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            {!roleChecked ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">Memeriksa akses administrator...</div>
+            ) : <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><Download size={20} /></div>
-                <div><h2 className="font-bold text-[#172033]">Export CSV</h2><p className="text-xs text-slate-500">Unduh satu, tiga, atau seluruh data, dengan filter opsional.</p></div>
+                <div><h2 className="font-bold text-[#172033]">Export CSV</h2><p className="text-xs text-slate-500">Pilih cakupan data alumni yang ingin diunduh.</p></div>
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <label className="text-xs font-semibold text-slate-700">Jumlah data
-                  <select value={exportLimit} onChange={(e) => setExportLimit(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
-                    <option value="1">1 baris pertama</option><option value="3">3 baris pertama</option><option value="all">Semua data</option>
+              <label className="block text-xs font-semibold text-slate-700">Cakupan export
+                <select value={exportScope} onChange={(e) => { setExportScope(e.target.value); setSelectedAlumni(""); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal sm:max-w-md">
+                  <option value="single">Satu alumni</option><option value="cohort">Angkatan tertentu</option><option value="category">Kategori program</option><option value="year">Tahun angkatan</option><option value="all">Semua data alumni</option>
+                </select>
+              </label>
+              {exportScope === "single" && <div className="mt-4 space-y-3">
+                <label className="block text-xs font-semibold text-slate-700">Cari alumni berdasarkan nama atau nomor alumni
+                  <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
+                    <input value={alumniSearch} onChange={(e) => setAlumniSearch(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void searchAlumni(); } }} placeholder="Masukkan nama / nomor alumni" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
+                    <button type="button" onClick={() => void searchAlumni()} disabled={searchingAlumni} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-[#0b1f3a] disabled:opacity-50">{searchingAlumni ? "Mencari..." : "Cari alumni"}</button>
+                  </div>
+                </label>
+                {searchAlumniError && <p role="status" className="text-sm text-rose-600">{searchAlumniError}</p>}
+                {alumniResults.length > 0 && <label className="block text-xs font-semibold text-slate-700">Pilih satu alumni
+                  <select value={selectedAlumni} onChange={(e) => setSelectedAlumni(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
+                    <option value="">Pilih hasil pencarian...</option>
+                    {alumniResults.map((alumni) => <option key={alumni.id} value={String(alumni.id)}>{alumni.nama}{alumni.nomorAlumni ? ` · ${alumni.nomorAlumni}` : ""}{alumni.kategoriProgram ? ` · ${alumni.kategoriProgram}` : ""}{alumni.nomorAngkatan ? ` Angkatan ${alumni.nomorAngkatan}` : ""}</option>)}
+                  </select>
+                </label>}
+              </div>}
+              {(exportScope === "cohort" || exportScope === "category") && <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="text-xs font-semibold text-slate-700">Kategori program
+                  <select value={exportKategori} onChange={(e) => setExportKategori(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
+                    <option value="">Pilih kategori...</option><option>KRA</option><option>PPRA</option><option>P4N</option><option>KSA</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option>
                   </select>
                 </label>
-                <label className="text-xs font-semibold text-slate-700">Nama alumni
-                  <input value={exportNama} onChange={(e) => setExportNama(e.target.value)} placeholder="Cari nama (opsional)" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
+                {exportScope === "cohort" && <label className="text-xs font-semibold text-slate-700">Nomor angkatan
+                  <input value={exportNomorAngkatan} onChange={(e) => setExportNomorAngkatan(e.target.value)} placeholder="Mis. 1" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
+                </label>}
+              </div>}
+              {exportScope === "year" && <label className="mt-4 block text-xs font-semibold text-slate-700">Tahun angkatan
+                <input inputMode="numeric" value={exportTahun} onChange={(e) => setExportTahun(e.target.value)} placeholder="Mis. 2024" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal sm:max-w-xs" />
+              </label>}
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="text-xs font-semibold text-slate-700">Filter nama tambahan (opsional)
+                  <input value={exportNama} onChange={(e) => setExportNama(e.target.value)} placeholder="Cari nama" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
                 </label>
-                <label className="text-xs font-semibold text-slate-700">Kategori angkatan
-                  <input value={exportKategori} onChange={(e) => setExportKategori(e.target.value)} placeholder="Mis. PPRA" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
-                </label>
-                <label className="text-xs font-semibold text-slate-700">Status
+                <label className="text-xs font-semibold text-slate-700">Status (opsional)
                   <select value={exportStatus} onChange={(e) => setExportStatus(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
                     <option value="">Semua status</option><option value="Terverifikasi">Terverifikasi</option><option value="Menunggu">Menunggu</option><option value="Ditolak">Ditolak</option>
                   </select>
                 </label>
               </div>
-              <a href={exportUrl} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a365d]"><Download size={16} />Unduh CSV</a>
-            </section>
+              {(() => {
+                const invalid = (exportScope === "single" && !selectedAlumni) ||
+                  (exportScope === "cohort" && (!exportKategori || !exportNomorAngkatan.trim())) ||
+                  (exportScope === "category" && !exportKategori) ||
+                  (exportScope === "year" && !/^\\d{4}$/.test(exportTahun.trim()));
+                return <a href={invalid ? undefined : exportUrl} onClick={(e) => { if (invalid) e.preventDefault(); }} aria-disabled={invalid} className={`mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition ${invalid ? "cursor-not-allowed bg-slate-400" : "bg-[#0b1f3a] hover:bg-[#1a365d]"}`}><Download size={16} />Unduh CSV</a>;
+              })()}
+            </section>}
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">

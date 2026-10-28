@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
         ) VALUES (
           NULL, ${email}, ${passwordHash}, 'register', 'Menunggu',
           ${nama}, ${kategoriProgram}, ${kategoriProgram}, ${nomorAngkatan}, ${tahunAngkatan},
-          ${nomorHp || null}, ${nomorAlumni || null}, ${instansi}, ${jabatan}, ${wilayah}, ${alamat}
+          ${nomorHp || null}, NULL, ${instansi}, ${jabatan}, ${wilayah}, ${alamat}
         )
       `;
       return { kind: "created" as const };

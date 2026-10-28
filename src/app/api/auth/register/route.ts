@@ -118,8 +118,8 @@ export async function POST(request: NextRequest) {
         WHERE status = 'Menunggu'
           AND request_type = 'register'
           AND lower(trim(coalesce(submitted_nama, ''))) = lower(${nama})
-          AND trim(coalesce(submitted_kategori_program, submitted_angkatan, '')) = ${kategoriProgram}
-          AND trim(coalesce(submitted_nomor_angkatan, '')) = ${nomorAngkatan}
+          AND upper(trim(coalesce(submitted_kategori_program, submitted_angkatan, ''))) = ${kategoriProgram}
+          AND submitted_tahun_angkatan = ${tahunAngkatan}
         LIMIT 1
       `;
       if (pendingIdentity.length) return { kind: "identity_pending" as const };

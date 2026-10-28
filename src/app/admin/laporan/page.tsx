@@ -3,8 +3,6 @@
 import {
   BarChart3,
   ChevronDown,
-  Download,
-  FileSpreadsheet,
   Filter,
   MapPin,
   RefreshCcw,
@@ -81,10 +79,6 @@ export default function LaporanPage() {
 
   const resetFilter = () => { setSearch(""); setPage(1); };
 
-  const handleExportCSV = () => {
-    window.open("/api/alumni/export", "_blank");
-  };
-
   const maxWilayah = wilayahData.length > 0 ? Math.max(...wilayahData.map((w) => w.jumlah)) : 1;
 
   return (
@@ -128,25 +122,6 @@ export default function LaporanPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <button
-                    type="button"
-                    onClick={handleExportCSV}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#123b68]"
-                  >
-                    <FileSpreadsheet size={17} />
-                    Export CSV
-                  </button>
-
-                  <a
-                    href="/api/alumni/export"
-                    download
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-[#475569] shadow-sm transition hover:bg-slate-50"
-                  >
-                    <Download size={17} />
-                    Download Semua
-                  </a>
-                </div>
               </div>
             </div>
 

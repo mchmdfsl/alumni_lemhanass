@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
 import { getAlumniSession } from "@/lib/alumni-session";
-import { r2, r2Bucket, r2PublicUrl } from "@/lib/r2";
+import { getR2Client, r2Bucket, r2PublicUrl } from "@/lib/r2";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
     const key = `profiles/${Number(alumni.id)}/${randomUUID()}.${imageType.extension}`;
     const photoUrl = `${r2PublicUrl.replace(/\/$/, "")}/${key}`;
 
-    await r2.send(new PutObjectCommand({
+    await getR2Client().send(new PutObjectCommand({
       Bucket: r2Bucket,
       Key: key,
       Body: buffer,

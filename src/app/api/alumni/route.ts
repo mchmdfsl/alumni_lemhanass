@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
       ORDER BY a.updated_at DESC, a.id DESC
       LIMIT ${limit}
       OFFSET ${offset}
-`;    `;
+`;
 
     const [counts] = await db()`
       SELECT

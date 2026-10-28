@@ -126,11 +126,13 @@ export async function POST(request: NextRequest) {
   INNER JOIN alumni a ON a.id = aa.alumni_id
   WHERE
     (
-      lower(coalesce(nullif(trim(aa.email), ''), nullif(trim(a.email), ''), '')) = lower(${identifier})
-      OR a.nomor_alumni = ${identifier}
+      lower(trim(coalesce(aa.email, ''))) = lower(trim(${identifier}))
+      OR lower(trim(coalesce(a.email, ''))) = lower(trim(${identifier}))
+      OR upper(trim(coalesce(a.nomor_alumni, ''))) = upper(trim(${identifier}))
     )
     AND aa.is_active = TRUE
     AND a.status = 'Terverifikasi'
+  ORDER BY aa.id DESC
   LIMIT 1
 `;
     if (!account) {

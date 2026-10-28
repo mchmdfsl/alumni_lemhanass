@@ -45,7 +45,6 @@ export default function VerifikasiAlumniPage() {
   const [wilayah, setWilayah] = useState("Semua Wilayah");
   const [page, setPage] = useState(1);
   const [bulkLoading, setBulkLoading] = useState(false);
-  const [accountLoading, setAccountLoading] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const [selectedAlumni, setSelectedAlumni] =
@@ -111,120 +110,6 @@ export default function VerifikasiAlumniPage() {
   };
 
 
-  const handleBulkActivateAccounts = async () => {
-    const confirmed = window.confirm("Buat akun untuk alumni terverifikasi yang belum memiliki akun? Proses berjalan per 20 akun. Simpan file kredensial setelah selesai.");
-    if (!confirmed) return;
-    setAccountLoading(true);
-    const allCredentials: Array<{ nama: string; angkatan: string; nomorAlumni: string; email: string; password: string }> = [];
-    try {
-      let finished = false;
-      let batches = 0;
-      while (!finished) {
-        batches += 1;
-        if (batches > 500) throw new Error("Batas aman 10.000 akun tercapai. Jalankan kembali untuk melanjutkan akun yang tersisa.");
-        const controller = new AbortController();
-        const timeout = window.setTimeout(() => controller.abort(), 60000);
-        let response: Response;
-        try {
-          response = await fetch("/api/admin/alumni-accounts/bulk-activate", { method: "POST", cache: "no-store", signal: controller.signal });
-        } finally {
-          window.clearTimeout(timeout);
-        }
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || "Aktivasi akun massal gagal.");
-        const credentials = Array.isArray(result.credentials) ? result.credentials : [];
-        allCredentials.push(...credentials);
-        finished = credentials.length < 20;
-        if (finished && allCredentials.length === 0) {
-          window.alert(result.message || "Tidak ada alumni terverifikasi tanpa akun.");
-          return;
-        }
-        await new Promise((resolve) => window.setTimeout(resolve, 150));
-      }
-      const headers = ["Nama", "Angkatan", "ID Alumni", "Email (belum diisi)", "Password"];
-      const escapeCsv = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"' ;
-      const csv = [headers, ...allCredentials.map((item) => [item.nama, item.angkatan, item.nomorAlumni, "", item.password])].map((row) => row.map(escapeCsv).join(",")).join("\\r\\n");
-      const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = "kredensial-alumni-" + new Date().toISOString().slice(0, 10) + ".csv";
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
-      window.alert("Selesai. " + allCredentials.length + " akun dibuat. Simpan file CSV kredensial sekarang.");
-    } catch (error) {
-      const message = error instanceof DOMException && error.name === "AbortError"
-        ? "Permintaan melewati batas 60 detik. Akun yang sudah berhasil dibuat tetap tersimpan; periksa log server sebelum mencoba lagi."
-        : error instanceof Error ? error.message : "Aktivasi akun massal gagal.";
-      window.alert(message);
-    } finally {
-      setAccountLoading(false);
-    }
-  };
-
-
-  const handleResetPasswords = async () => {
-    const confirmed = window.confirm(
-      "PERINGATAN: password baru akan menggantikan password lama untuk seluruh akun alumni aktif yang terverifikasi. Pengguna harus memakai password baru. File CSV akan berisi password baru. Lanjutkan?"
-    );
-    if (!confirmed) return;
-    setAccountLoading(true);
-    const allCredentials: Array<{ nama: string; angkatan: string; nomorAlumni: string; email: string; password: string }> = [];
-    const downloadCsv = () => {
-      if (!allCredentials.length) return;
-      const headers = ["Nama", "Angkatan", "ID Alumni", "Email", "Password"];
-      const escapeCsv = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
-      const csv = [headers, ...allCredentials.map((item) => [item.nama, item.angkatan, item.nomorAlumni, item.email, item.password])]
-        .map((row) => row.map(escapeCsv).join(",")).join("\r\n");
-      const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = "password-baru-alumni-" + new Date().toISOString().slice(0, 10) + ".csv";
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
-    };
-    try {
-      let afterId = 0;
-      let hasMore = true;
-      while (hasMore) {
-        const controller = new AbortController();
-        const timeout = window.setTimeout(() => controller.abort(), 60000);
-        let response: Response;
-        try {
-          response = await fetch("/api/admin/alumni-accounts/reset-passwords", {
-            method: "POST", cache: "no-store",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ afterId }), signal: controller.signal,
-          });
-        } finally { window.clearTimeout(timeout); }
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || "Reset password gagal.");
-        const credentials = Array.isArray(result.credentials) ? result.credentials : [];
-        allCredentials.push(...credentials);
-        afterId = Number(result.lastId) || afterId;
-        hasMore = Boolean(result.hasMore);
-        if (hasMore && credentials.length === 0) throw new Error("Batch kosong padahal server menyatakan masih ada akun. Proses dihentikan.");
-      }
-      if (!allCredentials.length) {
-        window.alert("Tidak ditemukan akun alumni aktif berstatus Terverifikasi. Tidak ada password yang diubah.");
-        return;
-      }
-      downloadCsv();
-      window.alert("Selesai: password " + allCredentials.length + " akun telah direset dan CSV password baru diunduh. Simpan file dengan aman.");
-    } catch (error) {
-      if (allCredentials.length) downloadCsv();
-      const message = error instanceof DOMException && error.name === "AbortError"
-        ? "Permintaan timeout. Password yang berhasil direset sejauh ini diekspor ke CSV."
-        : error instanceof Error ? error.message : "Reset password gagal.";
-      window.alert(message + (allCredentials.length ? "\n\nCSV parsial berisi " + allCredentials.length + " akun yang passwordnya sudah diubah. Simpan file tersebut." : ""));
-    } finally { setAccountLoading(false); }
-  };
-
   const handleVerify = async (alumni: VerificationAlumni) => {
     try {
       const response = await fetch(`/api/alumni/${alumni.id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "Terverifikasi" }) });
@@ -275,26 +160,7 @@ export default function VerifikasiAlumniPage() {
                   </p>
                 </div>
 
-{isSuperAdmin && (
-                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
-                  <button
-                    type="button"
-                    onClick={handleBulkActivateAccounts}
-                    disabled={accountLoading}
-                    className="inline-flex items-center justify-center rounded-xl border border-[#0b1f3a] bg-white px-4 py-3 text-sm font-semibold text-[#0b1f3a] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {accountLoading ? "Membuat akun..." : "Aktivasi Akun Alumni & Unduh Password"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleResetPasswords}
-                    disabled={accountLoading || bulkLoading}
-                    className="inline-flex items-center justify-center rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {accountLoading ? "Memproses akun..." : "Reset Password 621 Akun & Unduh CSV"}
-                  </button>
-                  </div>
-                )}
+
 
                 {/* Pending Indicator */}
                 <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">

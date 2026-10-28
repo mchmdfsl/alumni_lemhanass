@@ -54,6 +54,7 @@ export default function AlumniPage() {
   const [tahunAngkatanFilter, setTahunAngkatanFilter] = useState("Semua Tahun Angkatan");
   const [wilayah, setWilayah] = useState("Semua Wilayah");
   const [page, setPage] = useState(1);
+  const [cohortBackLink, setCohortBackLink] = useState("/admin/angkatan");
 
   const [selectedAlumni, setSelectedAlumni] = useState<Alumni | null>(null);
   const [editAlumni, setEditAlumni] = useState<Alumni | null>(null);
@@ -71,8 +72,12 @@ export default function AlumniPage() {
     const params = new URLSearchParams(window.location.search);
     const w = params.get("wilayah");
     const a = params.get("angkatan");
+    const category = params.get("kategori");
     if (w) setWilayah(w);
-    if (a) setKategori(a);
+    if (category) setKategori(category);
+    if (a) setNomorAngkatanFilter(a);
+    const back = params.get("back");
+    if (back === "angkatan") setCohortBackLink("/admin/angkatan");
   }, []);
 
   const loadAlumni = () => {
@@ -270,6 +275,11 @@ export default function AlumniPage() {
             </div>
           )}
           <div className="mx-auto max-w-7xl">
+            <div className="mb-4">
+              <a href={cohortBackLink} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#0b1f3a] shadow-sm transition hover:bg-slate-50">
+                <ChevronLeft size={16} /> Kembali ke Data Angkatan
+              </a>
+            </div>
             {/* PAGE HEADER */}
             <div className="mb-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

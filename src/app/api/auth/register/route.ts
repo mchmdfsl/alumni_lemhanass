@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     const nama = value("nama", 200);
     const kategoriProgram = value("kategoriProgram", 80).toLocaleUpperCase("id-ID");
-    const nomorAngkatan = value("nomorAngkatan", 40);
+    const nomorAngkatanInput = value("nomorAngkatan", 40);
     const tahunAngkatanRaw = value("tahunAngkatan", 4);
     const tahunAngkatan = /^\d{4}$/.test(tahunAngkatanRaw) ? Number(tahunAngkatanRaw) : NaN;
     const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"]);
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const email = value("email", 254).toLowerCase();
     const password = typeof body.password === "string" ? body.password : "";
 
-    if (!nama || !kategoriProgram || !nomorAngkatan || !Number.isInteger(tahunAngkatan) || !email || !password) {
+    if (!nama || !kategoriProgram || !Number.isInteger(tahunAngkatan) || !email || !password) {
       return NextResponse.json(
         { error: "Nama, kategori program, nomor angkatan, tahun angkatan, email, dan password wajib diisi." },
         { status: 400 },
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     if (!allowedCategories.has(kategoriProgram)) {
       return NextResponse.json({ error: "Kategori program tidak valid." }, { status: 400 });
     }
-    if (nomorAngkatan.length > 40 || tahunAngkatan < 1900 || tahunAngkatan > new Date().getFullYear() + 5) {
+    if (nomorAngkatanInput.length > 40 || tahunAngkatan < 1900 || tahunAngkatan > new Date().getFullYear() + 5) {
       return NextResponse.json({ error: "Nomor atau tahun angkatan tidak valid." }, { status: 400 });
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

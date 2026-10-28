@@ -15,6 +15,8 @@ export async function GET(request: NextRequest) {
   const nama = (query.get("nama") ?? query.get("search") ?? "").trim().slice(0, 120);
   const nomorAlumni = (query.get("nomorAlumni") ?? "").trim().slice(0, 80);
   const tahunAngkatan = (query.get("tahunAngkatan") ?? "").trim();
+  const requestedLimit = query.get("limit") ?? "all";
+  const rowLimit = requestedLimit === "all" ? 1000000 : [1, 3].includes(Number(requestedLimit)) ? Number(requestedLimit) : 1000000;
 
   try {
     const rows = await db()`
@@ -44,7 +46,8 @@ export async function GET(request: NextRequest) {
         AND (${nama} = '' OR nama ILIKE ${'%' + nama + '%'})
         AND (${nomorAlumni} = '' OR nomor_alumni = ${nomorAlumni})
         AND (${tahunAngkatan} = '' OR tahun_angkatan::text = ${tahunAngkatan})
-      ORDER BY created_at ASC`;
+      ORDER BY created_at ASC
+      LIMIT ${rowLimit}`;
 
     // Build CSV
     const headers = [

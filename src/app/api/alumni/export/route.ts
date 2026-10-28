@@ -15,8 +15,16 @@ export async function GET(request: NextRequest) {
   const nama = (query.get("nama") ?? query.get("search") ?? "").trim().slice(0, 120);
   const nomorAlumni = (query.get("nomorAlumni") ?? "").trim().slice(0, 80);
   const tahunAngkatan = (query.get("tahunAngkatan") ?? "").trim();
+  const nomorAngkatan = (query.get("nomorAngkatan") ?? "").trim().slice(0, 40);
+  const alumniId = (query.get("alumniId") ?? "").trim();
   const requestedLimit = query.get("limit") ?? "all";
-  const rowLimit = requestedLimit === "all" ? 1000000 : [1, 3].includes(Number(requestedLimit)) ? Number(requestedLimit) : 1000000;
+  const rowLimit = requestedLimit === "all" ? 1000000 : Number.isInteger(Number(requestedLimit)) && Number(requestedLimit) > 0 ? Math.min(Number(requestedLimit), 1000000) : 1000000;
+  if (alumniId && !/^\\d+$/.test(alumniId)) {
+    return NextResponse.json({ error: "ID alumni tidak valid." }, { status: 400 });
+  }
+  if (tahunAngkatan && !/^\\d{4}$/.test(tahunAngkatan)) {
+    return NextResponse.json({ error: "Tahun angkatan harus terdiri dari 4 digit." }, { status: 400 });
+  }
 
   try {
     const rows = await db()`
@@ -42,8 +50,10 @@ export async function GET(request: NextRequest) {
           THEN TO_CHAR(verified_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI:SS')
           ELSE '' END AS "verifiedAt"
       FROM alumni
-      WHERE (${status} = '' OR status = ${status})
-        AND (${angkatan} = '' OR COALESCE(NULLIF(trim(kategori_program), ''), angkatan) = ${angkatan})
+      WHERE (${alumniId} = '' OR id::text = ${alumniId})
+        AND (${status} = '' OR status = ${status})
+        AND (${angkatan} = '' OR upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan)) = upper(${angkatan}))
+        AND (${nomorAngkatan} = '' OR trim(COALESCE(nomor_angkatan, '')) = ${nomorAngkatan})
         AND (${wilayah} = '' OR wilayah = ${wilayah})
         AND (${nama} = '' OR nama ILIKE ${'%' + nama + '%'})
         AND (${nomorAlumni} = '' OR nomor_alumni = ${nomorAlumni})

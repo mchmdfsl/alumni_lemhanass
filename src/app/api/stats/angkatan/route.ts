@@ -25,33 +25,47 @@ export async function GET() {
       wilayahDominan: string | null;
     };
 
-    const rows = await db()`
+    // Agregasikan data terlebih dahulu. Subquery wilayah membaca hasil agregasi,
+    // bukan kolom alumni yang belum dikelompokkan.
+    const rows = await db() `
+      WITH grouped AS (
+        SELECT
+          COALESCE(NULLIF(trim(kategori_program), ''), NULLIF(trim(angkatan), ''), 'Tidak Diketahui') AS angkatan,
+          COALESCE(NULLIF(trim(kategori_program), ''), NULLIF(trim(angkatan), ''), 'Tidak Diketahui') AS "kategoriProgram",
+          COALESCE(NULLIF(trim(nomor_angkatan), ''), '-') AS "nomorAngkatan",
+          tahun_angkatan AS "tahunAngkatan",
+          COUNT(*)::int AS total,
+          COUNT(*) FILTER (WHERE status = 'Terverifikasi')::int AS terverifikasi,
+          COUNT(*) FILTER (WHERE status = 'Menunggu')::int AS menunggu,
+          COUNT(*) FILTER (WHERE status = 'Ditolak')::int AS ditolak
+        FROM alumni
+        GROUP BY
+          COALESCE(NULLIF(trim(kategori_program), ''), NULLIF(trim(angkatan), ''), 'Tidak Diketahui'),
+          COALESCE(NULLIF(trim(nomor_angkatan), ''), '-'),
+          tahun_angkatan
+      )
       SELECT
-        COALESCE(NULLIF(trim(kategori_program), ''), NULLIF(trim(angkatan), ''), 'Tidak Diketahui') AS angkatan,
-        COALESCE(NULLIF(trim(kategori_program), ''), NULLIF(trim(angkatan), ''), 'Tidak Diketahui') AS "kategoriProgram",
-        COALESCE(NULLIF(trim(nomor_angkatan), ''), '-') AS "nomorAngkatan",
-        tahun_angkatan AS "tahunAngkatan",
-        COUNT(*)::int AS total,
-        COUNT(*) FILTER (WHERE status = 'Terverifikasi')::int AS terverifikasi,
-        COUNT(*) FILTER (WHERE status = 'Menunggu')::int AS menunggu,
-        COUNT(*) FILTER (WHERE status = 'Ditolak')::int AS ditolak,
-        (
-          SELECT CASE WHEN NULLIF(trim(a2.wilayah), '') IS NULL THEN '-' ELSE a2.wilayah END
-          FROM alumni a2
-          WHERE COALESCE(NULLIF(trim(a2.kategori_program), ''), NULLIF(trim(a2.angkatan), ''), 'Tidak Diketahui')
-                = COALESCE(NULLIF(trim(alumni.kategori_program), ''), NULLIF(trim(alumni.angkatan), ''), 'Tidak Diketahui')
-            AND COALESCE(NULLIF(trim(a2.nomor_angkatan), ''), '-') = COALESCE(NULLIF(trim(alumni.nomor_angkatan), ''), '-')
-            AND a2.tahun_angkatan IS NOT DISTINCT FROM alumni.tahun_angkatan
-          GROUP BY a2.wilayah
-          ORDER BY COUNT(*) DESC
-          LIMIT 1
-        ) AS "wilayahDominan"
-      FROM alumni
-      GROUP BY
-        COALESCE(NULLIF(trim(kategori_program), ''), NULLIF(trim(angkatan), ''), 'Tidak Diketahui'),
-        COALESCE(NULLIF(trim(nomor_angkatan), ''), '-'),
-        tahun_angkatan
-      ORDER BY total DESC, "kategoriProgram" ASC, "nomorAngkatan" ASC, "tahunAngkatan" ASC NULLS LAST
+        g.angkatan,
+        g."kategoriProgram",
+        g."nomorAngkatan",
+        g."tahunAngkatan",
+        g.total,
+        g.terverifikasi,
+        g.menunggu,
+        g.ditolak,
+        COALESCE(w.wilayah, '-') AS "wilayahDominan"
+      FROM grouped g
+      LEFT JOIN LATERAL (
+        SELECT NULLIF(trim(a2.wilayah), '') AS wilayah
+        FROM alumni a2
+        WHERE COALESCE(NULLIF(trim(a2.kategori_program), ''), NULLIF(trim(a2.angkatan), ''), 'Tidak Diketahui') = g."kategoriProgram"
+          AND COALESCE(NULLIF(trim(a2.nomor_angkatan), ''), '-') = g."nomorAngkatan"
+          AND a2.tahun_angkatan IS NOT DISTINCT FROM g."tahunAngkatan"
+        GROUP BY a2.wilayah
+        ORDER BY COUNT(*) DESC, a2.wilayah ASC NULLS LAST
+        LIMIT 1
+      ) w ON TRUE
+      ORDER BY g.total DESC, g."kategoriProgram" ASC, g."nomorAngkatan" ASC, g."tahunAngkatan" ASC NULLS LAST
     `;
 
     const typedRows = rows as unknown as AngkatanStat[];

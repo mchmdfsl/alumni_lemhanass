@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,6 +44,19 @@ export async function POST(request: NextRequest) {
     }
     if (password.length < 12 || Buffer.byteLength(password, "utf8") > 1024) {
       return NextResponse.json({ error: "Password minimal 12 karakter." }, { status: 400 });
+    }
+
+    const rateLimit = await checkRateLimit(request, "register", {
+      identity: email,
+      ipLimit: 15,
+      identityLimit: 5,
+      windowSeconds: 15 * 60,
+    });
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        { error: "Terlalu banyak percobaan registrasi. Silakan coba lagi beberapa saat." },
+        { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
+      );
     }
 
     const passwordHash = await hashPassword(password);

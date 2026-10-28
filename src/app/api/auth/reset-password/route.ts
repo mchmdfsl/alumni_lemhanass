@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,6 +25,17 @@ export async function POST(request: NextRequest) {
     }
     if (password !== confirmPassword) {
       return NextResponse.json({ message: "Konfirmasi password tidak cocok." }, { status: 400 });
+    }
+
+    const rateLimit = await checkRateLimit(request, "reset-password", {
+      ipLimit: 10,
+      windowSeconds: 15 * 60,
+    });
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        { message: "Terlalu banyak percobaan reset password. Silakan coba lagi beberapa saat." },
+        { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
+      );
     }
 
     const tokenHash = createHash("sha256").update(token).digest("hex");

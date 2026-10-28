@@ -4,7 +4,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Download,
   ShieldAlert,
   Eye,
   Filter,
@@ -311,15 +310,6 @@ export default function AlumniPage() {
                       {bulkDeleting ? "Menghapus..." : "Hapus Massal"}
                     </button>
                   )}
-                  <a
-                    href="/api/alumni/export"
-                    download
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-[#475569] shadow-sm transition hover:bg-slate-50"
-                  >
-                    <Download size={17} />
-                    Export CSV
-                  </a>
-
                   <button
                     type="button"
                     onClick={() => setShowAddModal(true)}

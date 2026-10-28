@@ -23,7 +23,12 @@ export async function GET(request: NextRequest) {
         ) AS parts
       ) legacy
       WHERE upper(trim(coalesce(
-        NULLIF(trim(kategori_program), ''),
+        CASE
+          WHEN legacy.parts[1] IS NOT NULL
+            AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, ''))))
+            THEN legacy.parts[1]
+          ELSE NULLIF(trim(kategori_program), '')
+        END,
         legacy.parts[1],
         angkatan,
         ''

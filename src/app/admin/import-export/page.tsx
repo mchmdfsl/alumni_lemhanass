@@ -60,6 +60,15 @@ export default function ImportExportPage() {
   const [accountLoading, setAccountLoading] = useState(false);
   const [accountStatus, setAccountStatus] = useState("");
   const [accountError, setAccountError] = useState("");
+  const [accountScope, setAccountScope] = useState("all");
+  const [accountCategory, setAccountCategory] = useState("");
+  const [accountCohort, setAccountCohort] = useState("");
+  const [accountYear, setAccountYear] = useState("");
+  const [accountSearch, setAccountSearch] = useState("");
+  const [accountResults, setAccountResults] = useState<Array<{ id: number | string; nama: string; nomorAlumni?: string; kategoriProgram?: string; nomorAngkatan?: string; tahunAngkatan?: number | string }>>([]);
+  const [accountAlumniId, setAccountAlumniId] = useState("");
+  const [accountSearching, setAccountSearching] = useState(false);
+  const [accountSearchError, setAccountSearchError] = useState("");
   const [exportScope, setExportScope] = useState("all");
   const [exportNama, setExportNama] = useState("");
   const [exportKategori, setExportKategori] = useState("");
@@ -83,51 +92,11 @@ export default function ImportExportPage() {
   const [busy, setBusy] = useState(false);
 
 
-  async function handleBulkActivateAccounts() {
-    if (!window.confirm("Buat akun untuk seluruh alumni terverifikasi yang belum memiliki akun? Proses berjalan per 20 akun. Password baru akan diunduh dalam CSV. Lanjutkan?")) return;
-    setAccountLoading(true); setAccountStatus(""); setAccountError("");
-    const all: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string}> = [];
-    try {
-      let more = true, batches = 0;
-      while (more) {
-        if (++batches > 500) throw new Error("Batas 10.000 akun tercapai. Jalankan lagi untuk melanjutkan.");
-        const response = await fetch("/api/admin/alumni-accounts/bulk-activate", {method:"POST",cache:"no-store"});
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || "Aktivasi akun gagal.");
-        const credentials = Array.isArray(result.credentials) ? result.credentials : [];
-        all.push(...credentials); more = credentials.length === 20;
-        if (!credentials.length) break;
-      }
-      if (!all.length) { setAccountStatus("Tidak ada alumni terverifikasi tanpa akun. Tidak ada perubahan dilakukan."); return; }
-      downloadCredentialsCsv("kredensial-alumni", all);
-      setAccountStatus(`Berhasil membuat ${all.length} akun. CSV password telah diunduh. Simpan file dengan aman.`);
-    } catch(e) { setAccountError(e instanceof Error ? e.message : "Aktivasi akun gagal."); }
-    finally { setAccountLoading(false); }
-  }
-
-  async function handleResetPasswords() {
-    if (!window.confirm("PERINGATAN: password semua akun alumni aktif dan terverifikasi akan diganti. Password lama tidak berlaku lagi. CSV berisi password baru. Lanjutkan?")) return;
-    setAccountLoading(true); setAccountStatus(""); setAccountError("");
-    const all: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string;accountId?:number}> = [];
-    try {
-      let afterId = 0, more = true;
-      while (more) {
-        const response = await fetch("/api/admin/alumni-accounts/reset-passwords", {method:"POST",cache:"no-store",headers:{"Content-Type":"application/json"},body:JSON.stringify({afterId})});
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || "Reset password gagal.");
-        const credentials = Array.isArray(result.credentials) ? result.credentials : [];
-        all.push(...credentials); afterId = Number(result.lastId) || afterId; more = Boolean(result.hasMore);
-        if (more && !credentials.length) throw new Error("Batch kosong, proses dihentikan demi keamanan.");
-      }
-      if (!all.length) { setAccountStatus("Tidak ada akun aktif terverifikasi. Password tidak diubah."); return; }
-      downloadCredentialsCsv("password-baru-alumni", all);
-      setAccountStatus(`Password ${all.length} akun berhasil direset. CSV password baru telah diunduh. Simpan file dengan aman.`);
-    } catch(e) {
-      if (all.length) downloadCredentialsCsv("password-baru-alumni-parsial", all);
-      setAccountError((e instanceof Error ? e.message : "Reset password gagal.") + (all.length ? ` CSV parsial berisi ${all.length} akun yang passwordnya sudah berubah.` : ""));
-    } finally { setAccountLoading(false); }
-  }
-
+  function accountFilter() { return { scope: accountScope, alumniId: accountScope === "single" ? accountAlumniId : "", kategoriProgram: ["cohort","category"].includes(accountScope) ? accountCategory : "", nomorAngkatan: accountScope === "cohort" ? accountCohort.trim() : "", tahunAngkatan: accountScope === "year" ? accountYear.trim() : "" }; }
+  function validateAccountScope(scope: ReturnType<typeof accountFilter>) { if (scope.scope === "single" && !scope.alumniId) return "Pilih satu alumni terlebih dahulu."; if (scope.scope === "cohort" && (!scope.kategoriProgram || !scope.nomorAngkatan)) return "Pilih kategori dan isi nomor angkatan terlebih dahulu."; if (scope.scope === "category" && !scope.kategoriProgram) return "Pilih kategori program terlebih dahulu."; if (scope.scope === "year" && !/^\d{4}$/.test(scope.tahunAngkatan)) return "Isi tahun angkatan dengan 4 digit."; return ""; }
+  async function searchAccountAlumni() { const term = accountSearch.trim(); if (term.length < 2) { setAccountSearchError("Masukkan minimal 2 karakter nama atau nomor alumni."); setAccountResults([]); return; } setAccountSearching(true); setAccountSearchError(""); try { const response = await fetch("/api/alumni?search=" + encodeURIComponent(term) + "&limit=10", { cache: "no-store" }); const result = await response.json(); if (!response.ok) throw new Error(result.error || "Pencarian alumni gagal."); setAccountResults(Array.isArray(result.data) ? result.data : []); setAccountAlumniId(""); if (!result.data?.length) setAccountSearchError("Alumni tidak ditemukan."); } catch (error) { setAccountSearchError(error instanceof Error ? error.message : "Pencarian alumni gagal."); } finally { setAccountSearching(false); } }
+  async function handleBulkActivateAccounts() { const scope = accountFilter(); const invalid = validateAccountScope(scope); if (invalid) { setAccountError(invalid); return; } if (!window.confirm("Aktivasi akun untuk alumni terverifikasi yang sesuai dengan cakupan terpilih? Password baru akan diunduh dalam CSV. Lanjutkan?")) return; setAccountLoading(true); setAccountStatus(""); setAccountError(""); const all: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string}> = []; try { let more = true, batches = 0; while (more) { if (++batches > 500) throw new Error("Batas 10.000 akun tercapai. Jalankan lagi untuk melanjutkan."); const response = await fetch("/api/admin/alumni-accounts/bulk-activate", { method:"POST", cache:"no-store", headers:{"Content-Type":"application/json"}, body:JSON.stringify(scope) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || "Aktivasi akun gagal."); const credentials = Array.isArray(result.credentials) ? result.credentials : []; all.push(...credentials); more = credentials.length === 20; if (!credentials.length || scope.scope === "single") break; } if (!all.length) { setAccountStatus("Tidak ada alumni terverifikasi tanpa akun dalam cakupan ini. Tidak ada perubahan dilakukan."); return; } downloadCredentialsCsv("kredensial-alumni", all); setAccountStatus("Berhasil membuat " + all.length + " akun. CSV password telah diunduh. Simpan file dengan aman."); } catch(e) { setAccountError(e instanceof Error ? e.message : "Aktivasi akun gagal."); } finally { setAccountLoading(false); } }
+  async function handleResetPasswords() { const scope = accountFilter(); const invalid = validateAccountScope(scope); if (invalid) { setAccountError(invalid); return; } if (!window.confirm("PERINGATAN: password akun aktif dan terverifikasi dalam cakupan terpilih akan diganti. Password lama tidak berlaku lagi. CSV berisi password baru. Lanjutkan?")) return; setAccountLoading(true); setAccountStatus(""); setAccountError(""); const all: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string;accountId?:number}> = []; try { let afterId = 0, more = true; while (more) { const response = await fetch("/api/admin/alumni-accounts/reset-passwords", { method:"POST", cache:"no-store", headers:{"Content-Type":"application/json"}, body:JSON.stringify({afterId,...scope}) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || "Reset password gagal."); const credentials = Array.isArray(result.credentials) ? result.credentials : []; all.push(...credentials); afterId = Number(result.lastId) || afterId; more = Boolean(result.hasMore); if (more && !credentials.length) throw new Error("Batch kosong, proses dihentikan demi keamanan."); if (scope.scope === "single") more = false; } if (!all.length) { setAccountStatus("Tidak ada akun aktif terverifikasi dalam cakupan ini. Password tidak diubah."); return; } downloadCredentialsCsv("password-baru-alumni", all); setAccountStatus("Password " + all.length + " akun berhasil direset. CSV password baru telah diunduh. Simpan file dengan aman."); } catch(e) { if (all.length) downloadCredentialsCsv("password-baru-alumni-parsial", all); setAccountError((e instanceof Error ? e.message : "Reset password gagal.") + (all.length ? " CSV parsial berisi " + all.length + " akun yang passwordnya sudah berubah." : "")); } finally { setAccountLoading(false); } }
   function downloadCredentialsCsv(prefix: string, rows: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string}>) {
     const headers = ["Nama","Angkatan","ID Alumni","Email","Password"];
     const esc = (value: unknown) => '"' + String(value ?? "").replace(/"/g,'""') + '"';
@@ -334,9 +303,18 @@ export default function ImportExportPage() {
           <div className="mx-auto max-w-5xl space-y-6">
             {roleChecked && isSuperAdmin && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b28b16]">Khusus Super Admin</p><h2 className="mt-1 text-lg font-bold text-[#0b1f3a]">Aktivasi Akun & Reset Password</h2><p className="mt-1 text-sm text-slate-500">CSV berisi password baru. Simpan file dengan aman.</p></div>
+              <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                <label className="block text-xs font-semibold text-slate-700">Cakupan akun<select value={accountScope} onChange={(e) => { setAccountScope(e.target.value); setAccountAlumniId(""); setAccountError(""); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="single">Satu alumni</option><option value="cohort">Angkatan tertentu</option><option value="category">Kategori program</option><option value="year">Tahun angkatan</option><option value="all">Semua alumni yang memenuhi syarat</option></select></label>
+                {["cohort", "category"].includes(accountScope) && <label className="block text-xs font-semibold text-slate-700">Kategori program<select value={accountCategory} onChange={(e) => setAccountCategory(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Pilih kategori</option>{["KRA","PPRA","P4N","KSA","PPSA","P3N","PPNK"].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>}
+                {accountScope === "cohort" && <label className="block text-xs font-semibold text-slate-700">Nomor angkatan<input value={accountCohort} onChange={(e) => setAccountCohort(e.target.value)} placeholder="Contoh: 24" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" /></label>}
+                {accountScope === "year" && <label className="block text-xs font-semibold text-slate-700">Tahun angkatan<input inputMode="numeric" maxLength={4} value={accountYear} onChange={(e) => setAccountYear(e.target.value.replace(/\D/g, "").slice(0,4))} placeholder="Contoh: 2024" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" /></label>}
+              </div>
+              {accountScope === "single" && <div className="mb-4 rounded-xl border border-slate-200 p-3"><div className="flex flex-col gap-2 sm:flex-row"><input value={accountSearch} onChange={(e) => setAccountSearch(e.target.value)} placeholder="Cari nama atau nomor alumni" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm" /><button type="button" disabled={accountSearching} onClick={() => void searchAccountAlumni()} className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold">{accountSearching ? "Mencari..." : "Cari alumni"}</button></div>
+                {accountResults.length > 0 && <div className="mt-3 space-y-2">{accountResults.map((item) => <label key={String(item.id)} className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-100 p-2.5 text-sm"><input type="radio" name="accountAlumni" checked={accountAlumniId === String(item.id)} onChange={() => setAccountAlumniId(String(item.id))} className="mt-1" /><span><span className="block font-semibold">{item.nama}</span><span className="text-xs text-slate-500">{item.nomorAlumni || "Nomor alumni belum ada"} · {item.kategoriProgram || ""} {item.nomorAngkatan || ""} {item.tahunAngkatan || ""}</span></span></label>)}</div>}{accountSearchError && <p className="mt-2 text-xs text-rose-700">{accountSearchError}</p>}{accountAlumniId && <p className="mt-2 text-xs font-semibold text-emerald-700">Alumni terpilih: {accountResults.find((item) => String(item.id) === accountAlumniId)?.nama || accountAlumniId}</p>}</div>}
+              <p className="mb-3 text-xs leading-5 text-slate-500">Aktivasi hanya membuat akun yang belum ada. Reset hanya mengganti password akun aktif. Keduanya hanya memproses alumni berstatus Terverifikasi dan mengikuti cakupan di atas.</p>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <button type="button" disabled={accountLoading} onClick={() => void handleBulkActivateAccounts()} className="flex items-center justify-center gap-2 rounded-xl border border-[#0b1f3a] px-4 py-3 text-sm font-semibold text-[#0b1f3a] hover:bg-slate-50 disabled:opacity-50"><UserRoundPlus size={17}/>{accountLoading ? "Memproses akun..." : "Aktivasi Akun Alumni & Unduh Password"}</button>
-                <button type="button" disabled={accountLoading} onClick={() => void handleResetPasswords()} className="flex items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 hover:bg-red-100 disabled:opacity-50"><KeyRound size={17}/>{accountLoading ? "Memproses akun..." : "Reset Password 621 Akun & Unduh CSV"}</button>
+                <button type="button" disabled={accountLoading} onClick={() => void handleBulkActivateAccounts()} className="flex items-center justify-center gap-2 rounded-xl border border-[#0b1f3a] px-4 py-3 text-sm font-semibold text-[#0b1f3a] hover:bg-slate-50 disabled:opacity-50"><UserRoundPlus size={17}/>{accountLoading ? "Memproses akun..." : "Aktivasi Akun & Unduh Password"}</button>
+                <button type="button" disabled={accountLoading} onClick={() => void handleResetPasswords()} className="flex items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 hover:bg-red-100 disabled:opacity-50"><KeyRound size={17}/>{accountLoading ? "Memproses akun..." : "Reset Password & Unduh CSV"}</button>
               </div>
               {accountStatus && <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{accountStatus}</p>}
               {accountError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{accountError}</p>}

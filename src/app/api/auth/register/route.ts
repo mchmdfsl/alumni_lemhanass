@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
         if (!/^\d+$/.test(raw)) return highest;
         const parsed = Number(raw);
         return Number.isSafeInteger(parsed) ? Math.max(highest, parsed) : highest;
-      }, -1);
+      }, 0);
       const nomorAngkatan = String(highestCohort + 1);
 
       // Also serialize requests with the same email and identity.

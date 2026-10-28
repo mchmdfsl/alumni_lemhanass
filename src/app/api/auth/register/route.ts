@@ -67,9 +67,25 @@ export async function POST(request: NextRequest) {
         SELECT pg_advisory_xact_lock(hashtextextended(${"register-category:" + kategoriProgram}, 0))
       `;
       const cohortRows = await tx`
-        SELECT nomor_angkatan AS "nomorAngkatan"
+        SELECT COALESCE(NULLIF(trim(nomor_angkatan), ''), legacy.parts[2]) AS "nomorAngkatan"
         FROM alumni
-        WHERE upper(trim(coalesce(kategori_program, angkatan, ''))) = ${kategoriProgram}
+        CROSS JOIN LATERAL (
+          SELECT regexp_match(
+            upper(trim(coalesce(angkatan, ''))),
+            '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|PPNK|TOT)[[:space:]]+([0-9]+)'
+          ) AS parts
+        ) legacy
+        WHERE upper(trim(coalesce(
+          CASE
+            WHEN legacy.parts[1] IS NOT NULL
+              AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, ''))))
+              THEN legacy.parts[1]
+            ELSE NULLIF(trim(kategori_program), '')
+          END,
+          legacy.parts[1],
+          angkatan,
+          ''
+        ))) = ${kategoriProgram}
         UNION ALL
         SELECT submitted_nomor_angkatan AS "nomorAngkatan"
         FROM alumni_account_requests

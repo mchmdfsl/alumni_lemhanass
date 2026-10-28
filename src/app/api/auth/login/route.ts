@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
   INNER JOIN alumni a ON a.id = aa.alumni_id
   WHERE
     (
-      lower(aa.email) = lower(${identifier})
+      lower(coalesce(aa.email, a.email, '')) = lower(${identifier})
       OR a.nomor_alumni = ${identifier}
     )
     AND aa.is_active = TRUE

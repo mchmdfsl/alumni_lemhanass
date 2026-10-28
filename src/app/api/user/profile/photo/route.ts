@@ -158,11 +158,15 @@ export async function POST(request: NextRequest) {
     }));
     uploadedKey = key;
 
-    await db()`
+    const [updatedAlumni] = await db()`
       UPDATE alumni
       SET foto_profil = ${photoUrl}, updated_at = NOW()
       WHERE id = ${alumni.id}
+      RETURNING id
     `;
+    if (!updatedAlumni) {
+      throw new Error("Data alumni tidak ditemukan saat menyimpan foto profil.");
+    }
     databaseUpdated = true;
 
     const previousPhotoUrl = typeof alumni.fotoProfil === "string"

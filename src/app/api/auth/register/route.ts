@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       `;
       const highestCohort = cohortRows.reduce((highest, row) => {
         const raw = String(row.nomorAngkatan ?? "").trim();
-        if (!/^\\d+$/.test(raw)) return highest;
+        if (!/^\d+$/.test(raw)) return highest;
         const parsed = Number(raw);
         return Number.isSafeInteger(parsed) ? Math.max(highest, parsed) : highest;
       }, 0);

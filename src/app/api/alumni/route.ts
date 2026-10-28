@@ -43,46 +43,57 @@ export async function GET(request: NextRequest) {
 
     const rows = await db()`
       SELECT
-        id,
-        COALESCE(nomor_alumni, '') AS "nomorAlumni",
-        nama,
-        COALESCE(kategori_program, angkatan) AS "kategoriProgram",
-        COALESCE(nomor_angkatan, '') AS "nomorAngkatan",
-        tahun_angkatan AS "tahunAngkatan",
-        angkatan,
-        COALESCE(instansi, '') AS instansi,
-        COALESCE(jabatan, '') AS jabatan,
-        COALESCE(wilayah, '') AS wilayah,
-        COALESCE(alamat, '') AS alamat,
-        COALESCE(email, '') AS email,
-        COALESCE(nomor_hp, '') AS "nomorHp",
-        to_jsonb(alumni)->>'foto_profil' AS "fotoProfil",
-        status,
-        alasan_penolakan AS "alasanPenolakan",
-        sumber_data AS "sumberData",
-        created_at AS "createdAt",
-        updated_at AS "updatedAt",
-        verified_at AS "verifiedAt"
-      FROM alumni
+        a.id,
+        COALESCE(a.nomor_alumni, '') AS "nomorAlumni",
+        a.nama,
+        CASE
+          WHEN legacy.parts[1] IS NOT NULL
+            AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, ''))))
+            THEN legacy.parts[1]
+          ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan)
+        END AS "kategoriProgram",
+        COALESCE(NULLIF(trim(a.nomor_angkatan), ''), legacy.parts[2], '') AS "nomorAngkatan",
+        a.tahun_angkatan AS "tahunAngkatan",
+        a.angkatan,
+        COALESCE(a.instansi, '') AS instansi,
+        COALESCE(a.jabatan, '') AS jabatan,
+        COALESCE(a.wilayah, '') AS wilayah,
+        COALESCE(a.alamat, '') AS alamat,
+        COALESCE(a.email, '') AS email,
+        COALESCE(a.nomor_hp, '') AS "nomorHp",
+        to_jsonb(a)->>'foto_profil' AS "fotoProfil",
+        a.status,
+        a.alasan_penolakan AS "alasanPenolakan",
+        a.sumber_data AS "sumberData",
+        a.created_at AS "createdAt",
+        a.updated_at AS "updatedAt",
+        a.verified_at AS "verifiedAt"
+      FROM alumni a
+      CROSS JOIN LATERAL (
+        SELECT regexp_match(
+          upper(trim(coalesce(a.angkatan, ''))),
+          '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|PPNK|TOT)[[:space:]]+([0-9]+)'
+        ) AS parts
+      ) legacy
       WHERE (
         ${search} = ''
-        OR CONCAT_WS(
-          ' ',
-          nama,
-          nomor_alumni,
-          email,
-          instansi,
-          nomor_hp,
-          alamat
-        ) ILIKE ${"%" + search + "%"}
+        OR CONCAT_WS(' ', a.nama, a.nomor_alumni, a.email, a.instansi, a.nomor_hp, a.alamat) ILIKE ${"%" + search + "%"}
       )
-      AND (${status} = '' OR status = ${status})
-      AND (${angkatan} = '' OR COALESCE(NULLIF(trim(kategori_program), ''), angkatan) = ${angkatan})
-      AND (${wilayah} = '' OR wilayah = ${wilayah})
-      ORDER BY updated_at DESC, id DESC
+      AND (${status} = '' OR a.status = ${status})
+      AND (
+        ${angkatan} = ''
+        OR CASE
+          WHEN legacy.parts[1] IS NOT NULL
+            AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, ''))))
+            THEN legacy.parts[1]
+          ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan)
+        END = ${angkatan}
+      )
+      AND (${wilayah} = '' OR a.wilayah = ${wilayah})
+      ORDER BY a.updated_at DESC, a.id DESC
       LIMIT ${limit}
       OFFSET ${offset}
-    `;
+`;    `;
 
     const [counts] = await db()`
       SELECT

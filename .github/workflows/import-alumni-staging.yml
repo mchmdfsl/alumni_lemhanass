@@ -1,0 +1,40 @@
+name: Import alumni to staging
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  import-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check CSV exists
+        run: |
+          test -f ./alumni_siap_import.csv || {
+            echo "File alumni_siap_import.csv tidak ditemukan di root repository."
+            exit 1
+          }
+
+      - name: Install import dependency
+        run: npm install --no-save --package-lock=false postgres
+
+      - name: Import into staging only
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          test -n "$DATABASE_URL" || {
+            echo "GitHub Actions secret DATABASE_URL belum diatur."
+            exit 1
+          }
+          node scripts/import-alumni-staging.mjs ./alumni_siap_import.csv

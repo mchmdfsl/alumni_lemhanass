@@ -106,7 +106,7 @@ export default function ImportExportPage() {
       const invalid = mapped.findIndex((row) =>
         !row.kategoriProgram ||
         !row.nomorAngkatan ||
-        !/^\\d{4}$/.test(row.tahunAngkatan) ||
+        !/^\d{4}$/.test(row.tahunAngkatan) ||
         Number(row.tahunAngkatan) < 1900 ||
         Number(row.tahunAngkatan) > new Date().getFullYear() + 5
       );

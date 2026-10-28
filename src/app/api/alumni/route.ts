@@ -144,12 +144,11 @@ export async function POST(request: NextRequest) {
     const kategoriProgram = typeof body.kategoriProgram === "string" ? body.kategoriProgram.trim().toLocaleUpperCase("id-ID") : "";
     const nomorAngkatan = typeof body.nomorAngkatan === "string" ? body.nomorAngkatan.trim() : "";
     const tahunAngkatan = Number(body.tahunAngkatan);
-    const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"]);
 
     if (
       nama.length < 2 ||
       nama.length > 200 ||
-      !allowedCategories.has(kategoriProgram) ||
+      !/^[A-Z0-9]+(?:[ ][A-Z0-9]+){0,3}$/.test(kategoriProgram) ||
       !nomorAngkatan ||
       nomorAngkatan.length > 40 ||
       !Number.isInteger(tahunAngkatan) ||

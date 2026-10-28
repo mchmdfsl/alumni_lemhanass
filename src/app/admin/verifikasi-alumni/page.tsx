@@ -110,22 +110,7 @@ export default function VerifikasiAlumniPage() {
     setPage(1);
   };
 
-  const handleBulkVerifyImported = async () => {
-    const confirmed = window.confirm("Verifikasi semua data alumni hasil impor dari database? Pengajuan pendaftaran baru tidak akan diubah.");
-    if (!confirmed) return;
-    setBulkLoading(true);
-    try {
-      const response = await fetch("/api/alumni/bulk-verify", { method: "POST" });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Verifikasi massal gagal.");
-      window.alert("Berhasil memperbarui " + (result.updated ?? 0) + " data alumni hasil impor.");
-      window.location.reload();
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : "Verifikasi massal gagal.");
-    } finally {
-      setBulkLoading(false);
-    }
-  };
+
   const handleBulkActivateAccounts = async () => {
     const confirmed = window.confirm("Buat akun untuk alumni terverifikasi yang belum memiliki akun? Proses berjalan per 20 akun. Simpan file kredensial setelah selesai.");
     if (!confirmed) return;
@@ -307,14 +292,6 @@ export default function VerifikasiAlumniPage() {
                     className="inline-flex items-center justify-center rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {accountLoading ? "Memproses akun..." : "Reset Password 621 Akun & Unduh CSV"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleBulkVerifyImported}
-                    disabled={bulkLoading}
-                    className="inline-flex items-center justify-center rounded-xl bg-[#0b1f3a] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#18385f] disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {bulkLoading ? "Memverifikasi..." : "Verifikasi Massal Data Impor"}
                   </button>
                   </div>
                 )}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Download, FileUp, FileSpreadsheet, ShieldCheck } from "lucide-react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
@@ -52,23 +53,77 @@ function parseCsv(text: string): string[][] {
 }
 
 export default function ImportExportPage() {
-  const [exportLimit, setExportLimit] = useState("all");
+  const router = useRouter();
+  const [roleChecked, setRoleChecked] = useState(false);
+  const [exportScope, setExportScope] = useState("all");
   const [exportNama, setExportNama] = useState("");
   const [exportKategori, setExportKategori] = useState("");
+  const [exportNomorAngkatan, setExportNomorAngkatan] = useState("");
+  const [exportTahun, setExportTahun] = useState("");
   const [exportStatus, setExportStatus] = useState("");
+  const [alumniSearch, setAlumniSearch] = useState("");
+  const [alumniResults, setAlumniResults] = useState<Array<{ id: number | string; nama: string; nomorAlumni?: string; kategoriProgram?: string; nomorAngkatan?: string; tahunAngkatan?: number | string }>>([]);
+  const [selectedAlumni, setSelectedAlumni] = useState("");
+  const [searchingAlumni, setSearchingAlumni] = useState(false);
+  const [searchAlumniError, setSearchAlumniError] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [importRows, setImportRows] = useState<ImportRow[]>([]);
   const [importError, setImportError] = useState("");
   const [importStatus, setImportStatus] = useState("");
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !["admin", "super_admin"].includes(result.user?.role)) {
+          router.replace("/login");
+          return;
+        }
+        if (!cancelled) setRoleChecked(true);
+      })
+      .catch(() => router.replace("/login"));
+    return () => { cancelled = true; };
+  }, [router]);
+
   const exportUrl = useMemo(() => {
-    const params = new URLSearchParams({ format: "csv", limit: exportLimit });
+    const params = new URLSearchParams({ format: "csv" });
+    if (exportScope === "single" && selectedAlumni) params.set("alumniId", selectedAlumni);
+    if (exportScope === "single" && selectedAlumni) params.set("limit", "1");
+    if (exportScope === "cohort") {
+      if (exportKategori) params.set("kategoriProgram", exportKategori);
+      if (exportNomorAngkatan.trim()) params.set("nomorAngkatan", exportNomorAngkatan.trim());
+    }
+    if (exportScope === "category" && exportKategori) params.set("kategoriProgram", exportKategori);
+    if (exportScope === "year" && exportTahun.trim()) params.set("tahunAngkatan", exportTahun.trim());
     if (exportNama.trim()) params.set("nama", exportNama.trim());
-    if (exportKategori.trim()) params.set("angkatan", exportKategori.trim());
     if (exportStatus) params.set("status", exportStatus);
     return `/api/alumni/export?${params.toString()}`;
-  }, [exportLimit, exportNama, exportKategori, exportStatus]);
+  }, [exportScope, selectedAlumni, exportKategori, exportNomorAngkatan, exportTahun, exportNama, exportStatus]);
+
+  async function searchAlumni() {
+    const term = alumniSearch.trim();
+    if (term.length < 2) {
+      setSearchAlumniError("Masukkan minimal 2 karakter nama atau nomor alumni.");
+      setAlumniResults([]);
+      return;
+    }
+    setSearchingAlumni(true);
+    setSearchAlumniError("");
+    try {
+      const response = await fetch(`/api/alumni?search=${encodeURIComponent(term)}&limit=10`, { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Pencarian alumni gagal.");
+      setAlumniResults(Array.isArray(result.data) ? result.data : []);
+      setSelectedAlumni("");
+      if (!result.data?.length) setSearchAlumniError("Alumni tidak ditemukan. Coba nama atau nomor alumni lain.");
+    } catch (error) {
+      setSearchAlumniError(error instanceof Error ? error.message : "Pencarian alumni gagal.");
+    } finally {
+      setSearchingAlumni(false);
+    }
+  }
 
   async function handleFileChange(selected: File | null) {
     setFile(selected);
@@ -176,7 +231,7 @@ export default function ImportExportPage() {
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#b28b16]">Pengelolaan Data</p>
               <h1 className="text-2xl font-bold tracking-tight text-[#0b1f3a] sm:text-3xl">Import & Export Data</h1>
-              <p className="mt-1 text-sm text-slate-500">Pusat khusus untuk memasukkan data alumni dan mengunduh CSV. Hasil import masuk ke antrean verifikasi, bukan langsung terverifikasi.</p>
+              <p className="mt-1 text-sm text-slate-500">Pusat khusus administrator untuk memasukkan data alumni dan mengunduh CSV berdasarkan cakupan yang dipilih. Hasil import masuk ke antrean verifikasi.</p>
             </div>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">

@@ -8,7 +8,7 @@ const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "
 
 export async function GET(request: NextRequest) {
   const category = (request.nextUrl.searchParams.get("kategori") || "").trim().toLocaleUpperCase("id-ID");
-  if (!allowedCategories.has(category)) {
+  if (!/^[A-Z0-9]+(?:[ ][A-Z0-9]+){0,3}$/.test(category)) {
     return NextResponse.json({ error: "Kategori program tidak valid." }, { status: 400 });
   }
 

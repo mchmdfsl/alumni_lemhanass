@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
           ${nomorHp || null}, NULL, ${instansi}, ${jabatan}, ${wilayah}, ${alamat}
         )
       `;
-      return { kind: "created" as const };
+      return { kind: "created" as const, nomorAngkatan };
     });
 
     if (result.kind === "existing_account") {
@@ -156,7 +156,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       status: "Menunggu",
-      message: "Pengajuan alumni baru berhasil dikirim dan menunggu pemeriksaan admin.",
+      message: `Pengajuan alumni baru berhasil dikirim dan menunggu pemeriksaan admin. Nomor angkatan yang tercatat: ${result.nomorAngkatan}.`,
+      nomorAngkatan: result.nomorAngkatan,
     }, { status: 202 });
   } catch (error) {
     console.error("POST /api/auth/register failed", error);

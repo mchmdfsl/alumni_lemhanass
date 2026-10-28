@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       if (!/^\d+$/.test(value)) return current;
       const number = Number(value);
       return Number.isSafeInteger(number) ? Math.max(current, number) : current;
-    }, -1);
+    }, 0);
     return NextResponse.json({ kategoriProgram: category, nomorAngkatan: String(max + 1) });
   } catch (error) {
     console.error("GET /api/auth/next-cohort failed:", error);

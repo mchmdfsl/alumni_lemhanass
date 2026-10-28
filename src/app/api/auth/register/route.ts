@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     if (!nama || !kategoriProgram || !Number.isInteger(tahunAngkatan) || !email || !password) {
       return NextResponse.json(
-        { error: "Nama, kategori program, nomor angkatan, tahun angkatan, email, dan password wajib diisi." },
+        { error: "Nama, kategori program, tahun angkatan, email, dan password wajib diisi." },
         { status: 400 },
       );
     }
@@ -67,9 +67,106 @@ export async function POST(request: NextRequest) {
         SELECT pg_advisory_xact_lock(hashtextextended(${"register-category:" + kategoriProgram}, 0))
       `;
       const cohortRows = await tx`
-        SELECT nomor_angkatan AS "nomorAngkatan"
+        SELECT COALESCE(
+          NULLIF(trim(nomor_angkatan), ''),
+          (regexp_match(
+            upper(trim(coalesce(angkatan, ''))),
+            '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|PPNK|TOT)[[:space:]]+([0-9]+)([[:space:]]+([0-9]{4}))?
+      const highestCohort = cohortRows.reduce((highest, row) => {
+        const raw = String(row.nomorAngkatan ?? "").trim();
+        if (!/^\d+$/.test(raw)) return highest;
+        const parsed = Number(raw);
+        return Number.isSafeInteger(parsed) ? Math.max(highest, parsed) : highest;
+      }, 0);
+      const nomorAngkatan = String(highestCohort + 1);
+
+      // Also serialize requests with the same email and identity.
+      await tx`
+        SELECT pg_advisory_xact_lock(hashtextextended(${"register-email:" + email}, 0))
+      `;
+      const identityKey = [nama.toLocaleLowerCase("id-ID"), kategoriProgram, nomorAngkatan].join("|");
+      await tx`
+        SELECT pg_advisory_xact_lock(hashtextextended(${"register-identity:" + identityKey}, 0))
+      `;
+
+      const existingAccount = await tx`
+        SELECT id FROM alumni_accounts WHERE lower(email) = ${email} LIMIT 1
+      `;
+      if (existingAccount.length) return { kind: "existing_account" as const };
+
+      const existingAlumniEmail = await tx`
+        SELECT id FROM alumni
+        WHERE lower(trim(coalesce(email, ''))) = ${email}
+        LIMIT 1
+      `;
+      if (existingAlumniEmail.length) return { kind: "use_claim" as const };
+
+      const pending = await tx`
+        SELECT id FROM alumni_account_requests
+        WHERE lower(email) = ${email} AND status = 'Menunggu'
+        LIMIT 1
+      `;
+      if (pending.length) return { kind: "pending" as const };
+
+      const pendingIdentity = await tx`
+        SELECT id FROM alumni_account_requests
+        WHERE status = 'Menunggu'
+          AND request_type = 'register'
+          AND lower(trim(coalesce(submitted_nama, ''))) = lower(${nama})
+          AND upper(trim(coalesce(submitted_kategori_program, submitted_angkatan, ''))) = ${kategoriProgram}
+          AND submitted_tahun_angkatan = ${tahunAngkatan}
+        LIMIT 1
+      `;
+      if (pendingIdentity.length) return { kind: "identity_pending" as const };
+
+      await tx`
+        INSERT INTO alumni_account_requests (
+          alumni_id, email, password_hash, request_type, status,
+          submitted_nama, submitted_angkatan, submitted_kategori_program,
+          submitted_nomor_angkatan, submitted_tahun_angkatan, submitted_nomor_hp,
+          submitted_nomor_alumni, submitted_instansi, submitted_jabatan,
+          submitted_wilayah, submitted_alamat
+        ) VALUES (
+          NULL, ${email}, ${passwordHash}, 'register', 'Menunggu',
+          ${nama}, ${kategoriProgram}, ${kategoriProgram}, ${nomorAngkatan}, ${tahunAngkatan},
+          ${nomorHp || null}, NULL, ${instansi}, ${jabatan}, ${wilayah}, ${alamat}
+        )
+      `;
+      return { kind: "created" as const, nomorAngkatan };
+    });
+
+    if (result.kind === "existing_account") {
+      return NextResponse.json({ error: "Email sudah digunakan akun. Silakan login." }, { status: 409 });
+    }
+    if (result.kind === "use_claim") {
+      return NextResponse.json({ error: "Email sudah tercatat pada data alumni. Silakan login menggunakan ID alumni jika akun Anda sudah diaktifkan admin." }, { status: 409 });
+    }
+    if (result.kind === "pending") {
+      return NextResponse.json({ error: "Pengajuan dengan email ini masih menunggu pemeriksaan admin." }, { status: 409 });
+    }
+    if (result.kind === "identity_pending") {
+      return NextResponse.json({ error: "Pengajuan dengan nama dan angkatan tersebut sudah menunggu pemeriksaan admin." }, { status: 409 });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      status: "Menunggu",
+      message: `Pengajuan alumni baru berhasil dikirim dan menunggu pemeriksaan admin. Nomor angkatan yang tercatat: ${result.nomorAngkatan}.`,
+      nomorAngkatan: result.nomorAngkatan,
+    }, { status: 202 });
+  } catch (error) {
+    console.error("POST /api/auth/register failed", error);
+    return NextResponse.json({ error: "Registrasi gagal diproses oleh server." }, { status: 500 });
+  }
+}
+
+          ))[2]
+        ) AS "nomorAngkatan"
         FROM alumni
-        WHERE upper(trim(coalesce(kategori_program, angkatan, ''))) = ${kategoriProgram}
+        WHERE upper(trim(coalesce(nullif(trim(kategori_program), ''), (regexp_match(
+          upper(trim(coalesce(angkatan, ''))),
+          '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|PPNK|TOT)([[:space:]]|$)'
+        ))[1], ''))) = ${kategoriProgram}
         UNION ALL
         SELECT submitted_nomor_angkatan AS "nomorAngkatan"
         FROM alumni_account_requests

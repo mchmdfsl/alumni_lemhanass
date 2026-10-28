@@ -27,7 +27,6 @@ export async function PATCH(
       typeof body.nomorAngkatan === "string" ? body.nomorAngkatan.trim().slice(0, 40) : undefined;
     const tahunAngkatan =
       body.tahunAngkatan === undefined ? undefined : Number(body.tahunAngkatan);
-    const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"]);
     const instansi =
       typeof body.instansi === "string" ? body.instansi.trim().slice(0, 250) : undefined;
     const jabatan =
@@ -43,7 +42,7 @@ export async function PATCH(
 
     if (nama !== undefined && (nama.length < 2 || nama.length > 200))
       return NextResponse.json({ error: "Nama harus 2–200 karakter." }, { status: 400 });
-    if (kategoriProgram !== undefined && !allowedCategories.has(kategoriProgram))
+    if (kategoriProgram !== undefined && !/^[A-Z0-9]+(?:[ ][A-Z0-9]+){0,3}$/.test(kategoriProgram))
       return NextResponse.json({ error: "Kategori program tidak valid." }, { status: 400 });
     if (nomorAngkatan !== undefined && (!nomorAngkatan || nomorAngkatan.length > 40))
       return NextResponse.json({ error: "Nomor angkatan tidak valid." }, { status: 400 });

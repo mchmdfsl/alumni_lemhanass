@@ -7,7 +7,7 @@ import {
   verifySuperAdminCredentials,
 } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { verifyPassword } from "@/lib/password";
 import {
   createAlumniSessionToken,

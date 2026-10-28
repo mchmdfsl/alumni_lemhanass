@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
+import { assignAlumniNumber } from "@/lib/alumni-number";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -128,20 +129,12 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
         `;
         if (account.length) return { error: "ACCOUNT_EXISTS" };
 
-        const nomorAlumni = typeof req.submitted_nomor_alumni === "string" ? req.submitted_nomor_alumni.trim() : "";
-        if (nomorAlumni) {
-          const numberOwner = await tx`
-            SELECT id FROM alumni WHERE nomor_alumni = ${nomorAlumni} LIMIT 1
-          `;
-          if (numberOwner.length) return { error: "NOMOR_ALUMNI_IN_USE" };
-        }
-
         const inserted = await tx`
           INSERT INTO alumni (
             nomor_alumni, nama, angkatan, kategori_program, nomor_angkatan, tahun_angkatan,
             instansi, jabatan, wilayah, alamat, email, nomor_hp, status, sumber_data, verified_at, updated_at
           ) VALUES (
-            ${nomorAlumni || null}, ${nama}, ${kategoriProgram}, ${kategoriProgram}, ${nomorAngkatan}, ${tahunAngkatan},
+            NULL, ${nama}, ${kategoriProgram}, ${kategoriProgram}, ${nomorAngkatan}, ${tahunAngkatan},
             ${req.submitted_instansi || ""}, ${req.submitted_jabatan || ""},
             ${req.submitted_wilayah || ""}, ${req.submitted_alamat || ""},
             ${req.email}, ${req.submitted_nomor_hp || ""}, 'Terverifikasi',
@@ -150,6 +143,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
           RETURNING id
         `;
         alumniId = Number(inserted[0].id);
+        await assignAlumniNumber(tx, alumniId, kategoriProgram, null);
       } else {
         return { error: "INVALID_NEW_ALUMNI" };
       }

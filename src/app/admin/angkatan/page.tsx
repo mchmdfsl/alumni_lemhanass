@@ -36,6 +36,8 @@ export default function AngkatanPage() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
+    const initialCategory = new URLSearchParams(window.location.search).get("kategori");
+    if (initialCategory && categories.includes(initialCategory)) setSelectedCategory(initialCategory);
     let active = true;
     setLoading(true);
     fetch("/api/stats/angkatan", { cache: "no-store" })
@@ -230,7 +232,7 @@ export default function AngkatanPage() {
                           </td>
                           <td className="px-6 py-4 text-center">
                             <a
-                              href={`/admin/alumni?kategori=${encodeURIComponent(item.kategoriProgram)}&angkatan=${encodeURIComponent(item.nomorAngkatan)}&back=angkatan`}
+                              href={`/admin/alumni?kategori=${encodeURIComponent(item.kategoriProgram)}&angkatan=${encodeURIComponent(item.nomorAngkatan)}&back=angkatan&backKategori=${encodeURIComponent(item.kategoriProgram)}`}
                               className="inline-flex items-center gap-1.5 rounded-lg bg-[#0b1f3a]/5 px-3 py-1.5 text-xs font-semibold text-[#0b1f3a] transition hover:bg-[#0b1f3a]/10"
                             >
                               <Users size={13} />

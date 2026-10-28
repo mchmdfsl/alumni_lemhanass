@@ -27,4 +27,4 @@ export function getR2Client(): S3Client {
 export const r2Bucket =
   process.env.R2_BUCKET_NAME?.trim() || "alumni-lemhanas-foto";
 
-export const r2PublicUrl = (process.env.R2_PUBLIC_URL || "").replace(/\\/+$/, "");
+export const r2PublicUrl = (process.env.R2_PUBLIC_URL || "").replace(/\/+$/, "");

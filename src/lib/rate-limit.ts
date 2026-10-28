@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHmac } from "node:crypto";
 import { db } from "@/lib/db";
 
 type RateLimitOptions = {
@@ -41,7 +41,11 @@ export async function checkRateLimit(
 
   try {
     for (const check of checks) {
-      const keyHash = createHash("sha256").update(check.key).digest("hex");
+      const secret = process.env.SESSION_SECRET;
+      if (!secret || secret.length < 32) {
+        throw new Error("SESSION_SECRET belum memenuhi syarat untuk rate limiter.");
+      }
+      const keyHash = createHmac("sha256", secret).update(check.key).digest("hex");
       const [row] = await db() `
         INSERT INTO api_rate_limits (key_hash, window_started_at, request_count)
         VALUES (${keyHash}, NOW(), 1)

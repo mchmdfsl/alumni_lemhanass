@@ -6,12 +6,12 @@ import { LoaderCircle } from "lucide-react";
 import AuthShell from "@/components/auth/AuthShell";
 
 type FormState = {
-  nama: string; kategoriProgram: string; nomorAngkatan: string; tahunAngkatan: string; nomorHp: string; nomorAlumni: string;
+  nama: string; kategoriProgram: string; nomorAngkatan: string; tahunAngkatan: string; nomorHp: string;
   instansi: string; jabatan: string; wilayah: string; alamat: string;
   email: string; password: string; konfirmasi: string;
 };
 const initialForm: FormState = {
-  nama: "", kategoriProgram: "", nomorAngkatan: "", tahunAngkatan: "", nomorHp: "", nomorAlumni: "", instansi: "",
+  nama: "", kategoriProgram: "", nomorAngkatan: "", tahunAngkatan: "", nomorHp: "", instansi: "",
   jabatan: "", wilayah: "", alamat: "", email: "", password: "", konfirmasi: "",
 };
 const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#0b1f3a] focus:ring-2 focus:ring-[#0b1f3a]/10";
@@ -31,7 +31,6 @@ export default function DaftarPage() {
       nomorAngkatan: String(submitted.get("nomorAngkatan") ?? "").trim(),
       tahunAngkatan: String(submitted.get("tahunAngkatan") ?? "").trim(),
       nomorHp: String(submitted.get("nomorHp") ?? "").trim(),
-      nomorAlumni: String(submitted.get("nomorAlumni") ?? "").trim(),
       instansi: String(submitted.get("instansi") ?? "").trim(),
       jabatan: String(submitted.get("jabatan") ?? "").trim(),
       wilayah: String(submitted.get("wilayah") ?? "").trim(),
@@ -51,7 +50,7 @@ export default function DaftarPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nama: form.nama, kategoriProgram: form.kategoriProgram, nomorAngkatan: form.nomorAngkatan, tahunAngkatan: form.tahunAngkatan, nomorHp: form.nomorHp,
-          nomorAlumni: form.nomorAlumni, instansi: form.instansi, jabatan: form.jabatan,
+          instansi: form.instansi, jabatan: form.jabatan,
           wilayah: form.wilayah, alamat: form.alamat, email: form.email, password: form.password,
         }),
       });
@@ -99,7 +98,6 @@ export default function DaftarPage() {
         {renderField("Nomor angkatan *", "nomorAngkatan", "text", true, 40)}
         {renderField("Tahun angkatan *", "tahunAngkatan", "number", true, 4)}
         {renderField("Nomor HP", "nomorHp", "text", false, 50)}
-        {renderField("Nomor alumni (jika ada)", "nomorAlumni", "text", false, 80)}
         {renderField("Instansi", "instansi", "text", false, 250)}
         {renderField("Jabatan", "jabatan", "text", false, 200)}
         {renderField("Wilayah", "wilayah", "text", false, 150)}

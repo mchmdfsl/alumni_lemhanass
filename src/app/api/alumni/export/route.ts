@@ -12,6 +12,9 @@ export async function GET(request: NextRequest) {
   const status = query.get("status") ?? "";
   const angkatan = query.get("angkatan") ?? "";
   const wilayah = query.get("wilayah") ?? "";
+  const nama = (query.get("nama") ?? query.get("search") ?? "").trim().slice(0, 120);
+  const nomorAlumni = (query.get("nomorAlumni") ?? "").trim().slice(0, 80);
+  const tahunAngkatan = (query.get("tahunAngkatan") ?? "").trim();
 
   try {
     const rows = await db()`
@@ -38,6 +41,9 @@ export async function GET(request: NextRequest) {
       WHERE (${status} = '' OR status = ${status})
         AND (${angkatan} = '' OR COALESCE(NULLIF(trim(kategori_program), ''), angkatan) = ${angkatan})
         AND (${wilayah} = '' OR wilayah = ${wilayah})
+        AND (${nama} = '' OR nama ILIKE ${'%' + nama + '%'})
+        AND (${nomorAlumni} = '' OR nomor_alumni = ${nomorAlumni})
+        AND (${tahunAngkatan} = '' OR tahun_angkatan::text = ${tahunAngkatan})
       ORDER BY created_at ASC`;
 
     // Build CSV

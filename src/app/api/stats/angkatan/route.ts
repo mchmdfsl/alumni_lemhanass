@@ -30,7 +30,7 @@ export async function GET() {
     // bukan kolom alumni yang belum dikelompokkan.
     const rows = await db() `
       WITH normalized AS (
-        SELECT a.*, regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)') AS legacy_parts
+        SELECT a.*, regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)') AS legacy_parts
         FROM alumni a
       ),
       resolved AS (

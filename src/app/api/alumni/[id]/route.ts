@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
+import { getAdminScope } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 
@@ -9,8 +10,9 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  if (!(await isAdminAuthenticated()))
-    return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  const scope = await getAdminScope();
+  if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
 
   const { id } = await context.params;
   if (!/^\d+$/.test(id))
@@ -18,6 +20,7 @@ export async function PATCH(
 
   try {
     const body = await request.json();
+    if (scope.role === "admin" && typeof body.kategoriProgram === "string" && body.kategoriProgram.trim().toLocaleUpperCase("id-ID") !== scope.kategoriProgram) return NextResponse.json({ error: "Admin tidak dapat memindahkan alumni ke kategori lain." }, { status: 403 });
 
     const nama =
       typeof body.nama === "string" ? body.nama.trim().slice(0, 200) : undefined;
@@ -64,6 +67,7 @@ export async function PATCH(
         email       = email,
         updated_at  = NOW()
       WHERE id = ${Number(id)}
+        AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan, '')) = ${scope.kategoriProgram ?? ""})
       RETURNING id, COALESCE(nomor_alumni, '') AS "nomorAlumni", nama,
         COALESCE(kategori_program, angkatan) AS "kategoriProgram",
         COALESCE(nomor_angkatan, '') AS "nomorAngkatan", tahun_angkatan AS "tahunAngkatan", angkatan,
@@ -90,10 +94,9 @@ export async function DELETE(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const role = await isAdminAuthenticated();
-  if (!role)
-    return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
-  if (role !== "super_admin")
+  const scope = await getAdminScope();
+  if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  if (scope.role !== "super_admin")
     return NextResponse.json({ error: "Hanya Super Admin yang boleh menghapus data alumni." }, { status: 403 });
 
   const { id } = await context.params;

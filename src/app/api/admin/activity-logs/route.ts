@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getAdminScope } from "@/lib/admin-scope";
+import { getAdminActor } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const role = await isAdminAuthenticated();
-  if (role !== "admin" && role !== "super_admin") {
-    return NextResponse.json({ error: "Akses hanya untuk Admin dan Super Admin." }, { status: 403 });
-  }
+  const scope = await getAdminScope();
+  if (!scope) return NextResponse.json({ error: "Akses hanya untuk Admin dan Super Admin." }, { status: 403 });
+  if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
+  const actor = await getAdminActor();
+  const actorName = actor?.actor ?? "";
 
   try {
     const params = request.nextUrl.searchParams;
@@ -26,6 +29,7 @@ export async function GET(request: NextRequest) {
       FROM admin_audit_log l
       WHERE (${search} = '' OR l.actor ILIKE ${'%' + search + '%'} OR l.action ILIKE ${'%' + search + '%'} OR COALESCE(l.details::text, '') ILIKE ${'%' + search + '%'})
         AND (${action} = '' OR l.action = ${action})
+        AND (${scope.role === "super_admin"} = TRUE OR l.actor = ${actorName})
     `;
     const logs = await db()`
       SELECT l.id, l.action, l.actor, l.alumni_id AS "alumniId", l.details,

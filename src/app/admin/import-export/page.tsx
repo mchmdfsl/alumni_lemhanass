@@ -275,8 +275,8 @@ export default function ImportExportPage() {
 
   function handleTemplateDownload() {
     const headers = ["nomor alumni", "nama", "kategori program", "nomor angkatan", "tahun angkatan", "instansi", "jabatan", "wilayah", "alamat", "nomor hp"];
-    const csv = headers.map((value) => '"' + value.replace(/"/g, '""') + '"').join(",") + "\\r\\n";
-    const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+    const csv = headers.map((value) => '"' + value.replace(/"/g, '""') + '"').join(",") + "\r\n";
+    const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;

@@ -37,6 +37,12 @@ jobs:
       - name: Install database client
         run: npm install --no-save --package-lock=false postgres
 
+      - name: Confirm checked-out revision
+        run: |
+          echo "Workflow commit: $(git rev-parse HEAD)"
+          echo "Script marker:"
+          grep -n "alumni-import-audit-v3" scripts/import-staging-to-alumni.mjs
+
       - name: Run read-only import simulation
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

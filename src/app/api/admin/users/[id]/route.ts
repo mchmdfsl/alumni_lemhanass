@@ -22,15 +22,22 @@ export async function PATCH(request: Request, context: RouteContext) {
   if ("response" in access) return access.response;
   try {
     const body = await request.json();
-    if (typeof body.isActive !== "boolean") return NextResponse.json({ error: "Status isActive harus berupa boolean." }, { status: 400 });
+    const hasActive = typeof body.isActive === "boolean";
+    const hasCategory = typeof body.kategoriProgram === "string";
+    const kategoriProgram = hasCategory ? body.kategoriProgram.trim().toLocaleUpperCase("id-ID") : null;
+    if (!hasActive && !hasCategory) return NextResponse.json({ error: "Tidak ada perubahan yang dikirim." }, { status: 400 });
+    if (hasCategory && !/^(KRA|PPRA|P4N|KSA|PSA|PPSA|P3N|TAPLAI|PPNK|PPNK KOLABORASI|PRA|TOT)$/.test(kategoriProgram || "")) return NextResponse.json({ error: "Kategori program tidak valid." }, { status: 400 });
     const [user] = await db()`
-      UPDATE admin_users SET is_active = ${body.isActive}, updated_at = NOW()
+      UPDATE admin_users SET
+        is_active = COALESCE(${hasActive ? body.isActive : null}::boolean, is_active),
+        kategori_program = COALESCE(${kategoriProgram}::varchar, kategori_program),
+        updated_at = NOW()
       WHERE id = ${access.id} AND role = ${"admin"}
-      RETURNING id, username, email, is_active AS "isActive", updated_at AS "updatedAt"
+      RETURNING id, username, email, kategori_program AS "kategoriProgram", is_active AS "isActive", updated_at AS "updatedAt"
     `;
     if (!user) return NextResponse.json({ error: "Akun admin tidak ditemukan." }, { status: 404 });
     const actor = await getAdminActor();
-    if (actor) await writeAdminAudit(actor, "admin_updated", { targetUsername: user.username, isActive: user.isActive });
+    if (actor) await writeAdminAudit(actor, "admin_updated", { targetUsername: user.username, isActive: user.isActive, kategoriProgram: user.kategoriProgram });
     return NextResponse.json({ ok: true, user });
   } catch (error) {
     console.error("PATCH /api/admin/users/[id] failed:", error);

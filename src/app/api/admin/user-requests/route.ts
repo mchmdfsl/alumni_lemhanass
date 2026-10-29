@@ -72,7 +72,7 @@ export async function PATCH(request: NextRequest) {
         const kategoriProgram = typeof payload.kategoriProgram === "string" ? payload.kategoriProgram.trim().toLocaleUpperCase("id-ID").slice(0, 80) : "";
         const nomorAngkatan = typeof payload.nomorAngkatan === "string" ? payload.nomorAngkatan.trim().slice(0, 40) : "";
         const tahunAngkatan = Number(payload.tahunAngkatan);
-        const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"]);
+        const allowedCategories = new Set(["PRA", "PPRA", "P4N", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"]);
         if (!nama || !allowedCategories.has(kategoriProgram) || !nomorAngkatan || !Number.isInteger(tahunAngkatan)) throw new Error("Payload perubahan profil tidak lengkap.");
         await tx`
           UPDATE alumni SET

@@ -42,7 +42,7 @@ export async function GET() {
           COALESCE(NULLIF(trim(nomor_angkatan), ''), legacy_parts[2], '-') AS "nomorAngkatan",
           tahun_angkatan AS "tahunAngkatan", status, wilayah
         FROM normalized
-        WHERE (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan, '')) = ${scope.kategoriProgram ?? ""})
+        WHERE (${scope.role === "super_admin"} = TRUE OR CASE WHEN legacy_parts[1] IS NOT NULL AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, '')))) THEN legacy_parts[1] ELSE COALESCE(NULLIF(upper(trim(kategori_program)), ''), legacy_parts[1], angkatan, '') END = ${scope.kategoriProgram ?? ""})
       ),
       grouped AS (
         SELECT "kategoriProgram" AS angkatan, "kategoriProgram", "nomorAngkatan", "tahunAngkatan",

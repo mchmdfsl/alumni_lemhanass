@@ -273,6 +273,20 @@ export default function ImportExportPage() {
     }
   }
 
+  function handleTemplateDownload() {
+    const headers = ["nomor alumni", "nama", "kategori program", "nomor angkatan", "tahun angkatan", "instansi", "jabatan", "wilayah", "alamat", "nomor hp"];
+    const csv = headers.map((value) => '"' + value.replace(/"/g, '""') + '"').join(",") + "\\r\\n";
+    const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "template-data-alumni.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   async function searchAlumni() {
     const term = alumniSearch.trim();
     if (term.length < 2) {
@@ -560,7 +574,25 @@ export default function ImportExportPage() {
               {accountError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{accountError}</p>}
             </section>}
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                        <section id="template" className="scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="font-bold text-[#172033]">Template Data Alumni</h2>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">Unduh template ini dan bagikan kepada alumni. Mereka cukup mengisi data pribadi, lalu file dapat langsung diunggah melalui menu Import CSV.</p>
+                </div>
+                <button type="button" onClick={handleTemplateDownload} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1a365d]">
+                  <Download size={16} /> Unduh Template CSV
+                </button>
+              </div>
+              <div className="mt-4 rounded-xl bg-slate-50 p-4 text-xs leading-5 text-slate-600">
+                <p className="font-semibold text-slate-800">Petunjuk pengisian</p>
+                <p>Kolom Nama, Kategori Program, Nomor Angkatan, dan Tahun Angkatan wajib diisi. Kolom lainnya boleh dikosongkan jika tidak tersedia.</p>
+                <p className="mt-2">Jangan mengubah nama header. Kolom status, sumber data, dan sumber file tidak perlu diisi karena akan ditentukan otomatis oleh sistem.</p>
+                <p className="mt-2">Kategori program yang berlaku: PRA, PPRA, P4N, PSA, PPSA, P3N, TAPLAI, PPNK, PPNK KOLABORASI, atau TOT.</p>
+              </div>
+            </section>
+
+<section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><FileUp size={20} /></div>
                 <div><h2 className="font-bold text-[#172033]">Import CSV</h2><p className="text-xs text-slate-500">Pilih CSV untuk memperbarui data alumni yang cocok dan menambahkan data baru ke database.</p></div>

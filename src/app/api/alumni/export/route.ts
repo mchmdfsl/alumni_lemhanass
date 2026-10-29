@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getAdminScope } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
-  if (!(await isAdminAuthenticated()))
-    return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  const scope = await getAdminScope();
+  if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
 
   const query = request.nextUrl.searchParams;
   const status = query.get("status") ?? "";
@@ -50,7 +52,8 @@ export async function GET(request: NextRequest) {
           THEN TO_CHAR(verified_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI:SS')
           ELSE '' END AS "verifiedAt"
       FROM alumni
-      WHERE (${alumniId} = '' OR id::text = ${alumniId})
+      WHERE (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan, '')) = ${scope.kategoriProgram ?? ""})
+        AND (${alumniId} = '' OR id::text = ${alumniId})
         AND (${status} = '' OR status = ${status})
         AND (${angkatan} = '' OR upper(CASE WHEN (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] IS NOT NULL AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, '')))) THEN (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] ELSE COALESCE(NULLIF(upper(trim(kategori_program)), ''), (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], angkatan) END) = upper(${angkatan}))
         AND (

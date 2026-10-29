@@ -60,6 +60,9 @@ export default function ImportExportPage() {
   const [accountLoading, setAccountLoading] = useState(false);
   const [accountStatus, setAccountStatus] = useState("");
   const [credentialDownload, setCredentialDownload] = useState<{ url: string; filename: string } | null>(null);
+  const [exportDownload, setExportDownload] = useState<{ url: string; filename: string } | null>(null);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportError, setExportError] = useState("");
   const [accountError, setAccountError] = useState("");
   const [accountScope, setAccountScope] = useState("all");
   const [accountCategory, setAccountCategory] = useState("");
@@ -134,6 +137,11 @@ export default function ImportExportPage() {
   }, [credentialDownload]);
 
   useEffect(() => {
+    if (!exportDownload) return;
+    return () => URL.revokeObjectURL(exportDownload.url);
+  }, [exportDownload]);
+
+  useEffect(() => {
     let cancelled = false;
     fetch("/api/auth/me", { cache: "no-store" })
       .then(async (response) => {
@@ -162,6 +170,29 @@ export default function ImportExportPage() {
     if (exportStatus) params.set("status", exportStatus);
     return `/api/alumni/export?${params.toString()}`;
   }, [exportScope, selectedAlumni, exportKategori, exportNomorAngkatan, exportTahun, exportNama, exportStatus]);
+
+  async function handleExportDownload() {
+    setExportLoading(true);
+    setExportError("");
+    setExportDownload(null);
+    try {
+      const response = await fetch(exportUrl, { cache: "no-store" });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Ekspor CSV gagal diproses.");
+      }
+      const blob = await response.blob();
+      if (!blob.size) throw new Error("File ekspor kosong. Periksa filter dan data alumni.");
+      const url = URL.createObjectURL(blob);
+      const disposition = response.headers.get("Content-Disposition") || "";
+      const match = disposition.match(/filename="?([^";]+)"?/i);
+      setExportDownload({ url, filename: match?.[1] || "alumni-lemhannas-" + new Date().toISOString().slice(0, 10) + ".csv" });
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : "Ekspor CSV gagal diproses.");
+    } finally {
+      setExportLoading(false);
+    }
+  }
 
   async function searchAlumni() {
     const term = alumniSearch.trim();
@@ -368,9 +399,11 @@ export default function ImportExportPage() {
                 const invalid = (exportScope === "single" && !selectedAlumni) ||
                   (exportScope === "cohort" && (!exportKategori || !exportNomorAngkatan.trim())) ||
                   (exportScope === "category" && !exportKategori) ||
-                  (exportScope === "year" && !/^\\d{4}$/.test(exportTahun.trim()));
-                return <a href={invalid ? undefined : exportUrl} onClick={(e) => { if (invalid) e.preventDefault(); }} aria-disabled={invalid} className={`mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition ${invalid ? "cursor-not-allowed bg-slate-400" : "bg-[#0b1f3a] hover:bg-[#1a365d]"}`}><Download size={16} />Unduh CSV</a>;
+                  (exportScope === "year" && !/^\d{4}$/.test(exportTahun.trim()));
+                return <button type="button" disabled={invalid || exportLoading} onClick={() => void handleExportDownload()} aria-disabled={invalid} className={\`mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition \${invalid || exportLoading ? "cursor-not-allowed bg-slate-400" : "bg-[#0b1f3a] hover:bg-[#1a365d]"}\`}><Download size={16} />{exportLoading ? "Menyiapkan CSV..." : "Siapkan CSV"}</button>;
               })()}
+              {exportError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{exportError}</p>}
+              {exportDownload && <a href={exportDownload.url} download={exportDownload.filename} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"><Download size={16} />Unduh file CSV</a>}
             </section>}
 
             {roleChecked && isSuperAdmin && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">

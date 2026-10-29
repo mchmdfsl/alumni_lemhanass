@@ -147,7 +147,7 @@ export default function AlumniPage() {
   };
 
   // Keep program category, cohort number, and cohort year as independent filters.
-  const categoryOrder = ["PRA", "PPRA", "P4N", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
+  const categoryOrder = ["KRA", "PRA", "PPRA", "P4N", "KSA", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
   const kategoriOptions = useMemo(() => {
     const found = new Set(alumniData.map((a) => a.kategoriProgram || a.angkatan).filter(Boolean));
     const ordered = [

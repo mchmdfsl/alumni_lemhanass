@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Download, FileUp, FileSpreadsheet, ShieldCheck, KeyRound, UserRoundPlus } from "lucide-react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
+import { parseXlsxFile } from "@/lib/xlsx-parser";
 
 type ImportRow = {
   rowKey: string;
@@ -320,13 +321,14 @@ export default function ImportExportPage() {
     setImportError("");
     setImportStatus("");
     if (!selected) return;
-    if (!selected.name.toLowerCase().endsWith(".csv")) {
-      setImportError("Gunakan file CSV. Format Excel .xlsx belum didukung di menu ini.");
+    const extension = selected.name.toLowerCase().split(".").pop();
+    if (extension !== "csv" && extension !== "xlsx") {
+      setImportError("Gunakan file Excel .xlsx atau CSV.");
       return;
     }
 
     try {
-      const parsed = parseCsv(await selected.text());
+      const parsed = extension === "xlsx" ? await parseXlsxFile(selected) : parseCsv(await selected.text());
       if (parsed.length < 2) throw new Error("File CSV tidak memiliki baris data.");
       const headers = parsed[0].map((value) => value.trim().toLowerCase());
       const index = (...names: string[]) => headers.findIndex((header) => names.includes(header));
@@ -588,11 +590,11 @@ export default function ImportExportPage() {
 <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><FileUp size={20} /></div>
-                <div><h2 className="font-bold text-[#172033]">Import CSV</h2><p className="text-xs text-slate-500">Pilih CSV untuk memperbarui data alumni yang cocok dan menambahkan data baru ke database.</p></div>
+                <div><h2 className="font-bold text-[#172033]">Import Excel / CSV</h2><p className="text-xs text-slate-500">Unggah file Excel .xlsx atau CSV untuk memperbarui data alumni yang cocok dan menambahkan data baru ke database.</p></div>
               </div>
               <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-5">
-                <label className="block text-sm font-semibold text-slate-800">File CSV
-                  <input type="file" accept=".csv,text/csv" onChange={(e) => void handleFileChange(e.target.files?.[0] ?? null)} className="mt-3 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#0b1f3a] file:px-3 file:py-2 file:font-semibold file:text-white" />
+                <label className="block text-sm font-semibold text-slate-800">File Excel (.xlsx) atau CSV
+                  <input type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onChange={(e) => void handleFileChange(e.target.files?.[0] ?? null)} className="mt-3 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#0b1f3a] file:px-3 file:py-2 file:font-semibold file:text-white" />
                 </label>
                 <p className="mt-2 text-xs text-slate-500">Semua kolom wajib diisi kecuali Nomor Alumni. Sistem akan membuat Nomor Alumni secara otomatis.</p>
               </div>

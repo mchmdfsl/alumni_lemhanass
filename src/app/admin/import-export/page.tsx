@@ -392,6 +392,7 @@ export default function ImportExportPage() {
             headers: { "Content-Type": "application/json" },
             cache: "no-store",
             body: JSON.stringify({
+              sourceFile: file?.name || "import-manual.csv",
               rows: batch.map((row) => ({
                 nomorAlumni: row.nomorAlumni,
                 nama: row.nama,

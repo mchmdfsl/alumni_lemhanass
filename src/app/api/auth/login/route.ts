@@ -84,17 +84,19 @@ export async function POST(request: NextRequest) {
     // Akun Admin database yang dibuat oleh Super Admin.
     try {
       const [databaseAdmin] = await db()`
-        SELECT id, username, email, password_hash AS "passwordHash"
+        SELECT id, username, email, role, password_hash AS "passwordHash"
         FROM admin_users
         WHERE is_active = TRUE
+          AND role IN ('admin', 'super_admin')
           AND (lower(username) = lower(${identifier}) OR lower(email) = lower(${identifier}))
         LIMIT 1
       `;
       if (databaseAdmin && await verifyPassword(password, databaseAdmin.passwordHash)) {
-        const response = NextResponse.json({ ok: true, role: "admin" });
+        const databaseRole = databaseAdmin.role === "super_admin" ? "super_admin" : "admin";
+        const response = NextResponse.json({ ok: true, role: databaseRole });
         response.cookies.set(alumniSessionCookie.name, "", { ...alumniSessionCookie, maxAge: 0 });
-        response.cookies.set(sessionCookie.name, createSessionToken("admin", Number(databaseAdmin.id)), sessionCookie);
-        await logAdminLogin(String(databaseAdmin.username || databaseAdmin.email || "admin"), "admin");
+        response.cookies.set(sessionCookie.name, createSessionToken(databaseRole, Number(databaseAdmin.id)), sessionCookie);
+        await logAdminLogin(String(databaseAdmin.username || databaseAdmin.email || "admin"), databaseRole);
         return response;
       }
     } catch (error) {

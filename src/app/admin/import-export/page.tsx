@@ -137,8 +137,8 @@ export default function ImportExportPage() {
       const esc = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
       const csv = [headers, ...rows.map((r: { accountId?: unknown; alumniId?: unknown; nama?: unknown; angkatan?: unknown; nomorAlumni?: unknown; email?: unknown; isActive?: unknown }) => [
         r.accountId, r.alumniId, r.nama, r.angkatan, r.nomorAlumni, r.email, r.isActive ? "Aktif" : "Nonaktif", ""
-      ])].map(row => row.map(esc).join(",")).join("\\r\\n");
-      const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+      ])].map(row => row.map(esc).join(",")).join("\r\n");
+      const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       setAccountListDownload({ url, filename: "daftar-akun-user-" + new Date().toISOString().slice(0, 10) + ".csv" });
       setAccountListStatus("Berhasil menyiapkan " + rows.length.toLocaleString("id-ID") + " akun user. Kolom password dikosongkan karena password lama tidak bisa dibaca dari hash database. Tidak ada akun atau password yang diubah.");

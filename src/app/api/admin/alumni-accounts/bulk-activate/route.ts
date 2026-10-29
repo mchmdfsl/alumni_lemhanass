@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
         FROM alumni a LEFT JOIN alumni_accounts aa ON aa.alumni_id = a.id
         WHERE a.status = 'Terverifikasi' AND aa.id IS NULL
           AND (${scope !== "single"} OR a.id::text = ${alumniId})
-          AND (${!["cohort", "category"].includes(scope)} OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan)) = upper(${kategoriProgram}))
+          AND (${!["cohort", "category"].includes(scope)} OR upper(CASE WHEN (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], a.angkatan) END) = upper(${kategoriProgram}))
           AND (${scope !== "cohort"} OR trim(COALESCE(NULLIF(a.nomor_angkatan, ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[2], '')) = ${nomorAngkatan})
           AND (${scope !== "year"} OR a.tahun_angkatan::text = ${tahunAngkatan})
         ORDER BY a.angkatan ASC NULLS LAST, a.id ASC LIMIT 100 FOR UPDATE OF a
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       FROM alumni a LEFT JOIN alumni_accounts aa ON aa.alumni_id = a.id
       WHERE a.status = 'Terverifikasi' AND aa.id IS NULL
         AND (${scope !== "single"} OR a.id::text = ${alumniId})
-        AND (${!["cohort", "category"].includes(scope)} OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan)) = upper(${kategoriProgram}))
+        AND (${!["cohort", "category"].includes(scope)} OR upper(CASE WHEN (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], a.angkatan) END) = upper(${kategoriProgram}))
         AND (${scope !== "cohort"} OR trim(COALESCE(NULLIF(a.nomor_angkatan, ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[2], '')) = ${nomorAngkatan})
         AND (${scope !== "year"} OR a.tahun_angkatan::text = ${tahunAngkatan})
     `;

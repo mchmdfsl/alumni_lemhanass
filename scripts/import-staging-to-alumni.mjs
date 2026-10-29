@@ -104,7 +104,7 @@ try {
         AND NOT EXISTS (
           SELECT 1 FROM public.alumni a
           WHERE LOWER(TRIM(a.nama)) = LOWER(TRIM(s.nama))
-            AND UPPER(TRIM(a.angkatan)) = ${normalizeCohort}
+            AND UPPER(TRIM(a.angkatan)) = UPPER(${normalizeCohort})
         )
         AND EXISTS (
           SELECT 1 FROM public.alumni a
@@ -113,7 +113,7 @@ try {
         )
     `);
 
-    const [{ count: duplicateCandidateNumbers }] = await tx`
+    const [{ count: duplicateCandidateNumbers }] = await tx.unsafe(`
       WITH candidates AS (
         SELECT NULLIF(TRIM(s.nomor_alumni), '') AS nomor_alumni
         FROM public.alumni_import_staging s
@@ -128,22 +128,22 @@ try {
         SELECT nomor_alumni FROM candidates
         GROUP BY nomor_alumni HAVING COUNT(*) > 1
       ) d
-    `;
+    `);
 
-    const [{ count: existingNumberConflicts }] = await tx`
+    const [{ count: existingNumberConflicts }] = await tx.unsafe(`
       SELECT COUNT(*)::int AS count
       FROM public.alumni_import_staging s
       WHERE s.nomor_alumni IS NOT NULL AND TRIM(s.nomor_alumni) <> ''
         AND NOT EXISTS (
           SELECT 1 FROM public.alumni a
           WHERE LOWER(TRIM(a.nama)) = LOWER(TRIM(s.nama))
-            AND UPPER(TRIM(a.angkatan)) = UPPER(TRIM(s.angkatan))
+            AND UPPER(TRIM(a.angkatan)) = UPPER(${normalizeCohort})
         )
         AND EXISTS (
           SELECT 1 FROM public.alumni a
           WHERE a.nomor_alumni = TRIM(s.nomor_alumni)
         )
-    `;
+    `);
 
     console.log('\n=== SIMULASI IMPOR ALUMNI ===');
     console.log(`Baris staging: ${stagingCount}`);

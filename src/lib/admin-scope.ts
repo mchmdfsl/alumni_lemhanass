@@ -19,16 +19,21 @@ export async function getAdminScope(): Promise<AdminScope | null> {
   // akun dipindahkan ke Manajemen Admin dan diberi kategori eksplisit.
   if (adminUserId === null) return { role, kategoriProgram: null };
 
-  const [user] = await db()`
-    SELECT kategori_program AS "kategoriProgram"
-    FROM admin_users
-    WHERE id = ${adminUserId} AND role = ${"admin"} AND is_active = TRUE
-    LIMIT 1
-  `;
-  const category = typeof user?.kategoriProgram === "string"
-    ? user.kategoriProgram.trim().toLocaleUpperCase("id-ID")
-    : "";
-  return { role, kategoriProgram: category || null };
+  try {
+    const [user] = await db()`
+      SELECT kategori_program AS "kategoriProgram"
+      FROM admin_users
+      WHERE id = ${adminUserId} AND role = ${"admin"} AND is_active = TRUE
+      LIMIT 1
+    `;
+    const category = typeof user?.kategoriProgram === "string"
+      ? user.kategoriProgram.trim().toLocaleUpperCase("id-ID")
+      : "";
+    return { role, kategoriProgram: category || null };
+  } catch (error) {
+    console.error("Gagal membaca kategori Admin. Pastikan migrasi admin_category_scope sudah dijalankan:", error);
+    return { role, kategoriProgram: null };
+  }
 }
 
 export function adminCanManageCategory(scope: AdminScope, category: unknown) {

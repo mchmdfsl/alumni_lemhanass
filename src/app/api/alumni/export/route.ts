@@ -55,14 +55,14 @@ export async function GET(request: NextRequest) {
       WHERE (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(kategori_program), ''), (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], angkatan, '')) = ${scope.kategoriProgram ?? ""})
         AND (${alumniId} = '' OR id::text = ${alumniId})
         AND (${status} = '' OR status = ${status})
-        AND (${angkatan} = '' OR upper(CASE WHEN (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] IS NOT NULL AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, '')))) THEN (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] ELSE COALESCE(NULLIF(upper(trim(kategori_program)), ''), (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], angkatan) END) = upper(${angkatan}))
+        AND (${angkatan} = '' OR upper(CASE WHEN (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] IS NOT NULL AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, '')))) THEN (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] ELSE COALESCE(NULLIF(upper(trim(kategori_program)), ''), (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], angkatan) END) = upper(${angkatan}))
         AND (
           ${nomorAngkatan} = ''
           OR trim(COALESCE(
             NULLIF(nomor_angkatan, ''),
             (regexp_match(
               upper(trim(coalesce(angkatan, ''))),
-              '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'
+              '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'
             ))[2],
             ''
           )) = ${nomorAngkatan}

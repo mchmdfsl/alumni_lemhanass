@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
       CROSS JOIN LATERAL (
         SELECT regexp_match(
           upper(trim(coalesce(a.angkatan, ''))),
-          '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|PPNK|TOT)[[:space:]]+([0-9]+)'
+          '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'
         ) AS parts
       ) legacy
       WHERE (

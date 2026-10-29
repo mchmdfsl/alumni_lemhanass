@@ -3,6 +3,7 @@ import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
 import { assignAlumniNumber } from "@/lib/alumni-number";
+import { getAdminScope } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,9 +31,9 @@ const errorResponses: Record<ReviewError, { status: number; message: string }> =
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    if (!(await isAdminAuthenticated())) {
-      return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
-    }
+    const scope = await getAdminScope();
+    if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+    if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
 
     const { id } = await context.params;
     if (!/^[1-9]\d*$/.test(id)) {
@@ -68,6 +69,15 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       `;
       const req = rows[0];
       if (!req) return { error: "NOT_FOUND" };
+      if (scope.role === "admin") {
+        if (req.alumni_id === null) {
+          const submittedCategory = String(req.submitted_kategori_program || req.submitted_angkatan || "").trim().toLocaleUpperCase("id-ID");
+          if (submittedCategory !== scope.kategoriProgram) return { error: "NOT_FOUND" };
+        } else {
+          const [target] = await tx`SELECT id FROM alumni WHERE id = ${req.alumni_id} AND upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan, '')) = ${scope.kategoriProgram ?? ""} LIMIT 1`;
+          if (!target) return { error: "NOT_FOUND" };
+        }
+      }
       if (req.status !== "Menunggu") return { error: "ALREADY_REVIEWED" };
 
       if (status === "Ditolak") {

@@ -105,6 +105,7 @@ export async function GET(request: NextRequest) {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename="${filename}"`,
         "Cache-Control": "no-store",
+        "X-Export-Row-Count": String(rows.length),
       },
     });
   } catch (error) {

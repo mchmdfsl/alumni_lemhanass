@@ -19,18 +19,34 @@ const sql = postgres(process.env.DATABASE_URL, {
   max: 1,
 });
 
-const normalizeCategory = `CASE
-  WHEN UPPER(TRIM(s.kategori_program)) = 'KRA' THEN 'PRA'
-  WHEN UPPER(TRIM(s.kategori_program)) = 'KSA' THEN 'PSA'
-  ELSE TRIM(s.kategori_program)
-END`;
+const categories = ["PRA", "PPRA", "P4N", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
 
+// Normalisasi hanya alias kategori lama yang memang diminta: KRA -> PRA, KSA -> PSA.
+// Nama kategori lainnya mengikuti label resmi menu Data Angkatan.
 const normalizeCohort = `CASE
   WHEN UPPER(TRIM(s.angkatan)) ~ '^KRA([[:space:]]|$)'
     THEN REGEXP_REPLACE(TRIM(s.angkatan), '^KRA', 'PRA', 'i')
   WHEN UPPER(TRIM(s.angkatan)) ~ '^KSA([[:space:]]|$)'
     THEN REGEXP_REPLACE(TRIM(s.angkatan), '^KSA', 'PSA', 'i')
   ELSE TRIM(s.angkatan)
+END`;
+
+const normalizeCategory = `CASE
+  WHEN UPPER(TRIM(s.kategori_program)) = 'KRA' THEN 'PRA'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'KSA' THEN 'PSA'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'PRA' THEN 'PRA'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'PPRA' THEN 'PPRA'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'P4N' THEN 'P4N'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'PSA' THEN 'PSA'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'PPSA' THEN 'PPSA'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'P3N' THEN 'P3N'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'TAPLAI' THEN 'TAPLAI'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'PPNK' THEN 'PPNK'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'PPNK KOLABORASI' THEN 'PPNK KOLABORASI'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'TOT' THEN 'TOT'
+  WHEN UPPER(TRIM(${normalizeCohort})) ~ '^(PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK KOLABORASI|PPNK|TOT)([[:space:]]|$)'
+    THEN (REGEXP_MATCH(UPPER(TRIM(${normalizeCohort})), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)'))[1]
+  ELSE NULLIF(UPPER(TRIM(s.kategori_program)), '')
 END`;
 
 try {
@@ -47,24 +63,19 @@ try {
          OR angkatan IS NULL OR TRIM(angkatan) = ''
     `;
 
+    const [{ count: categoriesOutsideMenu }] = await tx.unsafe(`
+      SELECT COUNT(*)::int AS count
+      FROM public.alumni_import_staging s
+      WHERE COALESCE(${normalizeCategory}, '') NOT IN ('PRA', 'PPRA', 'P4N', 'PSA', 'PPSA', 'P3N', 'TAPLAI', 'PPNK', 'PPNK KOLABORASI', 'TOT')
+    `);
+
     const [{ count: duplicateIdentityGroups }] = await tx.unsafe(`
-      WITH normalized AS (
-        SELECT
-          LOWER(TRIM(s.nama)) AS nama_normal,
-          UPPER(TRIM(CASE 
-            WHEN UPPER(TRIM(s.angkatan)) ~ '^KRA([[:space:]]|$)'
-              THEN REGEXP_REPLACE(TRIM(s.angkatan), '^KRA', 'PRA', 'i')
-            WHEN UPPER(TRIM(s.angkatan)) ~ '^KSA([[:space:]]|$)'
-              THEN REGEXP_REPLACE(TRIM(s.angkatan), '^KSA', 'PSA', 'i')
-            ELSE TRIM(s.angkatan)
-          END)) AS angkatan_normal
-        FROM public.alumni_import_staging s
-      )
       SELECT COUNT(*)::int AS count
       FROM (
-        SELECT nama_normal, angkatan_normal
-        FROM normalized
-        GROUP BY nama_normal, angkatan_normal
+        SELECT LOWER(TRIM(s.nama)) AS nama_normal,
+               UPPER(TRIM(${normalizeCohort})) AS angkatan_normal
+        FROM public.alumni_import_staging s
+        GROUP BY LOWER(TRIM(s.nama)), UPPER(TRIM(${normalizeCohort}))
         HAVING COUNT(*) > 1
       ) d
     `);
@@ -150,12 +161,15 @@ try {
     console.log(`Calon baris baru: ${candidates}`);
     console.log(`Baris yang sudah cocok dengan data utama: ${stagingCount - candidates}`);
     console.log(`Baris dengan nama/angkatan kosong: ${blankRequired}`);
+    console.log(`Baris dengan kategori di luar menu Data Angkatan: ${categoriesOutsideMenu}`);
     console.log(`Grup identitas ganda di staging: ${duplicateIdentityGroups}`);
     console.log(`Grup email ganda di calon data baru: ${duplicateCandidateEmails}`);
     console.log(`Calon data dengan email yang sudah dipakai: ${existingEmailConflicts}`);
     console.log(`Grup nomor alumni ganda di calon data baru: ${duplicateCandidateNumbers}`);
     console.log(`Calon data dengan nomor alumni yang sudah dipakai: ${existingNumberConflicts}`);
-    console.log('Pemetaan kategori/angkatan: hanya KRA → PRA dan KSA → PSA; kategori/angkatan lain dipertahankan.');
+    console.log('Versi skrip: alumni-import-audit-v3');
+    console.log('Kategori menu: PRA, PPRA, P4N, PSA, PPSA, P3N, TAPLAI, PPNK, PPNK KOLABORASI, TOT');
+    console.log('Alias yang dinormalisasi: KRA → PRA, KSA → PSA saja.');
     console.log('Status data baru: Menunggu | sumber_data: impor');
 
     if (!apply) {
@@ -165,6 +179,7 @@ try {
     }
 
     if (blankRequired > 0) throw new Error('Ada nama/angkatan kosong; transaksi dibatalkan.');
+    if (categoriesOutsideMenu > 0) throw new Error('Ada kategori di luar menu Data Angkatan; transaksi dibatalkan agar kategori tidak salah masuk.');
     if (duplicateIdentityGroups > 0) throw new Error('Ada identitas nama+angkatan ganda di staging; transaksi dibatalkan.');
     if (duplicateCandidateEmails > 0 || existingEmailConflicts > 0) {
       throw new Error('Ada konflik email; transaksi dibatalkan agar indeks unik tidak dilanggar.');

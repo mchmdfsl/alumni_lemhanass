@@ -66,6 +66,7 @@ export default function ImportExportPage() {
   const [exportDownload, setExportDownload] = useState<{ url: string; filename: string } | null>(null);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState("");
+  const [exportStatusMessage, setExportStatusMessage] = useState("");
   const [accountError, setAccountError] = useState("");
   const [accountScope, setAccountScope] = useState("all");
   const [accountCategory, setAccountCategory] = useState("");
@@ -188,6 +189,30 @@ export default function ImportExportPage() {
     if (exportStatus) params.set("status", exportStatus);
     return `/api/alumni/export?${params.toString()}`;
   }, [exportScope, selectedAlumni, exportKategori, exportNomorAngkatan, exportTahun, exportNama, exportStatus]);
+
+  async function handleVerifiedReportDownload() {
+    setExportLoading(true);
+    setExportError("");
+    setExportStatusMessage("");
+    setExportDownload(null);
+    try {
+      const response = await fetch("/api/alumni/export?status=Terverifikasi&limit=all", { cache: "no-store" });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Ekspor laporan alumni terverifikasi gagal.");
+      }
+      const blob = await response.blob();
+      if (!blob.size) throw new Error("File laporan kosong. Periksa data alumni.");
+      const rowCount = Number(response.headers.get("X-Export-Row-Count") || 0);
+      const url = URL.createObjectURL(blob);
+      setExportDownload({ url, filename: "laporan-seluruh-alumni-terverifikasi-" + new Date().toISOString().slice(0, 10) + ".csv" });
+      setExportStatusMessage("Server mengekspor " + rowCount.toLocaleString("id-ID") + " baris alumni terverifikasi. Data dengan kolom kosong dan nama duplikat tetap disertakan.");
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : "Ekspor laporan alumni terverifikasi gagal.");
+    } finally {
+      setExportLoading(false);
+    }
+  }
 
   async function handleExportDownload() {
     setExportLoading(true);
@@ -428,7 +453,13 @@ export default function ImportExportPage() {
                   (exportScope === "year" && !/^\d{4}$/.test(exportTahun.trim()));
                 return <button type="button" disabled={invalid || exportLoading} onClick={() => void handleExportDownload()} aria-disabled={invalid} className={`mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition ${invalid || exportLoading ? "cursor-not-allowed bg-slate-400" : "bg-[#0b1f3a] hover:bg-[#1a365d]"}`}><Download size={16} />{exportLoading ? "Menyiapkan CSV..." : "Siapkan CSV"}</button>;
               })()}
+              <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
+                <p className="text-sm font-semibold text-blue-950">Laporan seluruh alumni terverifikasi</p>
+                <p className="mt-1 text-xs leading-5 text-blue-900">Mengambil semua baris berstatus Terverifikasi langsung dari database, termasuk profil dengan kolom kosong. Nama duplikat tetap dipertahankan.</p>
+                <button type="button" disabled={exportLoading} onClick={() => void handleVerifiedReportDownload()} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50"><Download size={16} />{exportLoading ? "Menyiapkan laporan..." : "Unduh seluruh data terverifikasi"}</button>
+              </div>
               {exportError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{exportError}</p>}
+              {exportStatusMessage && <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{exportStatusMessage}</p>}
               {exportDownload && <a href={exportDownload.url} download={exportDownload.filename} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"><Download size={16} />Unduh file CSV</a>}
             </section>}
 

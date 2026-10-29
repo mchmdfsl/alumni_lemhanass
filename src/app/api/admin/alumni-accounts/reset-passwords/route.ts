@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
           AND (${scope !== "cohort"} OR trim(COALESCE(NULLIF(a.nomor_angkatan, ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[2], '')) = ${nomorAngkatan})
           AND (${scope !== "year"} OR a.tahun_angkatan::text = ${tahunAngkatan})
         ORDER BY aa.id ASC
-        LIMIT 10
+        LIMIT 100
         FOR UPDATE OF aa
       `;
       const updated: Array<{ accountId: number; nama: string; angkatan: string; nomorAlumni: string; email: string; password: string }> = [];
@@ -71,8 +71,8 @@ export async function POST(request: NextRequest) {
       ok: true,
       credentials,
       lastId: credentials.length ? credentials[credentials.length - 1].accountId : afterId,
-      hasMore: credentials.length === 10,
-      message: credentials.length ? "Password direset untuk batch ini." : "Tidak ada akun aktif terverifikasi lagi.",
+      hasMore: credentials.length === 100,
+      message: credentials.length ? "Password direset untuk batch 100 akun ini." : "Tidak ada akun aktif terverifikasi lagi.",
     });
   } catch (error) {
     console.error("POST /api/admin/alumni-accounts/reset-passwords:", error);

@@ -61,7 +61,7 @@ export default function ListAngkatan() {
     return () => controller.abort();
   }, [query, selectedAngkatan, page, pageSize, reloadKey]);
 
-  const categories = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"];
+  const categories = ["PRA", "PPRA", "P4N", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
   const angkatanOptions = useMemo(() => Array.from(new Set([...categories, ...alumni.map((person) => String(person.kategoriProgram || person.angkatan || "").trim()).filter(Boolean)])).sort((a, b) => {
     const ai = categories.indexOf(a);
     const bi = categories.indexOf(b);

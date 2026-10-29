@@ -352,6 +352,7 @@ export default function ImportExportPage() {
       setImportError("Koneksi terputus saat mengimpor. Periksa daftar alumni sebelum mengulangi agar tidak mengirim duplikat.");
     } finally {
       setBusy(false);
+      if (isSuperAdmin) void refreshAccountStats();
     }
   }
 

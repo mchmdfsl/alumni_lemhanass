@@ -59,6 +59,10 @@ export default function ImportExportPage() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [accountLoading, setAccountLoading] = useState(false);
   const [accountStatus, setAccountStatus] = useState("");
+  const [accountListLoading, setAccountListLoading] = useState(false);
+  const [accountListStatus, setAccountListStatus] = useState("");
+  const [accountListError, setAccountListError] = useState("");
+  const [accountListDownload, setAccountListDownload] = useState<{ url: string; filename: string } | null>(null);
   const [accountStats, setAccountStats] = useState<Record<string, number> | null>(null);
   const [accountStatsError, setAccountStatsError] = useState("");
   const [accountStatsLoading, setAccountStatsLoading] = useState(false);
@@ -118,6 +122,33 @@ export default function ImportExportPage() {
     }
   }
   async function searchAccountAlumni() { const term = accountSearch.trim(); if (term.length < 2) { setAccountSearchError("Masukkan minimal 2 karakter nama atau nomor alumni."); setAccountResults([]); return; } setAccountSearching(true); setAccountSearchError(""); try { const response = await fetch("/api/alumni?search=" + encodeURIComponent(term) + "&limit=10", { cache: "no-store" }); const result = await response.json(); if (!response.ok) throw new Error(result.error || "Pencarian alumni gagal."); setAccountResults(Array.isArray(result.data) ? result.data : []); setAccountAlumniId(""); if (!result.data?.length) setAccountSearchError("Alumni tidak ditemukan."); } catch (error) { setAccountSearchError(error instanceof Error ? error.message : "Pencarian alumni gagal."); } finally { setAccountSearching(false); } }
+  async function handleExportAccountList() {
+    setAccountListLoading(true);
+    setAccountListError("");
+    setAccountListStatus("");
+    setAccountListDownload(null);
+    try {
+      const response = await fetch("/api/admin/alumni-accounts/export", { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Ekspor daftar akun gagal.");
+      const rows = Array.isArray(result.accounts) ? result.accounts : [];
+      if (!rows.length) throw new Error("Tidak ada akun user yang dapat diekspor.");
+      const headers = ["ID Akun", "ID Alumni", "Nama", "Angkatan", "Nomor Alumni", "Email", "Status Akun", "Password"];
+      const esc = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
+      const csv = [headers, ...rows.map((r: { accountId?: unknown; alumniId?: unknown; nama?: unknown; angkatan?: unknown; nomorAlumni?: unknown; email?: unknown; isActive?: unknown }) => [
+        r.accountId, r.alumniId, r.nama, r.angkatan, r.nomorAlumni, r.email, r.isActive ? "Aktif" : "Nonaktif", ""
+      ])].map(row => row.map(esc).join(",")).join("\\r\\n");
+      const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      setAccountListDownload({ url, filename: "daftar-akun-user-" + new Date().toISOString().slice(0, 10) + ".csv" });
+      setAccountListStatus("Berhasil menyiapkan " + rows.length.toLocaleString("id-ID") + " akun user. Kolom password dikosongkan karena password lama tidak bisa dibaca dari hash database. Tidak ada akun atau password yang diubah.");
+    } catch (error) {
+      setAccountListError(error instanceof Error ? error.message : "Ekspor daftar akun gagal.");
+    } finally {
+      setAccountListLoading(false);
+    }
+  }
+
   async function handleBulkActivateAccounts() { const scope = accountFilter(); const invalid = validateAccountScope(scope); if (invalid) { setAccountError(invalid); return; } if (!window.confirm("Aktivasi akun untuk alumni terverifikasi yang sesuai dengan cakupan terpilih? Password baru akan diunduh dalam CSV. Lanjutkan?")) return; setAccountLoading(true); setAccountStatus(""); setAccountError(""); const all: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string}> = []; try { let more = true, batches = 0; while (more) { if (++batches > 500) throw new Error("Batas 50.000 akun per sekali jalan tercapai. Jalankan lagi untuk melanjutkan."); const response = await fetch("/api/admin/alumni-accounts/bulk-activate", { method:"POST", cache:"no-store", headers:{"Content-Type":"application/json"}, body:JSON.stringify(scope) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || "Aktivasi akun gagal."); const credentials = Array.isArray(result.credentials) ? result.credentials : []; const validCredentials = credentials.filter((item: { password?: unknown }) => typeof item.password === "string" && item.password.trim()); all.push(...validCredentials); if (validCredentials.length !== credentials.length) throw new Error("Server mengembalikan kredensial tanpa password. Baris kosong tidak dimasukkan ke CSV; periksa statistik database sebelum menjalankan ulang."); more = Boolean(result.hasMore); if (!credentials.length || scope.scope === "single") break; } if (!all.length) { setAccountStatus("Tidak ada alumni terverifikasi tanpa akun dalam cakupan ini. Tidak ada perubahan dilakukan."); return; } downloadCredentialsCsv("kredensial-alumni", all); setAccountStatus("Berhasil membuat " + all.length + " akun. CSV password siap diunduh. Tekan tombol Unduh CSV di bawah, lalu simpan file dengan aman."); } catch(e) { if (all.length) downloadCredentialsCsv("kredensial-alumni-parsial", all); setAccountError((e instanceof Error ? e.message : "Aktivasi akun gagal.") + (all.length ? " CSV parsial tersedia untuk " + all.length + " akun yang datanya berhasil diterima." : "")); } finally { setAccountLoading(false); void refreshAccountStats(); } }
   async function handleResetPasswords() { const scope = accountFilter(); const invalid = validateAccountScope(scope); if (invalid) { setAccountError(invalid); return; } if (!window.confirm("PERINGATAN: password akun aktif dan terverifikasi dalam cakupan terpilih akan diganti. Password lama tidak berlaku lagi. CSV berisi password baru. Lanjutkan?")) return; setAccountLoading(true); setAccountStatus(""); setAccountError(""); const all: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string;accountId?:number}> = []; try { let afterId = 0, more = true; while (more) { const response = await fetch("/api/admin/alumni-accounts/reset-passwords", { method:"POST", cache:"no-store", headers:{"Content-Type":"application/json"}, body:JSON.stringify({afterId,...scope}) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || "Reset password gagal."); const credentials = Array.isArray(result.credentials) ? result.credentials : []; const validCredentials = credentials.filter((item: { password?: unknown }) => typeof item.password === "string" && item.password.trim()); all.push(...validCredentials); if (validCredentials.length !== credentials.length) throw new Error("Server mengembalikan kredensial tanpa password. Baris kosong tidak dimasukkan ke CSV; periksa statistik database sebelum menjalankan ulang."); afterId = Number(result.lastId) || afterId; more = Boolean(result.hasMore); if (more && !credentials.length) throw new Error("Batch kosong, proses dihentikan demi keamanan."); if (scope.scope === "single") more = false; } if (!all.length) { setAccountStatus("Tidak ada akun aktif terverifikasi dalam cakupan ini. Password tidak diubah."); return; } downloadCredentialsCsv("password-baru-alumni", all); setAccountStatus("Password " + all.length + " akun berhasil direset. CSV password baru siap diunduh. Tekan tombol Unduh CSV di bawah, lalu simpan file dengan aman."); } catch(e) { if (all.length) downloadCredentialsCsv("password-baru-alumni-parsial", all); setAccountError((e instanceof Error ? e.message : "Reset password gagal.") + (all.length ? " CSV parsial berisi " + all.length + " akun yang passwordnya sudah berubah." : "")); } finally { setAccountLoading(false); void refreshAccountStats(); } }
   function downloadCredentialsCsv(prefix: string, rows: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string}>) {
@@ -149,6 +180,11 @@ export default function ImportExportPage() {
     }
     return importRows;
   }, [importRows, importScope, selectedImportKey, importCategory, importCohortNumber]);
+
+  useEffect(() => {
+    if (!accountListDownload) return;
+    return () => URL.revokeObjectURL(accountListDownload.url);
+  }, [accountListDownload]);
 
   useEffect(() => {
     if (!credentialDownload) return;
@@ -506,6 +542,14 @@ export default function ImportExportPage() {
               {accountScope === "year" && <label className="mt-4 block text-xs font-semibold text-slate-700">Tahun angkatan
                 <input inputMode="numeric" maxLength={4} value={accountYear} onChange={(e) => setAccountYear(e.target.value.replace(/\D/g, "").slice(0,4))} placeholder="Mis. 2024" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal sm:max-w-xs" />
               </label>}
+              <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                <h3 className="text-sm font-bold text-blue-950">Ekspor daftar akun user (aman, tanpa reset)</h3>
+                <p className="mt-1 text-xs leading-5 text-blue-900">Mengunduh daftar akun yang sudah ada, termasuk akun aktif dan nonaktif. Password dibiarkan kosong dan tidak ada data akun yang diubah.</p>
+                <button type="button" disabled={accountListLoading} onClick={() => void handleExportAccountList()} className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-sm font-semibold text-blue-950 hover:bg-blue-100 disabled:opacity-50"><Download size={16}/>{accountListLoading ? "Menyiapkan CSV..." : "Ekspor semua akun user"}</button>
+                {accountListStatus && <p role="status" className="mt-3 rounded-xl bg-white p-3 text-sm text-blue-900">{accountListStatus}</p>}
+                {accountListDownload && <a href={accountListDownload.url} download={accountListDownload.filename} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-900"><Download size={16}/>Unduh daftar akun user CSV</a>}
+                {accountListError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{accountListError}</p>}
+              </div>
               <p className="mt-3 text-xs leading-5 text-slate-500">Aktivasi membuat akun yang belum ada. Reset mengganti password akun aktif. Keduanya hanya memproses alumni terverifikasi sesuai cakupan.</p>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <button type="button" disabled={accountLoading} onClick={() => void handleBulkActivateAccounts()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1a365d] disabled:opacity-50"><UserRoundPlus size={16}/>{accountLoading ? "Memproses..." : "Aktivasi akun & unduh password"}</button>

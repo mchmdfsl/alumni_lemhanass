@@ -400,7 +400,7 @@ export default function ImportExportPage() {
                   (exportScope === "cohort" && (!exportKategori || !exportNomorAngkatan.trim())) ||
                   (exportScope === "category" && !exportKategori) ||
                   (exportScope === "year" && !/^\d{4}$/.test(exportTahun.trim()));
-                return <button type="button" disabled={invalid || exportLoading} onClick={() => void handleExportDownload()} aria-disabled={invalid} className={\`mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition \${invalid || exportLoading ? "cursor-not-allowed bg-slate-400" : "bg-[#0b1f3a] hover:bg-[#1a365d]"}\`}><Download size={16} />{exportLoading ? "Menyiapkan CSV..." : "Siapkan CSV"}</button>;
+                return <button type="button" disabled={invalid || exportLoading} onClick={() => void handleExportDownload()} aria-disabled={invalid} className={`mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition ${invalid || exportLoading ? "cursor-not-allowed bg-slate-400" : "bg-[#0b1f3a] hover:bg-[#1a365d]"}`}><Download size={16} />{exportLoading ? "Menyiapkan CSV..." : "Siapkan CSV"}</button>;
               })()}
               {exportError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{exportError}</p>}
               {exportDownload && <a href={exportDownload.url} download={exportDownload.filename} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"><Download size={16} />Unduh file CSV</a>}

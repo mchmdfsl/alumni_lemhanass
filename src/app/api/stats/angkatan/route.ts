@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getAdminScope } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,9 +9,9 @@ export const dynamic = "force-dynamic";
 const categories = ["PRA", "PPRA", "P4N", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
 
 export async function GET() {
-  if (!(await isAdminAuthenticated())) {
-    return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
-  }
+  const scope = await getAdminScope();
+  if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
 
   try {
     type AngkatanStat = {
@@ -41,6 +42,7 @@ export async function GET() {
           COALESCE(NULLIF(trim(nomor_angkatan), ''), legacy_parts[2], '-') AS "nomorAngkatan",
           tahun_angkatan AS "tahunAngkatan", status, wilayah
         FROM normalized
+        WHERE (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan, '')) = ${scope.kategoriProgram ?? ""})
       ),
       grouped AS (
         SELECT "kategoriProgram" AS angkatan, "kategoriProgram", "nomorAngkatan", "tahunAngkatan",

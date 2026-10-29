@@ -12,7 +12,7 @@ export async function GET() {
   if (role !== "super_admin") return NextResponse.json({ error: "Akses hanya untuk Super Admin." }, { status: 403 });
   try {
     const users = await db()`
-      SELECT id, username, email, is_active AS "isActive", created_at AS "createdAt", updated_at AS "updatedAt"
+      SELECT id, username, email, kategori_program AS "kategoriProgram", is_active AS "isActive", created_at AS "createdAt", updated_at AS "updatedAt"
       FROM admin_users ORDER BY created_at DESC, id DESC
     `;
     return NextResponse.json({ users });
@@ -30,14 +30,16 @@ export async function POST(request: Request) {
     const username = typeof body.username === "string" ? body.username.trim() : "";
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body.password === "string" ? body.password : "";
+    const kategoriProgram = typeof body.kategoriProgram === "string" ? body.kategoriProgram.trim().toLocaleUpperCase("id-ID") : "";
+    if (!/^(KRA|PPRA|P4N|KSA|PSA|PPSA|P3N|TAPLAI|PPNK|PPNK KOLABORASI|PRA|TOT)$/.test(kategoriProgram)) return NextResponse.json({ error: "Pilih kategori program admin yang valid." }, { status: 400 });
     if (!/^[a-zA-Z0-9._-]{3,80}$/.test(username)) return NextResponse.json({ error: "Username tidak valid." }, { status: 400 });
     if (!/^[^\s@]+@[^\s@]+[.][^\s@]+$/.test(email) || email.length > 254) return NextResponse.json({ error: "Format email tidak valid." }, { status: 400 });
     if (password.length < 12 || Buffer.byteLength(password, "utf8") > 1024) return NextResponse.json({ error: "Password harus minimal 12 karakter." }, { status: 400 });
     const passwordHash = await hashPassword(password);
     const [user] = await db()`
-      INSERT INTO admin_users (username, email, password_hash, role, is_active)
-      VALUES (${username}, ${email}, ${passwordHash}, ${"admin"}, TRUE)
-      RETURNING id, username, email, is_active AS "isActive", created_at AS "createdAt"
+      INSERT INTO admin_users (username, email, password_hash, role, kategori_program, is_active)
+      VALUES (${username}, ${email}, ${passwordHash}, ${"admin"}, ${kategoriProgram}, TRUE)
+      RETURNING id, username, email, kategori_program AS "kategoriProgram", is_active AS "isActive", created_at AS "createdAt"
     `;
     const actor = await getAdminActor();
     if (actor) await writeAdminAudit(actor, "admin_created", { targetUsername: user.username, targetEmail: user.email });

@@ -292,7 +292,7 @@ export default function ImportExportPage() {
   async function submitImport() {
     if (!rowsToImport.length || busy) return;
     const confirmed = window.confirm(
-      "Konfirmasi import " + rowsToImport.length + " baris dengan cakupan " +
+      "Konfirmasi sinkronisasi " + rowsToImport.length + " baris dengan cakupan " +
       (importScope === "single" ? "satu alumni" : importScope === "cohort" ? "angkatan terpilih" : importScope === "category" ? "kategori terpilih" : "semua baris file") +
       ". Data akan dikirim ke antrean verifikasi. Lanjutkan?"
     );
@@ -487,7 +487,7 @@ export default function ImportExportPage() {
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><FileUp size={20} /></div>
-                <div><h2 className="font-bold text-[#172033]">Import CSV</h2><p className="text-xs text-slate-500">Pilih file CSV berisi data alumni untuk dimasukkan ke antrean verifikasi.</p></div>
+                <div><h2 className="font-bold text-[#172033]">Import CSV</h2><p className="text-xs text-slate-500">Pilih CSV untuk memperbarui data alumni yang cocok dan menambahkan data baru ke database.</p></div>
               </div>
               <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-5">
                 <label className="block text-sm font-semibold text-slate-800">File CSV

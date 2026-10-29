@@ -113,16 +113,30 @@ export default function VerifikasiAlumniPage() {
 
 
   const handleBulkVerify = async () => {
-    if (!window.confirm("Verifikasi massal akan mengubah SEMUA data hasil impor berstatus Menunggu menjadi Terverifikasi dan memastikan nomor alumni tersedia. Tindakan ini berlaku untuk seluruh data impor yang menunggu, bukan hanya halaman ini. Lanjutkan?")) return;
+    if (!window.confirm("Verifikasi massal akan memproses SEMUA data hasil impor berstatus Menunggu dalam kelompok 100 data per permintaan. Proses bisa berlangsung beberapa menit. Lanjutkan?")) return;
     setBulkLoading(true);
+    let totalUpdated = 0;
     try {
-      const response = await fetch("/api/alumni/bulk-verify", { method: "POST", cache: "no-store" });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Verifikasi massal gagal.");
-      window.alert(result.message + "\\nJumlah data diverifikasi: " + (result.updated ?? 0));
+      let remaining = 1;
+      let batches = 0;
+      while (remaining > 0) {
+        if (++batches > 200) throw new Error("Batas aman proses tercapai. Muat ulang halaman lalu jalankan kembali untuk melanjutkan data yang masih Menunggu.");
+        const response = await fetch("/api/alumni/bulk-verify", { method: "POST", cache: "no-store" });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Verifikasi massal gagal.");
+        const updated = Number(result.updated ?? 0);
+        totalUpdated += updated;
+        remaining = Number(result.remaining ?? 0);
+        if (updated === 0 && remaining > 0) throw new Error("Tidak ada data yang diproses, tetapi masih ada data Menunggu. Hentikan proses dan periksa log server.");
+        if (remaining > 0) {
+          // Yield to the browser between database batches.
+          await new Promise((resolve) => window.setTimeout(resolve, 100));
+        }
+      }
+      window.alert("Verifikasi massal selesai. Total data yang diverifikasi pada proses ini: " + totalUpdated);
       window.location.reload();
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : "Verifikasi massal gagal.");
+      window.alert((error instanceof Error ? error.message : "Verifikasi massal gagal.") + "\\n\\nData yang sudah berhasil diproses dalam kelompok sebelumnya tetap tersimpan. Jalankan kembali untuk melanjutkan data yang masih Menunggu.");
     } finally {
       setBulkLoading(false);
     }

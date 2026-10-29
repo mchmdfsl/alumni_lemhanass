@@ -1,0 +1,68 @@
+name: Import alumni to production database
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_import:
+        description: 'Ketik APPLY-ALUMNI-6524 untuk mengonfirmasi impor ke database'
+        required: true
+        type: string
+      backup_confirmed:
+        description: 'Pastikan backup Neon sudah dibuat sebelum impor'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alumni-production-import
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: ${{ inputs.confirm_import == 'APPLY-ALUMNI-6524' && inputs.backup_confirmed == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate database secret
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::GitHub Actions Secret DATABASE_URL belum tersedia atau kosong."
+            exit 1
+          fi
+          echo "DATABASE_URL tersedia. Nilainya tidak akan dicetak."
+
+      - name: Install database client
+        run: npm install --no-save --package-lock=false postgres
+
+      - name: Confirm revision and script
+        run: |
+          echo "Workflow commit: $(git rev-parse HEAD)"
+          grep -n "alumni-import-audit-v3" scripts/import-staging-to-alumni.mjs
+
+      - name: Apply import with transactional validation
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_SSL: require
+        run: node scripts/import-staging-to-alumni.mjs --apply
+
+  blocked:
+    if: ${{ inputs.confirm_import != 'APPLY-ALUMNI-6524' || inputs.backup_confirmed != true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stop unless confirmation and backup are provided
+        run: |
+          echo "::error::Impor diblokir. Isi confirm_import dengan APPLY-ALUMNI-6524 dan centang backup_confirmed setelah backup Neon dibuat."
+          exit 1

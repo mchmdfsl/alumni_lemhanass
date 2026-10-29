@@ -147,7 +147,7 @@ export default function AlumniPage() {
   };
 
   // Keep program category, cohort number, and cohort year as independent filters.
-  const categoryOrder = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"];
+  const categoryOrder = ["PRA", "PPRA", "P4N", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
   const kategoriOptions = useMemo(() => {
     const found = new Set(alumniData.map((a) => a.kategoriProgram || a.angkatan).filter(Boolean));
     const ordered = [
@@ -861,7 +861,7 @@ function AlumniAddModal({ saving, onClose, onSave }: { saving: boolean; onClose:
 }
 
 function CategorySelect({ label, value, onChange, name, required = false }: { label: string; value?: string; onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void; name?: string; required?: boolean }) {
-  const categories = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "PPNK", "PPNK KOLABORASI", "TOT"];
+  const categories = ["PRA", "PPRA", "P4N", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
   const options = value && !categories.includes(value) ? [value, ...categories] : categories;
   return (
     <div className="flex flex-col gap-1.5">

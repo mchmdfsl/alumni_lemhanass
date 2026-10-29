@@ -138,7 +138,7 @@ export default function AdminDashboardPage() {
               {adminRole === "super_admin" ? (
                 <DashboardAction href="/admin/manajemen-admin" title="Manajemen Admin" description="Kelola akun dan akses administrator" />
               ) : (
-                <DashboardAction href="/admin/permintaan-alumni" title="Permintaan Alumni" description="Tinjau permintaan perubahan data" />
+                <DashboardAction href="/admin/permintaan-alumni" title="Permintaan Alumni" description="Tinjau permohonan penonaktifan akun" />
               )}
             </section>
             {/* =====================================

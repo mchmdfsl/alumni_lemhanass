@@ -7,6 +7,8 @@ import { getAdminActor } from "@/lib/admin-audit";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const BATCH_SIZE = 100;
+
 export async function POST() {
   const role = await isAdminAuthenticated();
   if (!role) {
@@ -21,14 +23,15 @@ export async function POST() {
 
   try {
     const actor = await getAdminActor();
-    const updated = await db().begin(async (tx) => {
+    const result = await db().begin(async (tx) => {
       const rows = await tx`
         SELECT id, angkatan, nomor_alumni AS "nomorAlumni"
         FROM alumni
         WHERE sumber_data = 'impor'
           AND status = 'Menunggu'
         ORDER BY angkatan ASC NULLS LAST, id ASC
-        FOR UPDATE
+        LIMIT ${BATCH_SIZE}
+        FOR UPDATE SKIP LOCKED
       `;
 
       for (const row of rows) {
@@ -49,19 +52,43 @@ export async function POST() {
       }
 
       if (rows.length > 0) {
-        await tx`INSERT INTO admin_audit_log (action, actor, details) VALUES (${"bulk_verify"}, ${actor?.actor || "super-admin"}, ${JSON.stringify({ actorRole: actor?.role || "super_admin", total: rows.length, alumniIds: rows.map((row) => Number(row.id)) })}::jsonb)`;
+        await tx`
+          INSERT INTO admin_audit_log (action, actor, details)
+          VALUES (
+            ${"bulk_verify"},
+            ${actor?.actor || "super-admin"},
+            ${JSON.stringify({
+              actorRole: actor?.role || "super_admin",
+              total: rows.length,
+              alumniIds: rows.map((row) => Number(row.id)),
+              batchSize: BATCH_SIZE,
+            })}::jsonb
+          )
+        `;
       }
-      return rows.length;
+
+      const pending = await tx`
+        SELECT COUNT(*)::int AS total
+        FROM alumni
+        WHERE sumber_data = 'impor'
+          AND status = 'Menunggu'
+      `;
+
+      return { updated: rows.length, remaining: Number(pending[0]?.total ?? 0) };
     });
 
     return NextResponse.json({
-      message: "Data alumni hasil impor berhasil diverifikasi dan nomor alumni dipastikan tersedia.",
-      updated,
+      message: result.remaining > 0
+        ? "Satu kelompok data berhasil diverifikasi."
+        : "Verifikasi massal data impor selesai.",
+      updated: result.updated,
+      remaining: result.remaining,
+      hasMore: result.remaining > 0,
     });
   } catch (error) {
     console.error("POST /api/alumni/bulk-verify:", error);
     return NextResponse.json(
-      { error: "Gagal memverifikasi data alumni hasil impor. Periksa skema database dan duplikasi nomor alumni." },
+      { error: "Gagal memverifikasi kelompok data alumni impor. Periksa skema database dan duplikasi nomor alumni." },
       { status: 500 },
     );
   }

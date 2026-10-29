@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       FROM alumni
       WHERE (${alumniId} = '' OR id::text = ${alumniId})
         AND (${status} = '' OR status = ${status})
-        AND (${angkatan} = '' OR upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan)) = upper(${angkatan}))
+        AND (${angkatan} = '' OR upper(CASE WHEN (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] IS NOT NULL AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, '')))) THEN (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] ELSE COALESCE(NULLIF(upper(trim(kategori_program)), ''), (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], angkatan) END) = upper(${angkatan}))
         AND (
           ${nomorAngkatan} = ''
           OR trim(COALESCE(

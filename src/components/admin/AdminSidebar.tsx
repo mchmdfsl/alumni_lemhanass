@@ -9,6 +9,7 @@ import {
   Activity,
   FileBarChart,
   FileUp,
+  FileSpreadsheet,
   GraduationCap,
   LayoutDashboard,
   LogOut,
@@ -36,6 +37,7 @@ const menuItems = [
   { label: "Wilayah", href: "/admin/wilayah", icon: MapPin },
   { label: "Laporan", href: "/admin/laporan", icon: FileBarChart },
   { label: "Import & Export", href: "/admin/import-export", icon: FileUp },
+  { label: "Template Data Alumni", href: "/admin/import-export#template", icon: FileSpreadsheet },
   { label: "Pengaturan", href: "/admin/pengaturan", icon: Settings },
   { label: "Manajemen Admin", href: "/admin/manajemen-admin", icon: ShieldCheck, superAdminOnly: true },
   { label: "Log Aktivitas", href: "/admin/log-aktivitas", icon: Activity },
@@ -119,8 +121,11 @@ export default function AdminSidebar() {
     }
   };
 
-  const isActive = (href: string) =>
-    href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(`${href}/`);
+  const isActive = (href: string) => {
+    const [path, anchor] = href.split("#");
+    if (anchor) return pathname === path && (typeof window !== "undefined" ? window.location.hash === `#${anchor}` : false);
+    return path === "/admin" ? pathname === "/admin" : pathname === path || pathname.startsWith(`${path}/`);
+  };
 
   return (
     <>

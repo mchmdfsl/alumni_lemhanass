@@ -274,7 +274,7 @@ export default function ImportExportPage() {
   }
 
   function handleTemplateDownload() {
-    const headers = ["nomor alumni", "nama", "kategori program", "nomor angkatan", "tahun angkatan", "instansi", "jabatan", "wilayah", "alamat", "nomor hp"];
+    const headers = ["nama", "kategori program", "nomor angkatan", "tahun angkatan", "instansi", "jabatan", "wilayah", "alamat", "nomor hp"];
     const csv = headers.map((value) => '"' + value.replace(/"/g, '""') + '"').join(",") + "\r\n";
     const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -348,16 +348,8 @@ export default function ImportExportPage() {
         nomorHp: get(row, "nomor hp", "nomorhp", "no hp", "no. hp"),
       })).filter((row) => row.nama);
       if (!mapped.length) throw new Error("Kolom Nama tidak ditemukan atau tidak ada data alumni.");
-      const invalid = mapped.findIndex((row) =>
-        !row.kategoriProgram ||
-        !row.nomorAngkatan ||
-        !/^\d{4}$/.test(row.tahunAngkatan) ||
-        Number(row.tahunAngkatan) < 1900 ||
-        Number(row.tahunAngkatan) > new Date().getFullYear() + 5
-      );
-      if (invalid >= 0) {
-        throw new Error("Baris data ke-" + (invalid + 2) + " belum memiliki Kategori Program, Nomor Angkatan, atau Tahun Angkatan yang valid. Lengkapi CSV sebelum import.");
-      }
+      const invalid = mapped.findIndex((row) => !row.kategoriProgram || !row.nomorAngkatan || !/^\d{4}$/.test(row.tahunAngkatan) || Number(row.tahunAngkatan) < 1900 || Number(row.tahunAngkatan) > new Date().getFullYear() + 5 || !row.instansi || !row.jabatan || !row.wilayah || !row.alamat || !row.nomorHp);
+      if (invalid >= 0) throw new Error("Baris data ke-" + (invalid + 2) + " belum lengkap. Semua kolom wajib diisi kecuali Nomor Alumni yang dibuat otomatis oleh sistem.");
       setImportRows(mapped);
     } catch (error) {
       setImportError(error instanceof Error ? error.message : "File CSV tidak bisa dibaca.");
@@ -587,8 +579,8 @@ export default function ImportExportPage() {
               </div>
               <div className="mt-4 rounded-xl bg-slate-50 p-4 text-xs leading-5 text-slate-600">
                 <p className="font-semibold text-slate-800">Petunjuk pengisian</p>
-                <p>Kolom Nama, Kategori Program, Nomor Angkatan, dan Tahun Angkatan wajib diisi. Kolom lainnya boleh dikosongkan jika tidak tersedia.</p>
-                <p className="mt-2">Jangan mengubah nama header. Kolom status, sumber data, dan sumber file tidak perlu diisi karena akan ditentukan otomatis oleh sistem.</p>
+                <p>Semua kolom wajib diisi kecuali Nomor Alumni. Nomor Alumni dibuat otomatis oleh sistem saat data berhasil diimpor.</p>
+                <p className="mt-2">Jangan mengubah nama header. Nomor Alumni, status, sumber data, dan sumber file tidak perlu diisi karena ditentukan otomatis oleh sistem.</p>
                 <p className="mt-2">Kategori program yang berlaku: PRA, PPRA, P4N, PSA, PPSA, P3N, TAPLAI, PPNK, PPNK KOLABORASI, atau TOT.</p>
               </div>
             </section>
@@ -602,7 +594,7 @@ export default function ImportExportPage() {
                 <label className="block text-sm font-semibold text-slate-800">File CSV
                   <input type="file" accept=".csv,text/csv" onChange={(e) => void handleFileChange(e.target.files?.[0] ?? null)} className="mt-3 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#0b1f3a] file:px-3 file:py-2 file:font-semibold file:text-white" />
                 </label>
-                <p className="mt-2 text-xs text-slate-500">Kolom minimal: Nama, Kategori Program/Angkatan, Nomor Angkatan, Tahun Angkatan. File CSV hasil ekspor dapat digunakan setelah memastikan kolom kategori dan tahun angkatan terisi benar.</p>
+                <p className="mt-2 text-xs text-slate-500">Semua kolom wajib diisi kecuali Nomor Alumni. Sistem akan membuat Nomor Alumni secara otomatis.</p>
               </div>
               {file && <p className="mt-3 text-xs text-slate-600">File: <strong>{file.name}</strong> · {importRows.length} baris tersisa untuk diperiksa</p>}
               {importRows.length > 0 && <>

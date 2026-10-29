@@ -112,6 +112,22 @@ export default function VerifikasiAlumniPage() {
 
 
 
+  const handleBulkVerify = async () => {
+    if (!window.confirm("Verifikasi massal akan mengubah SEMUA data hasil impor berstatus Menunggu menjadi Terverifikasi dan memastikan nomor alumni tersedia. Tindakan ini berlaku untuk seluruh data impor yang menunggu, bukan hanya halaman ini. Lanjutkan?")) return;
+    setBulkLoading(true);
+    try {
+      const response = await fetch("/api/alumni/bulk-verify", { method: "POST", cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Verifikasi massal gagal.");
+      window.alert(result.message + "\\nJumlah data diverifikasi: " + (result.updated ?? 0));
+      window.location.reload();
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Verifikasi massal gagal.");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   const handleBulkActivateAccounts = async () => {
     if (!window.confirm("Aktivasi massal membuat akun untuk alumni terverifikasi yang belum memiliki akun. Password baru akan diunduh dalam CSV. Lanjutkan?")) return;
     setAccountLoading(true);
@@ -192,6 +208,7 @@ export default function VerifikasiAlumniPage() {
 
 
 
+                {isSuperAdmin && <button type="button" onClick={handleBulkVerify} disabled={bulkLoading || accountLoading} className="inline-flex items-center justify-center rounded-xl bg-[#0b1f3a] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#16345c] disabled:cursor-not-allowed disabled:opacity-60">{bulkLoading ? "Memverifikasi..." : "Verifikasi Massal Data Impor"}</button>}
                 {isSuperAdmin && <button type="button" onClick={handleBulkActivateAccounts} disabled={accountLoading || bulkLoading} className="inline-flex items-center justify-center rounded-xl border border-[#0b1f3a] bg-white px-4 py-3 text-sm font-semibold text-[#0b1f3a] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">{accountLoading ? "Membuat akun..." : "Aktivasi Massal Alumni & Unduh Password"}</button>}
 
                 {/* Pending Indicator */}

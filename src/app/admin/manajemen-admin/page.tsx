@@ -19,7 +19,7 @@ export default function ManajemenAdminPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [kategoriProgram, setKategoriProgram] = useState("TOT");
+  const [kategoriProgram, setKategoriProgram] = useState("");
 
   const loadUsers = useCallback(async () => {
     setLoading(true); setError("");
@@ -48,7 +48,7 @@ export default function ManajemenAdminPage() {
       const response = await fetch("/api/admin/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, email, password, kategoriProgram }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Gagal membuat akun admin.");
-      setUsername(""); setEmail(""); setPassword(""); setKategoriProgram("TOT"); setNotice("Akun admin berhasil dibuat.");
+      setUsername(""); setEmail(""); setPassword(""); setKategoriProgram(""); setNotice("Akun admin berhasil dibuat.");
       await loadUsers();
     } catch (e) { setError(e instanceof Error ? e.message : "Terjadi kesalahan."); }
     finally { setSaving(false); }
@@ -113,7 +113,7 @@ export default function ManajemenAdminPage() {
               <form onSubmit={createAdmin} className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <label className="text-sm font-medium text-slate-700">Username<input required minLength={3} maxLength={80} pattern="[a-zA-Z0-9._-]+" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 outline-none focus:border-[#b28b16] focus:ring-2 focus:ring-[#b28b16]/20" /></label>
                 <label className="text-sm font-medium text-slate-700">Email<input required type="email" maxLength={254} autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 outline-none focus:border-[#b28b16] focus:ring-2 focus:ring-[#b28b16]/20" /></label>
-                <label className="text-sm font-medium text-slate-700">Kategori Admin<select required value={kategoriProgram} onChange={(e) => setKategoriProgram(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 outline-none focus:border-[#b28b16] focus:ring-2 focus:ring-[#b28b16]/20">{["KRA","PPRA","P4N","KSA","PSA","PPSA","P3N","TAPLAI","PPNK","PPNK KOLABORASI","PRA","TOT"].map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+                <label className="text-sm font-medium text-slate-700">Kategori Admin<select required value={kategoriProgram} onChange={(e) => setKategoriProgram(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 outline-none focus:border-[#b28b16] focus:ring-2 focus:ring-[#b28b16]/20"><option value="" disabled>Pilih kategori program</option>{["KRA","PPRA","P4N","KSA","PSA","PPSA","P3N","TAPLAI","PPNK","PPNK KOLABORASI","PRA","TOT"].map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
                 <label className="text-sm font-medium text-slate-700 md:col-span-2">Password<input required type="password" minLength={12} maxLength={1024} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 outline-none focus:border-[#b28b16] focus:ring-2 focus:ring-[#b28b16]/20" /></label>
                 <div className="md:col-span-2"><button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#15365f] disabled:opacity-60"><UserPlus size={17} />{saving ? "Menyimpan..." : "Buat akun Admin"}</button></div>
               </form>

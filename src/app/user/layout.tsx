@@ -198,7 +198,7 @@ export default function UserLayout({
               </p>
             </div>
             <p className="mt-1 text-[11px] leading-relaxed text-[#64748b]">
-              Perbarui informasi melalui pengajuan agar data resmi tetap terjaga.
+              Perbarui data langsung melalui halaman Profil Saya. Setiap perubahan akan tersimpan ke database.
             </p>
           </div>
         </nav>

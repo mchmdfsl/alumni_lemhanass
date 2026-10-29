@@ -24,6 +24,7 @@ export async function GET() {
         a.alamat AS "currentAlamat"
       FROM alumni_user_requests r
       INNER JOIN alumni a ON a.id = r.alumni_id
+      WHERE r.request_type = 'delete_account'
       ORDER BY CASE WHEN r.status = 'Menunggu' THEN 0 ELSE 1 END,
         r.created_at DESC
       LIMIT 300
@@ -65,31 +66,7 @@ export async function PATCH(request: NextRequest) {
       `;
       if (!req) return "not_found";
       if (req.status !== "Menunggu") return "already_reviewed";
-
-      if (status === "Disetujui" && req.requestType === "profile_update") {
-        const payload = typeof req.payload === "string" ? JSON.parse(req.payload) : (req.payload ?? {});
-        const nama = typeof payload.nama === "string" ? payload.nama.trim().slice(0, 200) : "";
-        const kategoriProgram = typeof payload.kategoriProgram === "string" ? payload.kategoriProgram.trim().toLocaleUpperCase("id-ID").slice(0, 80) : "";
-        const nomorAngkatan = typeof payload.nomorAngkatan === "string" ? payload.nomorAngkatan.trim().slice(0, 40) : "";
-        const tahunAngkatan = Number(payload.tahunAngkatan);
-        const allowedCategories = new Set(["PRA", "PPRA", "P4N", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"]);
-        if (!nama || !allowedCategories.has(kategoriProgram) || !nomorAngkatan || !Number.isInteger(tahunAngkatan)) throw new Error("Payload perubahan profil tidak lengkap.");
-        await tx`
-          UPDATE alumni SET
-            nama = ${nama},
-            angkatan = ${kategoriProgram},
-            kategori_program = ${kategoriProgram},
-            nomor_angkatan = ${nomorAngkatan},
-            tahun_angkatan = ${tahunAngkatan},
-            jabatan = ${String(payload.jabatan ?? "").trim().slice(0, 200)},
-            instansi = ${String(payload.instansi ?? "").trim().slice(0, 250)},
-            wilayah = ${String(payload.wilayah ?? "").trim().slice(0, 150)},
-            alamat = ${String(payload.alamat ?? "").trim().slice(0, 5000)},
-            nomor_hp = ${String(payload.nomorHp ?? "").trim().slice(0, 50)},
-            updated_at = NOW()
-          WHERE id = ${req.alumniId}
-        `;
-      }
+      if (req.requestType !== "delete_account") return "unsupported_request";
 
       if (status === "Disetujui" && req.requestType === "delete_account") {
         await tx`UPDATE alumni_accounts SET is_active = FALSE WHERE alumni_id = ${req.alumniId}`;
@@ -106,6 +83,7 @@ export async function PATCH(request: NextRequest) {
 
     if (result === "not_found") return NextResponse.json({ error: "Permintaan tidak ditemukan." }, { status: 404 });
     if (result === "already_reviewed") return NextResponse.json({ error: "Permintaan sudah diproses sebelumnya." }, { status: 409 });
+    if (result === "unsupported_request") return NextResponse.json({ error: "Jenis permintaan ini tidak lagi memerlukan verifikasi admin." }, { status: 400 });
     const actor = await getAdminActor();
     if (actor) await writeAdminAudit(actor, "user_request_reviewed", { requestId: id, status, adminNote: adminNote || null });
     return NextResponse.json({ ok: true, message: status === "Disetujui" ? "Permintaan disetujui." : "Permintaan ditolak." });

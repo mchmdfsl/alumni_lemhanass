@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { LoaderCircle, CheckCircle2, AlertCircle, Clock3, RefreshCw, BellRing, XCircle } from "lucide-react";
 
 type RequestHistory = { id: number; requestType: string; message: string; status: "Menunggu" | "Disetujui" | "Ditolak"; adminNote?: string | null; createdAt: string; reviewedAt?: string | null };
-const requestLabels: Record<string, string> = { profile_update: "Perubahan profil", data_update: "Pembaruan data", delete_account: "Penonaktifan akun" };
+const requestLabels: Record<string, string> = { delete_account: "Penonaktifan akun" };
 
 export default function PengajuanPage() {
-  const [jenis, setJenis] = useState("data_update");
+  const [jenis] = useState("delete_account");
   const [pesan, setPesan] = useState("");
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<{ ok: boolean; message: string } | null>(null);
@@ -52,7 +52,7 @@ export default function PengajuanPage() {
       <section>
         <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#b28b16]">Layanan Alumni</p>
         <h1 className="text-2xl font-bold text-[#0b1f3a]">Pengajuan Alumni</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-500">Kirim permintaan pembaruan data atau penonaktifan akun. Pengajuan akan masuk ke admin untuk ditinjau.</p>
+        <p className="mt-2 text-sm leading-6 text-slate-500">Perubahan profil kini tersimpan langsung dari halaman Profil Saya. Halaman ini hanya untuk permohonan penonaktifan akun.</p>
       </section>
 
       <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
@@ -69,12 +69,9 @@ export default function PengajuanPage() {
           {notice.ok ? <CheckCircle2 size={18} className="mt-0.5 shrink-0" /> : <AlertCircle size={18} className="mt-0.5 shrink-0" />}
           <span>{notice.message}</span>
         </div>}
-        <div>
-          <label htmlFor="jenis" className="mb-2 block text-sm font-semibold text-slate-700">Jenis Pengajuan</label>
-          <select id="jenis" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0b1f3a] focus:ring-2 focus:ring-[#0b1f3a]/10" value={jenis} onChange={(event) => setJenis(event.target.value)}>
-            <option value="data_update">Permohonan pembaruan data</option>
-            <option value="delete_account">Permohonan penonaktifan akun</option>
-          </select>
+        <div className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
+          <p className="font-semibold">Permohonan penonaktifan akun</p>
+          <p className="mt-1 text-slate-500">Permintaan ini akan ditinjau oleh admin sebelum akun dinonaktifkan.</p>
         </div>
         <div>
           <label htmlFor="pesan" className="mb-2 block text-sm font-semibold text-slate-700">Keterangan / Alasan</label>

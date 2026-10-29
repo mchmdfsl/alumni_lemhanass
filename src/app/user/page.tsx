@@ -134,9 +134,9 @@ export default function UserDashboardPage() {
         />
 
         <InfoCard
-          title="Pengajuan Menunggu"
+          title="Penonaktifan Menunggu"
           value={loading ? "..." : pendingRequests.toLocaleString("id-ID")}
-          description="Permintaan yang masih ditinjau admin"
+          description="Permohonan yang menunggu admin"
           icon={Clock3}
         />
       </section>
@@ -225,7 +225,7 @@ export default function UserDashboardPage() {
                 <p className="mt-2 text-sm leading-relaxed text-[#64748b]">
                   Gunakan direktori alumni untuk melihat informasi
                   rekan alumni. Jika terdapat data yang perlu diperbarui,
-                  sampaikan melalui menu pengajuan.
+                  perbarui langsung melalui halaman Profil Saya.
                 </p>
               </div>
             </div>
@@ -262,8 +262,8 @@ export default function UserDashboardPage() {
 
               <QuickLink
                 href="/user/pengajuan"
-                title="Pengajuan"
-                description="Ajukan perubahan data"
+                title="Penonaktifan Akun"
+                description="Ajukan penonaktifan akun"
                 icon={FileText}
               />
             </div>

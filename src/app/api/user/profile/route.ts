@@ -128,33 +128,32 @@ export async function PATCH(request: NextRequest) {
     };
 
     const [result] = await db()`
-      INSERT INTO alumni_user_requests (
-        alumni_id,
-        request_type,
-        payload,
-        message,
-        status
-      )
-      VALUES (
-        ${alumni.id},
-        'profile_update',
-        ${JSON.stringify(payload)}::jsonb,
-        'Permintaan perubahan profil alumni',
-        'Menunggu'
-      )
-      RETURNING
-        id,
-        status,
-        created_at AS "createdAt"
+      UPDATE alumni
+      SET nama = ${payload.nama},
+        angkatan = ${payload.angkatan},
+        kategori_program = ${payload.kategoriProgram},
+        nomor_angkatan = ${payload.nomorAngkatan},
+        tahun_angkatan = ${payload.tahunAngkatan},
+        jabatan = ${payload.jabatan},
+        instansi = ${payload.instansi},
+        wilayah = ${payload.wilayah},
+        alamat = ${payload.alamat},
+        nomor_hp = ${payload.nomorHp},
+        updated_at = NOW()
+      WHERE id = ${alumni.id}
+      RETURNING id, nomor_alumni AS "nomorAlumni", nama, angkatan,
+        kategori_program AS "kategoriProgram",
+        nomor_angkatan AS "nomorAngkatan",
+        tahun_angkatan AS "tahunAngkatan", jabatan, instansi, wilayah,
+        alamat, nomor_hp AS "nomorHp", status
     `;
 
-    return NextResponse.json(
-      {
-        message: "Permintaan perubahan profil berhasil dikirim.",
-        data: result,
-      },
-      { status: 201 }
-    );
+    if (!result) return NextResponse.json({ message: "Data alumni tidak ditemukan." }, { status: 404 });
+
+    return NextResponse.json({
+      message: "Profil berhasil diperbarui dan langsung tersimpan ke database.",
+      data: result,
+    });
   } catch (error) {
     console.error("PATCH /api/user/profile:", error);
 

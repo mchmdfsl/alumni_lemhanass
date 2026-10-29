@@ -363,15 +363,15 @@ export default function ProfilUser() {
       if (!response.ok) {
         throw new Error(
           result.message ||
-            "Gagal mengirim permintaan perubahan profil."
+            "Gagal menyimpan perubahan profil."
         );
       }
 
+      setSavedProfile(profile);
+      setProfile(profile);
       setNotice({
         type: "success",
-        message:
-          result.message ||
-          "Permintaan perubahan profil berhasil dikirim kepada admin.",
+        message: result.message || "Profil berhasil diperbarui dan langsung tersimpan ke database.",
       });
     } catch (error) {
       setNotice({
@@ -643,11 +643,11 @@ export default function ProfilUser() {
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
           <h2 className="font-bold text-[#172033]">
-            Ajukan Perubahan Profil
+            Edit Profil
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Perubahan data akan dikirim kepada admin untuk ditinjau.
+            Perubahan data akan langsung disimpan ke database setelah Anda menekan tombol Simpan Perubahan.
           </p>
         </div>
 
@@ -743,9 +743,7 @@ export default function ProfilUser() {
 
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
               <p className="text-sm leading-relaxed text-amber-900">
-                <strong>Perhatian:</strong> Mengirim formulir ini
-                tidak langsung mengubah data utama. Permintaan
-                akan masuk ke admin untuk ditinjau terlebih dahulu.
+                <strong>Informasi:</strong> Setelah disimpan, perubahan profil langsung diperbarui pada data utama alumni.
               </p>
             </div>
 
@@ -769,12 +767,12 @@ export default function ProfilUser() {
                       size={17}
                       className="animate-spin"
                     />
-                    Mengirim...
+                    Menyimpan...
                   </>
                 ) : (
                   <>
                     <Save size={17} />
-                    Kirim Permintaan
+                    Simpan Perubahan
                   </>
                 )}
               </button>

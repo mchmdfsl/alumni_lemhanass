@@ -27,8 +27,6 @@ type RequestRow = {
 };
 
 const labels: Record<string, string> = {
-  profile_update: "Perubahan profil",
-  data_update: "Pembaruan data",
   delete_account: "Permintaan penonaktifan akun",
 };
 
@@ -93,7 +91,7 @@ export default function PermintaanAlumniPage() {
               <div>
                 <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#b28b16]">Layanan Alumni</p>
                 <h1 className="text-2xl font-bold tracking-tight text-[#0b1f3a] sm:text-3xl">Permintaan Alumni</h1>
-                <p className="mt-2 text-sm text-slate-500">Tinjau perubahan profil, pembaruan data, dan permintaan penonaktifan akun.</p>
+                <p className="mt-2 text-sm text-slate-500">Tinjau permintaan penonaktifan akun alumni.</p>
               </div>
               <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#0b1f3a] disabled:opacity-60">
                 <RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Muat ulang
@@ -114,23 +112,6 @@ export default function PermintaanAlumniPage() {
             ) : (
               <div className="space-y-4">
                 {rows.map((row) => {
-                  const rawPayload = row.payload ?? {};
-                  const payload = (typeof rawPayload === "string"
-                    ? (() => { try { return JSON.parse(rawPayload) as Record<string, unknown>; } catch { return {}; } })()
-                    : rawPayload) as Record<string, unknown>;
-                  const requested = (key: string, fallbackKey?: string) => {
-                    const value = payload[key] ?? (fallbackKey ? payload[fallbackKey] : undefined);
-                    return value === null || value === undefined || String(value).trim() === "" ? "-" : String(value);
-                  };
-                  const details: Array<[string, unknown, unknown]> = [
-                    ["Nama", row.currentNama ?? row.nama, requested("nama")],
-                    ["Kategori program / Angkatan", row.currentAngkatan ?? row.angkatan, requested("angkatan", "kategoriProgram")],
-                    ["Jabatan", row.currentJabatan, requested("jabatan")],
-                    ["Instansi", row.currentInstansi, requested("instansi")],
-                    ["Wilayah", row.currentWilayah, requested("wilayah")],
-                    ["Nomor HP", row.currentNomorHp, requested("nomorHp", "nomor_hp")],
-                    ["Alamat", row.currentAlamat, requested("alamat")],
-                  ];
                   const pending = row.status === "Menunggu";
                   return (
                     <article key={row.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

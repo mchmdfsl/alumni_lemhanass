@@ -46,6 +46,7 @@ export async function GET() {
         reviewed_at AS "reviewedAt"
       FROM alumni_user_requests
       WHERE alumni_id = ${alumni.id}
+        AND request_type = 'delete_account'
       ORDER BY created_at DESC
       LIMIT 100
     `;
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
     const message =
       typeof body.message === "string" ? body.message.trim() : "";
 
-    if (!["data_update", "delete_account"].includes(type)) {
+    if (type !== "delete_account") {
       return NextResponse.json(
         { message: "Jenis pengajuan tidak valid." },
         { status: 400 }

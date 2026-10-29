@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getAdminScope } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 
 export async function GET() {
-  if (!(await isAdminAuthenticated()))
-    return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  const scope = await getAdminScope();
+  if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
   try {
     const rows = await db()`
       SELECT
         CASE WHEN wilayah = '' OR wilayah IS NULL THEN 'Tidak Diketahui' ELSE wilayah END AS wilayah,
         COUNT(*)::int AS jumlah
       FROM alumni
+      WHERE (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan, '')) = ${scope.kategoriProgram ?? ""})
       GROUP BY wilayah
       ORDER BY jumlah DESC
       LIMIT 20`;

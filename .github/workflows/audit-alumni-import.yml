@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: alumni-import-audit
+  cancel-in-progress: false
+
 jobs:
   dry-run:
     runs-on: ubuntu-latest
@@ -19,15 +23,22 @@ jobs:
         with:
           node-version: 22
 
+      - name: Validate database secret
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::GitHub Actions Secret DATABASE_URL belum tersedia atau kosong."
+            echo "Buka Settings > Secrets and variables > Actions, lalu buat repository secret bernama DATABASE_URL."
+            exit 1
+          fi
+          echo "DATABASE_URL tersedia. Nilainya tidak akan dicetak."
+
       - name: Install database client
         run: npm install --no-save --package-lock=false postgres
 
       - name: Run read-only import simulation
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          test -n "$DATABASE_URL" || {
-            echo "GitHub Actions secret DATABASE_URL belum diatur."
-            exit 1
-          }
-          node scripts/import-staging-to-alumni.mjs
+          DATABASE_SSL: require
+        run: node scripts/import-staging-to-alumni.mjs

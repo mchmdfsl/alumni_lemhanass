@@ -161,8 +161,12 @@ export default function VerifikasiAlumniPage() {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Aktivasi akun massal gagal.");
         const credentials = Array.isArray(result.credentials) ? result.credentials : [];
+        if (credentials.some((item: { password?: unknown }) => typeof item.password !== "string" || !item.password.trim())) {
+          allCredentials.push(...credentials);
+          throw new Error("Server mengembalikan kredensial tanpa password. File parsial akan disiapkan; jangan jalankan aktivasi ulang sebelum memeriksa akun yang sudah dibuat.");
+        }
         allCredentials.push(...credentials);
-        finished = credentials.length < 100;
+        finished = !Boolean(result.hasMore);
       }
       if (!allCredentials.length) { window.alert("Tidak ada alumni terverifikasi tanpa akun."); return; }
       const esc = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
@@ -171,7 +175,15 @@ export default function VerifikasiAlumniPage() {
       const url = URL.createObjectURL(blob);
       setCredentialDownload({ url, filename: "kredensial-alumni-" + new Date().toISOString().slice(0, 10) + ".csv" });
       window.alert("Selesai. " + allCredentials.length + " akun dibuat. CSV siap diunduh lewat tombol Unduh CSV pada halaman ini. Simpan file dengan aman.");
-    } catch (error) { window.alert(error instanceof Error ? error.message : "Aktivasi akun massal gagal."); }
+    } catch (error) {
+      if (allCredentials.length) {
+        const esc = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '\"\"') + '"';
+        const csv = [["Nama", "Angkatan", "ID Alumni", "Email", "Password"], ...allCredentials.map(item => [item.nama, item.angkatan, item.nomorAlumni, item.email, item.password])].map(row => row.map(esc).join(",")).join("\r\n");
+        const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" }));
+        setCredentialDownload({ url, filename: "kredensial-alumni-parsial-" + new Date().toISOString().slice(0, 10) + ".csv" });
+      }
+      window.alert((error instanceof Error ? error.message : "Aktivasi akun massal gagal.") + (allCredentials.length ? "\nCSV parsial tersedia lewat tombol Unduh CSV." : ""));
+    }
     finally { setAccountLoading(false); }
   };
 

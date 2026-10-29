@@ -583,7 +583,7 @@ export default function ImportExportPage() {
                 <p className="font-semibold text-slate-800">Petunjuk pengisian</p>
                 <p>Semua kolom wajib diisi kecuali Nomor Alumni. Nomor Alumni dibuat otomatis oleh sistem saat data berhasil diimpor.</p>
                 <p className="mt-2">Jangan mengubah nama header. Nomor Alumni, status, sumber data, dan sumber file tidak perlu diisi karena ditentukan otomatis oleh sistem.</p>
-                <p className="mt-2">Kategori program yang berlaku: PRA, PPRA, P4N, PSA, PPSA, P3N, TAPLAI, PPNK, PPNK KOLABORASI, atau TOT.</p>
+                <p className="mt-2">Kategori program yang berlaku: KRA, PRA, PPRA, P4N, KSA, PSA, PPSA, P3N, TAPLAI, PPNK, PPNK KOLABORASI, atau TOT.</p>
               </div>
             </section>
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { assignAlumniNumber } from "@/lib/alumni-number";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,8 +31,8 @@ export async function POST(request: NextRequest) {
       alamat: str(row.alamat, 3000),
       nomorHp: str(row.nomorHp, 50),
     }));
-    const invalid = normalized.find((row) => row.nama.length < 2 || !/^[A-Z0-9]+(?:[ ][A-Z0-9]+){0,3}$/.test(row.kategoriProgram) || !row.nomorAngkatan || !/^\d{4}$/.test(row.tahunAngkatan) || Number(row.tahunAngkatan) < 1900 || Number(row.tahunAngkatan) > new Date().getFullYear() + 5);
-    if (invalid) return NextResponse.json({ error: `Baris ke-${invalid.index + 1} tidak valid. Nama, kategori, nomor angkatan, dan tahun 4 digit wajib benar.` }, { status: 400 });
+    const invalid = normalized.find((row) => row.nama.length < 2 || !/^[A-Z0-9]+(?:[ ][A-Z0-9]+){0,3}$/.test(row.kategoriProgram) || !row.nomorAngkatan || !/^\d{4}$/.test(row.tahunAngkatan) || Number(row.tahunAngkatan) < 1900 || Number(row.tahunAngkatan) > new Date().getFullYear() + 5 || !row.instansi || !row.jabatan || !row.wilayah || !row.alamat || !row.nomorHp);
+    if (invalid) return NextResponse.json({ error: `Baris ke-${invalid.index + 1} tidak valid. Nama, kategori, nomor angkatan, tahun, instansi, jabatan, wilayah, alamat, dan nomor HP wajib diisi dengan benar.` }, { status: 400 });
 
     const result = await db().begin(async (tx) => {
       const outcomes: Array<{ index: number; action: "inserted" | "updated" }> = [];
@@ -70,10 +71,13 @@ export async function POST(request: NextRequest) {
             nomor_hp = COALESCE(NULLIF(${row.nomorHp}, ''), nomor_hp),
             sumber_file = ${sourceFile},
             updated_at = NOW() WHERE id = ${Number(matches[0].id)}`;
+          if (!row.nomorAlumni) { const current = await tx`SELECT id, nomor_alumni AS "nomorAlumni" FROM alumni WHERE id = ${Number(matches[0].id)} FOR UPDATE`; if (!current[0]?.nomorAlumni) await assignAlumniNumber(tx, Number(matches[0].id), row.kategoriProgram, null); }
           outcomes.push({ index: row.index, action: "updated" });
         } else {
-          await tx`INSERT INTO alumni (nomor_alumni, nama, angkatan, kategori_program, nomor_angkatan, tahun_angkatan, instansi, jabatan, wilayah, alamat, email, nomor_hp, status, sumber_data, sumber_file)
-            VALUES (${row.nomorAlumni || null}, ${row.nama}, ${row.kategoriProgram}, ${row.kategoriProgram}, ${row.nomorAngkatan}, ${Number(row.tahunAngkatan)}, ${row.instansi || null}, ${row.jabatan || null}, ${row.wilayah || null}, ${row.alamat || null}, NULL, ${row.nomorHp || null}, 'Menunggu', 'impor', ${sourceFile})`;
+          const inserted = await tx`INSERT INTO alumni (nomor_alumni, nama, angkatan, kategori_program, nomor_angkatan, tahun_angkatan, instansi, jabatan, wilayah, alamat, email, nomor_hp, status, sumber_data, sumber_file)
+            VALUES (${row.nomorAlumni || null}, ${row.nama}, ${row.kategoriProgram}, ${row.kategoriProgram}, ${row.nomorAngkatan}, ${Number(row.tahunAngkatan)}, ${row.instansi}, ${row.jabatan}, ${row.wilayah}, ${row.alamat}, NULL, ${row.nomorHp}, 'Menunggu', 'impor', ${sourceFile})
+            RETURNING id`;
+          await assignAlumniNumber(tx, Number(inserted[0].id), row.kategoriProgram, row.nomorAlumni || null);
           outcomes.push({ index: row.index, action: "inserted" });
         }
       }

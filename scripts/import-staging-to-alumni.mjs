@@ -27,10 +27,10 @@ END`;
 
 const normalizeCohort = `CASE
   WHEN UPPER(TRIM(s.angkatan)) ~ '^KRA([[:space:]]|$)'
-    THEN REGEXP_REPLACE(UPPER(TRIM(s.angkatan)), '^KRA([[:space:]]|$)', 'PRA\\1')
+    THEN REGEXP_REPLACE(TRIM(s.angkatan), '^KRA', 'PRA', 'i')
   WHEN UPPER(TRIM(s.angkatan)) ~ '^KSA([[:space:]]|$)'
-    THEN REGEXP_REPLACE(UPPER(TRIM(s.angkatan)), '^KSA([[:space:]]|$)', 'PSA\\1')
-  ELSE UPPER(TRIM(s.angkatan))
+    THEN REGEXP_REPLACE(TRIM(s.angkatan), '^KSA', 'PSA', 'i')
+  ELSE TRIM(s.angkatan)
 END`;
 
 try {

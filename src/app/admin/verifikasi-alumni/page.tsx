@@ -161,11 +161,11 @@ export default function VerifikasiAlumniPage() {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Aktivasi akun massal gagal.");
         const credentials = Array.isArray(result.credentials) ? result.credentials : [];
-        if (credentials.some((item: { password?: unknown }) => typeof item.password !== "string" || !item.password.trim())) {
-          allCredentials.push(...credentials);
-          throw new Error("Server mengembalikan kredensial tanpa password. File parsial akan disiapkan; jangan jalankan aktivasi ulang sebelum memeriksa akun yang sudah dibuat.");
+        const validCredentials = credentials.filter((item: { password?: unknown }) => typeof item.password === "string" && item.password.trim());
+        allCredentials.push(...validCredentials);
+        if (validCredentials.length !== credentials.length) {
+          throw new Error("Server mengembalikan kredensial tanpa password. Baris kosong tidak dimasukkan ke CSV; periksa statistik database sebelum menjalankan ulang.");
         }
-        allCredentials.push(...credentials);
         finished = !Boolean(result.hasMore);
       }
       if (!allCredentials.length) { window.alert("Tidak ada alumni terverifikasi tanpa akun."); return; }

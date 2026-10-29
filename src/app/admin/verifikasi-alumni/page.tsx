@@ -10,6 +10,7 @@ import {
   Search,
   UserCheck,
   UserX,
+  Download,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -46,6 +47,7 @@ export default function VerifikasiAlumniPage() {
   const [page, setPage] = useState(1);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [accountLoading, setAccountLoading] = useState(false);
+  const [credentialDownload, setCredentialDownload] = useState<{ url: string; filename: string } | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const [selectedAlumni, setSelectedAlumni] =
@@ -56,6 +58,11 @@ export default function VerifikasiAlumniPage() {
   );
 
   const [rejectionReason, setRejectionReason] = useState("");
+
+  useEffect(() => {
+    if (!credentialDownload) return;
+    return () => URL.revokeObjectURL(credentialDownload.url);
+  }, [credentialDownload]);
 
   useEffect(() => {
     let active = true;
@@ -143,28 +150,27 @@ export default function VerifikasiAlumniPage() {
   };
 
   const handleBulkActivateAccounts = async () => {
-    if (!window.confirm("Aktivasi massal membuat akun untuk alumni terverifikasi yang belum memiliki akun. Password baru akan diunduh dalam CSV. Lanjutkan?")) return;
+    if (!window.confirm("Aktivasi massal membuat akun untuk alumni terverifikasi yang belum memiliki akun. File CSV password akan tersedia untuk diunduh setelah proses selesai. Lanjutkan?")) return;
     setAccountLoading(true);
     const allCredentials: Array<{ nama: string; angkatan: string; nomorAlumni: string; email: string; password: string }> = [];
     try {
       let finished = false, batches = 0;
       while (!finished) {
-        if (++batches > 500) throw new Error("Batas aman 10.000 akun tercapai. Jalankan kembali untuk melanjutkan.");
+        if (++batches > 500) throw new Error("Batas aman 50.000 akun tercapai. Jalankan kembali untuk melanjutkan.");
         const response = await fetch("/api/admin/alumni-accounts/bulk-activate", { method: "POST", cache: "no-store" });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Aktivasi akun massal gagal.");
         const credentials = Array.isArray(result.credentials) ? result.credentials : [];
         allCredentials.push(...credentials);
-        finished = credentials.length < 20;
+        finished = credentials.length < 100;
       }
       if (!allCredentials.length) { window.alert("Tidak ada alumni terverifikasi tanpa akun."); return; }
       const esc = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
-      const csv = [["Nama", "Angkatan", "ID Alumni", "Email", "Password"], ...allCredentials.map(item => [item.nama, item.angkatan, item.nomorAlumni, item.email, item.password])].map(row => row.map(esc).join(",")).join("\\r\\n");
-      const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
-      anchor.href = url; anchor.download = "kredensial-alumni-" + new Date().toISOString().slice(0, 10) + ".csv";
-      document.body.appendChild(anchor); anchor.click(); anchor.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 60000);
-      window.alert("Selesai. " + allCredentials.length + " akun dibuat. Simpan CSV kredensial dengan aman.");
+      const csv = [["Nama", "Angkatan", "ID Alumni", "Email", "Password"], ...allCredentials.map(item => [item.nama, item.angkatan, item.nomorAlumni, item.email, item.password])].map(row => row.map(esc).join(",")).join("\r\n");
+      const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      setCredentialDownload({ url, filename: "kredensial-alumni-" + new Date().toISOString().slice(0, 10) + ".csv" });
+      window.alert("Selesai. " + allCredentials.length + " akun dibuat. CSV siap diunduh lewat tombol Unduh CSV pada halaman ini. Simpan file dengan aman.");
     } catch (error) { window.alert(error instanceof Error ? error.message : "Aktivasi akun massal gagal."); }
     finally { setAccountLoading(false); }
   };
@@ -224,6 +230,7 @@ export default function VerifikasiAlumniPage() {
 
                 {isSuperAdmin && <button type="button" onClick={handleBulkVerify} disabled={bulkLoading || accountLoading} className="inline-flex items-center justify-center rounded-xl bg-[#0b1f3a] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#16345c] disabled:cursor-not-allowed disabled:opacity-60">{bulkLoading ? "Memverifikasi..." : "Verifikasi Massal Data Impor"}</button>}
                 {isSuperAdmin && <button type="button" onClick={handleBulkActivateAccounts} disabled={accountLoading || bulkLoading} className="inline-flex items-center justify-center rounded-xl border border-[#0b1f3a] bg-white px-4 py-3 text-sm font-semibold text-[#0b1f3a] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">{accountLoading ? "Membuat akun..." : "Aktivasi Massal Alumni & Unduh Password"}</button>}
+                {credentialDownload && <a href={credentialDownload.url} download={credentialDownload.filename} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-800"><Download size={16} />Unduh CSV Kredensial</a>}
 
                 {/* Pending Indicator */}
                 <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">

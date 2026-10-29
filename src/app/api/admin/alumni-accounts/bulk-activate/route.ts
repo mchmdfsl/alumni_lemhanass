@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
           AND (${!["cohort", "category"].includes(scope)} OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan)) = upper(${kategoriProgram}))
           AND (${scope !== "cohort"} OR trim(COALESCE(NULLIF(a.nomor_angkatan, ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[2], '')) = ${nomorAngkatan})
           AND (${scope !== "year"} OR a.tahun_angkatan::text = ${tahunAngkatan})
-        ORDER BY a.angkatan ASC NULLS LAST, a.id ASC LIMIT 100 FOR UPDATE OF a SKIP LOCKED
+        ORDER BY a.angkatan ASC NULLS LAST, a.id ASC LIMIT 100 FOR UPDATE OF a
       `;
 
       const created: Array<{ nama: string; angkatan: string; nomorAlumni: string; email: string; password: string }> = [];
@@ -77,8 +77,18 @@ export async function POST(request: NextRequest) {
       return created;
     });
 
+    const [remainingRow] = await db()`
+      SELECT COUNT(*)::int AS remaining
+      FROM alumni a LEFT JOIN alumni_accounts aa ON aa.alumni_id = a.id
+      WHERE a.status = 'Terverifikasi' AND aa.id IS NULL
+        AND (${scope !== "single"} OR a.id::text = ${alumniId})
+        AND (${!["cohort", "category"].includes(scope)} OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan)) = upper(${kategoriProgram}))
+        AND (${scope !== "cohort"} OR trim(COALESCE(NULLIF(a.nomor_angkatan, ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[2], '')) = ${nomorAngkatan})
+        AND (${scope !== "year"} OR a.tahun_angkatan::text = ${tahunAngkatan})
+    `;
+    const remaining = Number(remainingRow?.remaining ?? 0);
     const actor = await getAdminActor();
-    if (actor && credentials.length) await writeAdminAudit(actor, "alumni_accounts_bulk_activated", { count: credentials.length, batchSize: 100, scope, alumniId: scope === "single" ? Number(alumniId) : null, kategoriProgram, nomorAngkatan, tahunAngkatan });
+    if (actor && credentials.length) await writeAdminAudit(actor, "alumni_accounts_bulk_activated", { count: credentials.length, batchSize: 100, remaining, scope, alumniId: scope === "single" ? Number(alumniId) : null, kategoriProgram, nomorAngkatan, tahunAngkatan });
 
     // Passwords are returned only in this super-admin-authorized response so they can be
     // saved once; only hashes are persisted in the database.
@@ -87,7 +97,8 @@ export async function POST(request: NextRequest) {
       created: credentials.length,
       credentials,
       batchSize: 100,
-      hasMore: credentials.length === 100,
+      hasMore: remaining > 0,
+      remaining,
       message: credentials.length
         ? "Batch 100 akun berhasil dibuat."
         : "Tidak ada alumni terverifikasi tanpa akun. Tidak ada perubahan dilakukan.",

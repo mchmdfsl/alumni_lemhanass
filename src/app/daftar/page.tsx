@@ -106,12 +106,13 @@ export default function DaftarPage() {
           <label htmlFor="kategoriProgram" className="mb-1.5 block text-sm font-semibold text-slate-700">Kategori program *</label>
           <select id="kategoriProgram" name="kategoriProgram" defaultValue={initialForm.kategoriProgram} required onChange={(event) => void handleKategoriChange(event.target.value)} className={inputClass}>
             <option value="">Pilih kategori program</option>
-            <option value="KRA">KRA</option>
+            <option value="PRA">PRA</option>
             <option value="PPRA">PPRA</option>
             <option value="P4N">P4N</option>
-            <option value="KSA">KSA</option>
+            <option value="PSA">PSA</option>
             <option value="PPSA">PPSA</option>
             <option value="P3N">P3N</option>
+            <option value="TAPLAI">TAPLAI</option>
             <option value="PPNK">PPNK</option>
             <option value="PPNK KOLABORASI">PPNK KOLABORASI</option>
             <option value="TOT">TOT</option>

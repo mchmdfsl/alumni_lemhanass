@@ -6,7 +6,7 @@ import { getAdminScope } from "@/lib/admin-scope";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const categories = ["PRA", "PPRA", "P4N", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
+const categories = ["KRA", "PRA", "PPRA", "P4N", "KSA", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
 
 export async function GET() {
   const scope = await getAdminScope();
@@ -71,7 +71,8 @@ export async function GET() {
 
     const typedRows = rows as unknown as AngkatanStat[];
     const existingCategories = new Set(typedRows.map((row) => row.kategoriProgram));
-    const emptyCategories: AngkatanStat[] = categories
+    const visibleCategories = scope.role === "super_admin" ? categories : categories.filter((category) => category === scope.kategoriProgram);
+    const emptyCategories: AngkatanStat[] = visibleCategories
       .filter((category) => !existingCategories.has(category))
       .map((category) => ({
         angkatan: category,

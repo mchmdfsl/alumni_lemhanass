@@ -1,4 +1,10 @@
+import fs from 'node:fs';
 import postgres from 'postgres';
+
+if (!process.env.DATABASE_URL) {
+  if (fs.existsSync('.env.local')) process.loadEnvFile('.env.local');
+  else if (fs.existsSync('.env')) process.loadEnvFile('.env');
+}
 
 const apply = process.argv.includes('--apply');
 
@@ -58,7 +64,7 @@ try {
         SELECT 1
         FROM public.alumni a
         WHERE LOWER(TRIM(a.nama)) = LOWER(TRIM(s.nama))
-          AND UPPER(TRIM(a.angkatan)) = ${normalizeCohort}
+          AND UPPER(TRIM(a.angkatan)) = UPPER(${normalizeCohort})
       )
     `);
 

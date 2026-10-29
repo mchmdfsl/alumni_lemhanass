@@ -1,0 +1,33 @@
+name: Audit alumni import (dry run)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install database client
+        run: npm install --no-save --package-lock=false postgres
+
+      - name: Run read-only import simulation
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          test -n "$DATABASE_URL" || {
+            echo "GitHub Actions secret DATABASE_URL belum diatur."
+            exit 1
+          }
+          node scripts/import-staging-to-alumni.mjs

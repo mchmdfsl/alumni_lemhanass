@@ -22,7 +22,7 @@ const sql = postgres(process.env.DATABASE_URL, {
 const normalizeCategory = `CASE
   WHEN UPPER(TRIM(s.kategori_program)) = 'KRA' THEN 'PRA'
   WHEN UPPER(TRIM(s.kategori_program)) = 'KSA' THEN 'PSA'
-  ELSE UPPER(TRIM(s.kategori_program))
+  ELSE TRIM(s.kategori_program)
 END`;
 
 const normalizeCohort = `CASE
@@ -47,15 +47,27 @@ try {
          OR angkatan IS NULL OR TRIM(angkatan) = ''
     `;
 
-    const [{ count: duplicateIdentityGroups }] = await tx`
+    const [{ count: duplicateIdentityGroups }] = await tx.unsafe(`
+      WITH normalized AS (
+        SELECT
+          LOWER(TRIM(s.nama)) AS nama_normal,
+          UPPER(TRIM(CASE 
+            WHEN UPPER(TRIM(s.angkatan)) ~ '^KRA([[:space:]]|$)'
+              THEN REGEXP_REPLACE(TRIM(s.angkatan), '^KRA', 'PRA', 'i')
+            WHEN UPPER(TRIM(s.angkatan)) ~ '^KSA([[:space:]]|$)'
+              THEN REGEXP_REPLACE(TRIM(s.angkatan), '^KSA', 'PSA', 'i')
+            ELSE TRIM(s.angkatan)
+          END)) AS angkatan_normal
+        FROM public.alumni_import_staging s
+      )
       SELECT COUNT(*)::int AS count
       FROM (
-        SELECT LOWER(TRIM(nama)), UPPER(TRIM(angkatan))
-        FROM public.alumni_import_staging
-        GROUP BY LOWER(TRIM(nama)), UPPER(TRIM(angkatan))
+        SELECT nama_normal, angkatan_normal
+        FROM normalized
+        GROUP BY nama_normal, angkatan_normal
         HAVING COUNT(*) > 1
       ) d
-    `;
+    `);
 
     const [{ count: candidates }] = await tx.unsafe(`
       SELECT COUNT(*)::int AS count
@@ -76,7 +88,7 @@ try {
           AND NOT EXISTS (
             SELECT 1 FROM public.alumni a
             WHERE LOWER(TRIM(a.nama)) = LOWER(TRIM(s.nama))
-              AND UPPER(TRIM(a.angkatan)) = ${normalizeCohort}
+              AND UPPER(TRIM(a.angkatan)) = UPPER(${normalizeCohort})
           )
       )
       SELECT COUNT(*)::int AS count FROM (
@@ -109,7 +121,7 @@ try {
           AND NOT EXISTS (
             SELECT 1 FROM public.alumni a
             WHERE LOWER(TRIM(a.nama)) = LOWER(TRIM(s.nama))
-              AND UPPER(TRIM(a.angkatan)) = UPPER(TRIM(s.angkatan))
+              AND UPPER(TRIM(a.angkatan)) = UPPER(${normalizeCohort})
           )
       )
       SELECT COUNT(*)::int AS count FROM (
@@ -143,7 +155,7 @@ try {
     console.log(`Calon data dengan email yang sudah dipakai: ${existingEmailConflicts}`);
     console.log(`Grup nomor alumni ganda di calon data baru: ${duplicateCandidateNumbers}`);
     console.log(`Calon data dengan nomor alumni yang sudah dipakai: ${existingNumberConflicts}`);
-    console.log('Pemetaan kategori: KRA → PRA, KSA → PSA');
+    console.log('Pemetaan kategori/angkatan: hanya KRA → PRA dan KSA → PSA; kategori/angkatan lain dipertahankan.');
     console.log('Status data baru: Menunggu | sumber_data: impor');
 
     if (!apply) {

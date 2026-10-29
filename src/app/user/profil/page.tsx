@@ -685,7 +685,7 @@ export default function ProfilUser() {
             <Field label="Kategori Program" icon={GraduationCap} required>
               <select value={profile.kategoriProgram} onChange={(event) => updateField("kategoriProgram", event.target.value)} required className={inputClass}>
                 <option value="">Pilih kategori program</option>
-                <option value="PRA">PRA</option><option value="PPRA">PPRA</option><option value="P4N">P4N</option>
+                <option value="KRA">KRA</option><option value="PRA">PRA</option><option value="PPRA">PPRA</option><option value="P4N">P4N</option><option value="KSA">KSA</option>
                 <option value="PSA">PSA</option><option value="PPSA">PPSA</option><option value="P3N">P3N</option><option value="TAPLAI">TAPLAI</option>
                 <option value="PPNK">PPNK</option><option value="PPNK KOLABORASI">PPNK KOLABORASI</option><option value="TOT">TOT</option>
               </select>

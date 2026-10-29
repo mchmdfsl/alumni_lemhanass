@@ -306,36 +306,43 @@ export default function ImportExportPage() {
     const successfulRows: ImportRow[] = [];
     const selectedRows = rowsToImport;
 
+    let insertedCount = 0;
+    let updatedCount = 0;
     try {
-      for (let i = 0; i < selectedRows.length; i++) {
-        const row = selectedRows[i];
-        const response = await fetch("/api/alumni", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          cache: "no-store",
-          body: JSON.stringify({
-            nomorAlumni: row.nomorAlumni,
-            nama: row.nama,
-            kategoriProgram: row.kategoriProgram,
-            nomorAngkatan: row.nomorAngkatan,
-            tahunAngkatan: Number(row.tahunAngkatan),
-            instansi: row.instansi,
-            jabatan: row.jabatan,
-            wilayah: row.wilayah,
-            alamat: row.alamat,
-            nomorHp: row.nomorHp,
-          }),
-        });
-        if (response.ok) {
-          success++;
-          successfulRows.push(row);
-        } else {
-          failed++;
+      for (let start = 0; start < selectedRows.length; start += 100) {
+        const batch = selectedRows.slice(start, start + 100);
+        try {
+          const response = await fetch("/api/alumni/import-batch", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            cache: "no-store",
+            body: JSON.stringify({
+              rows: batch.map((row) => ({
+                nomorAlumni: row.nomorAlumni,
+                nama: row.nama,
+                kategoriProgram: row.kategoriProgram,
+                nomorAngkatan: row.nomorAngkatan,
+                tahunAngkatan: row.tahunAngkatan,
+                instansi: row.instansi,
+                jabatan: row.jabatan,
+                wilayah: row.wilayah,
+                alamat: row.alamat,
+                nomorHp: row.nomorHp,
+              })),
+            }),
+          });
           const data = await response.json().catch(() => ({}));
-          if (issues.length < 5) issues.push(`Baris ${i + 2}: ${data.error || "gagal disimpan"}`);
+          if (!response.ok) throw new Error(data.error || "Batch gagal disinkronkan.");
+          success += Number(data.processed ?? batch.length);
+          insertedCount += Number(data.inserted ?? 0);
+          updatedCount += Number(data.updated ?? 0);
+          successfulRows.push(...batch);
+        } catch (error) {
+          failed += batch.length;
+          if (issues.length < 5) issues.push(`Batch baris ${start + 1}-${start + batch.length}: ${error instanceof Error ? error.message : "gagal disimpan"}`);
         }
       }
-      setImportStatus(`Selesai: ${success} baris masuk ke antrean verifikasi; ${failed} baris gagal. Baris yang gagal tetap tersedia untuk diperiksa.`);
+      setImportStatus(`Selesai: ${success} baris disinkronkan ke database (${insertedCount} data baru, ${updatedCount} data diperbarui); ${failed} baris gagal.`);
       if (issues.length) setImportError(issues.join("\n"));
       if (successfulRows.length) {
         setImportRows((current) => current.filter((row) => !successfulRows.includes(row)));

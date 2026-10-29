@@ -45,7 +45,12 @@ export async function POST(request: NextRequest) {
             SELECT a.id FROM alumni a
             CROSS JOIN LATERAL (SELECT regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)') AS parts) legacy
             WHERE lower(trim(a.nama)) = lower(${row.nama})
-              AND upper(COALESCE(NULLIF(trim(a.kategori_program), ''), legacy.parts[1], a.angkatan)) = ${row.kategoriProgram}
+              AND CASE
+                WHEN legacy.parts[1] IS NOT NULL
+                  AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, ''))))
+                  THEN legacy.parts[1]
+                ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan)
+              END = ${row.kategoriProgram}
               AND COALESCE(NULLIF(trim(a.nomor_angkatan), ''), legacy.parts[2], '') = ${row.nomorAngkatan}
               AND a.tahun_angkatan::text = ${row.tahunAngkatan}
             ORDER BY a.id ASC LIMIT 2 FOR UPDATE OF a

@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
       FROM admin_audit_log l
       WHERE (${search} = '' OR l.actor ILIKE ${'%' + search + '%'} OR l.action ILIKE ${'%' + search + '%'} OR COALESCE(l.details::text, '') ILIKE ${'%' + search + '%'})
         AND (${action} = '' OR l.action = ${action})
+        AND (${scope.role === "super_admin"} = TRUE OR l.actor = ${actorName})
       ORDER BY l.created_at DESC, l.id DESC
       LIMIT ${limit} OFFSET ${offset}
     `;

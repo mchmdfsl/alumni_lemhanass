@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Kirim 1 sampai 100 baris per batch." }, { status: 400 });
     }
     const rows = body.rows as ImportRecord[];
+    const sourceFile = str(body?.sourceFile, 255) || "import-manual.csv";
     const normalized = rows.map((row, index) => ({
       index,
       nomorAlumni: str(row.nomorAlumni, 80),
@@ -67,11 +68,12 @@ export async function POST(request: NextRequest) {
             wilayah = COALESCE(NULLIF(${row.wilayah}, ''), wilayah),
             alamat = COALESCE(NULLIF(${row.alamat}, ''), alamat),
             nomor_hp = COALESCE(NULLIF(${row.nomorHp}, ''), nomor_hp),
+            sumber_file = ${sourceFile},
             updated_at = NOW() WHERE id = ${Number(matches[0].id)}`;
           outcomes.push({ index: row.index, action: "updated" });
         } else {
-          await tx`INSERT INTO alumni (nomor_alumni, nama, angkatan, kategori_program, nomor_angkatan, tahun_angkatan, instansi, jabatan, wilayah, alamat, email, nomor_hp, status, sumber_data)
-            VALUES (${row.nomorAlumni || null}, ${row.nama}, ${row.kategoriProgram}, ${row.kategoriProgram}, ${row.nomorAngkatan}, ${Number(row.tahunAngkatan)}, ${row.instansi || null}, ${row.jabatan || null}, ${row.wilayah || null}, ${row.alamat || null}, NULL, ${row.nomorHp || null}, 'Menunggu', 'impor')`;
+          await tx`INSERT INTO alumni (nomor_alumni, nama, angkatan, kategori_program, nomor_angkatan, tahun_angkatan, instansi, jabatan, wilayah, alamat, email, nomor_hp, status, sumber_data, sumber_file)
+            VALUES (${row.nomorAlumni || null}, ${row.nama}, ${row.kategoriProgram}, ${row.kategoriProgram}, ${row.nomorAngkatan}, ${Number(row.tahunAngkatan)}, ${row.instansi || null}, ${row.jabatan || null}, ${row.wilayah || null}, ${row.alamat || null}, NULL, ${row.nomorHp || null}, 'Menunggu', 'impor', ${sourceFile})`;
           outcomes.push({ index: row.index, action: "inserted" });
         }
       }

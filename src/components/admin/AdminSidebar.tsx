@@ -48,6 +48,7 @@ export default function AdminSidebar() {
   const [loadingLogout, setLoadingLogout] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [currentRole, setCurrentRole] = useState<"admin" | "super_admin">("admin");
+  const [adminCategory, setAdminCategory] = useState<string | null>(null);
 
   const closeMobileSidebar = useCallback(() => setMobileOpen(false), []);
 
@@ -82,7 +83,7 @@ export default function AdminSidebar() {
     let cancelled = false;
     fetch("/api/auth/me", { cache: "no-store" }).then(async (response) => {
       const result = await response.json();
-      if (!cancelled && response.ok && (result.user?.role === "admin" || result.user?.role === "super_admin")) setCurrentRole(result.user.role);
+      if (!cancelled && response.ok && (result.user?.role === "admin" || result.user?.role === "super_admin")) { setCurrentRole(result.user.role); setAdminCategory(result.user.kategoriProgram || null); }
     }).catch(() => undefined);
     async function fetchPendingCount() {
       try {
@@ -202,7 +203,7 @@ export default function AdminSidebar() {
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-[#172033]">{currentRole === "super_admin" ? "Super Admin" : "Administrator"}</p>
-              <p className="text-xs text-gray-500">{currentRole === "super_admin" ? "Akses Super Admin" : "Panel Admin"}</p>
+              <p className="text-xs text-gray-500">{currentRole === "super_admin" ? "Seluruh kategori" : adminCategory ? `Kategori ${adminCategory}` : "Kategori belum ditetapkan"}</p>
             </div>
           </div>
           <button

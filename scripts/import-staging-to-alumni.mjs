@@ -44,7 +44,9 @@ const normalizeCategory = `CASE
   WHEN UPPER(TRIM(s.kategori_program)) = 'PPNK' THEN 'PPNK'
   WHEN UPPER(TRIM(s.kategori_program)) = 'PPNK KOLABORASI' THEN 'PPNK KOLABORASI'
   WHEN UPPER(TRIM(s.kategori_program)) = 'TOT' THEN 'TOT'
-  WHEN UPPER(TRIM(${normalizeCohort})) ~ '^(PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK KOLABORASI|PPNK|TOT)([[:space:]]|$)'
+  WHEN UPPER(TRIM(s.kategori_program)) ~ '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)([[:space:]]|$)'
+    THEN (REGEXP_MATCH(UPPER(TRIM(s.kategori_program)), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)'))[1]
+  WHEN UPPER(TRIM(${normalizeCohort})) ~ '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)([[:space:]]|$)'
     THEN (REGEXP_MATCH(UPPER(TRIM(${normalizeCohort})), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)'))[1]
   ELSE NULLIF(UPPER(TRIM(s.kategori_program)), '')
 END`;

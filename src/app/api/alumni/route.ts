@@ -2,18 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAdminActor } from "@/lib/admin-audit";
+import { getAdminScope } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 
 const statusValues = new Set(["Menunggu", "Terverifikasi", "Ditolak"]);
 
 export async function GET(request: NextRequest) {
-  if (!(await isAdminAuthenticated())) {
+  const scope = await getAdminScope();
+  if (!scope) {
     return NextResponse.json(
       { error: "Tidak memiliki akses." },
       { status: 401 }
     );
   }
+
+  if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
 
   try {
     const query = request.nextUrl.searchParams;
@@ -90,6 +94,7 @@ export async function GET(request: NextRequest) {
         END = ${angkatan}
       )
       AND (${wilayah} = '' OR a.wilayah = ${wilayah})
+      AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, '')) = ${scope.kategoriProgram ?? ""})
       ORDER BY a.updated_at DESC, a.id DESC
       LIMIT ${limit}
       OFFSET ${offset}
@@ -107,7 +112,8 @@ export async function GET(request: NextRequest) {
         COUNT(*) FILTER (
           WHERE status = 'Ditolak'
         )::int AS ditolak
-      FROM alumni
+      FROM alumni a
+      WHERE (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, '')) = ${scope.kategoriProgram ?? ""})
     `;
 
     return NextResponse.json({
@@ -128,12 +134,15 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await isAdminAuthenticated())) {
+  const scope = await getAdminScope();
+  if (!scope) {
     return NextResponse.json(
       { error: "Tidak memiliki akses." },
       { status: 401 }
     );
   }
+
+  if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
 
   try {
     const body = await request.json();
@@ -142,6 +151,7 @@ export async function POST(request: NextRequest) {
       typeof body.nama === "string" ? body.nama.trim() : "";
 
     const kategoriProgram = typeof body.kategoriProgram === "string" ? body.kategoriProgram.trim().toLocaleUpperCase("id-ID") : "";
+    if (scope.role === "admin" && kategoriProgram !== scope.kategoriProgram) return NextResponse.json({ error: "Admin hanya boleh menambah alumni pada kategori yang ditetapkan." }, { status: 403 });
     const nomorAngkatan = typeof body.nomorAngkatan === "string" ? body.nomorAngkatan.trim() : "";
     const tahunAngkatan = Number(body.tahunAngkatan);
 

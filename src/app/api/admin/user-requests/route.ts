@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
+import { getAdminScope } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  if (!(await isAdminAuthenticated())) {
-    return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
-  }
+  const scope = await getAdminScope();
+  if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
   try {
     const data = await db()`
       SELECT r.id, r.alumni_id AS "alumniId", r.request_type AS "requestType",
@@ -25,6 +26,7 @@ export async function GET() {
       FROM alumni_user_requests r
       INNER JOIN alumni a ON a.id = r.alumni_id
       WHERE r.request_type = 'delete_account'
+        AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, '')) = ${scope.kategoriProgram ?? ""})
       ORDER BY CASE WHEN r.status = 'Menunggu' THEN 0 ELSE 1 END,
         r.created_at DESC
       LIMIT 300
@@ -41,8 +43,9 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
-  const role = await isAdminAuthenticated();
-  if (!role) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  const scope = await getAdminScope();
+  if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
 
   try {
     const body = await request.json();
@@ -65,6 +68,10 @@ export async function PATCH(request: NextRequest) {
         FOR UPDATE
       `;
       if (!req) return "not_found";
+      if (scope.role === "admin") {
+        const [target] = await tx`SELECT id FROM alumni WHERE id = ${req.alumniId} AND upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan, '')) = ${scope.kategoriProgram ?? ""} LIMIT 1`;
+        if (!target) return "not_found";
+      }
       if (req.status !== "Menunggu") return "already_reviewed";
       if (req.requestType !== "delete_account") return "unsupported_request";
 
@@ -75,7 +82,7 @@ export async function PATCH(request: NextRequest) {
       await tx`
         UPDATE alumni_user_requests
         SET status = ${status}, admin_note = ${adminNote || null},
-          reviewed_by = ${role}, reviewed_at = NOW()
+          reviewed_by = ${scope.role}, reviewed_at = NOW()
         WHERE id = ${id}
       `;
       return "saved";

@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
         END = ${angkatan}
       )
       AND (${wilayah} = '' OR a.wilayah = ${wilayah})
-      AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, '')) = ${scope.kategoriProgram ?? ""})
+      AND (${scope.role === "super_admin"} = TRUE OR CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan, '') END = ${scope.kategoriProgram ?? ""})
       ORDER BY a.updated_at DESC, a.id DESC
       LIMIT ${limit}
       OFFSET ${offset}
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
           WHERE status = 'Ditolak'
         )::int AS ditolak
       FROM alumni a
-      WHERE (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, '')) = ${scope.kategoriProgram ?? ""})
+      WHERE (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], a.angkatan, '')) = ${scope.kategoriProgram ?? ""})
     `;
 
     return NextResponse.json({

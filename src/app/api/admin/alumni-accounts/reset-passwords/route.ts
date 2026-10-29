@@ -65,13 +65,28 @@ export async function POST(request: NextRequest) {
       }
       return updated;
     });
+    const lastId = credentials.length ? credentials[credentials.length - 1].accountId : afterId;
+    const [remainingRow] = await db()`
+      SELECT COUNT(*)::int AS remaining
+      FROM alumni_accounts aa
+      INNER JOIN alumni a ON a.id = aa.alumni_id
+      WHERE aa.id > ${lastId}
+        AND aa.is_active = TRUE
+        AND a.status = 'Terverifikasi'
+        AND (${scope !== "single"} OR a.id::text = ${alumniId})
+        AND (${!["cohort", "category"].includes(scope)} OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan)) = upper(${kategoriProgram}))
+        AND (${scope !== "cohort"} OR trim(COALESCE(NULLIF(a.nomor_angkatan, ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[2], '')) = ${nomorAngkatan})
+        AND (${scope !== "year"} OR a.tahun_angkatan::text = ${tahunAngkatan})
+    `;
+    const remaining = Number(remainingRow?.remaining ?? 0);
     const actor = await getAdminActor();
-    if (actor && credentials.length) await writeAdminAudit(actor, "alumni_passwords_bulk_reset", { count: credentials.length, accountIds: credentials.map((item) => item.accountId) });
+    if (actor && credentials.length) await writeAdminAudit(actor, "alumni_passwords_bulk_reset", { count: credentials.length, remaining, accountIds: credentials.map((item) => item.accountId) });
     return NextResponse.json({
       ok: true,
       credentials,
-      lastId: credentials.length ? credentials[credentials.length - 1].accountId : afterId,
-      hasMore: credentials.length === 100,
+      lastId,
+      hasMore: remaining > 0,
+      remaining,
       message: credentials.length ? "Password direset untuk batch 100 akun ini." : "Tidak ada akun aktif terverifikasi lagi.",
     });
   } catch (error) {

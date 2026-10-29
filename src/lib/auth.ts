@@ -22,8 +22,10 @@ export async function isAdminAuthenticated(): Promise<AdminRole | null> {
         WHERE id = ${adminUserId} AND is_active = TRUE
         LIMIT 1
       `;
-      if (!user || user.role !== "admin" || role !== "admin") return null;
-      return "admin";
+      // Cocokkan role sesi dengan role aktif di database. Sebelumnya semua sesi
+      // akun database dipaksa menjadi admin sehingga Super Admin database ditolak.
+      if (!user || (user.role !== "admin" && user.role !== "super_admin") || user.role !== role) return null;
+      return user.role as AdminRole;
     } catch (error) {
       console.error("Gagal memvalidasi sesi admin database:", error);
       return null;

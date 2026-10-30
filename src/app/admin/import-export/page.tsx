@@ -315,7 +315,7 @@ export default function ImportExportPage() {
     const normalized = filename.toLocaleUpperCase("id-ID").replace(/[_-]+/g, " ");
     const categories = ["PPNK KOLABORASI", "TAPLAI", "PPRA", "PPSA", "PPNK", "PRA", "P4N", "PSA", "P3N", "KRA", "KSA", "TOT"];
     const category = categories.find((value) => new RegExp("(?:^|[^A-Z0-9])" + value.replace(/ /g, "\\s+") + "(?=$|[^A-Z0-9])").test(normalized)) || "";
-    const yearMatch = normalized.match(/(?:19|20)\\d{2}/);
+    const yearMatch = normalized.match(/(?:19|20)\d{2}/);
     const year = yearMatch?.[0] || "";
     return {
       kategoriProgram: category,

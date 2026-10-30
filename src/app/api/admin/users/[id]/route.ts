@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
+import { getAdminCategoryGroup } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const hasCategory = typeof body.kategoriProgram === "string";
     const kategoriProgram = hasCategory ? body.kategoriProgram.trim().toLocaleUpperCase("id-ID") : null;
     if (!hasActive && !hasCategory) return NextResponse.json({ error: "Tidak ada perubahan yang dikirim." }, { status: 400 });
-    if (hasCategory && !/^(KRA|PPRA|P4N|KSA|PSA|PPSA|P3N|TAPLAI|PPNK|PPNK KOLABORASI|PRA|TOT)$/.test(kategoriProgram || "")) return NextResponse.json({ error: "Kategori program tidak valid." }, { status: 400 });
+    if (hasCategory && !getAdminCategoryGroup(kategoriProgram)) return NextResponse.json({ error: "Kelompok Admin tidak valid." }, { status: 400 });
     const [user] = await db()`
       UPDATE admin_users SET
         is_active = COALESCE(${hasActive ? body.isActive : null}::boolean, is_active),

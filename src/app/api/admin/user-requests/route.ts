@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
-import { getAdminScope } from "@/lib/admin-scope";
+import { getAdminCategories, getAdminScope } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +11,7 @@ export async function GET() {
   const scope = await getAdminScope();
   if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
   if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
+  const allowedCategories = getAdminCategories(scope) ?? [];
   try {
     const data = await db()`
       SELECT r.id, r.alumni_id AS "alumniId", r.request_type AS "requestType",
@@ -26,7 +27,7 @@ export async function GET() {
       FROM alumni_user_requests r
       INNER JOIN alumni a ON a.id = r.alumni_id
       WHERE r.request_type = 'delete_account'
-        AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, '')) = ${scope.kategoriProgram ?? ""})
+        AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, '')) = ANY(${allowedCategories}))
       ORDER BY CASE WHEN r.status = 'Menunggu' THEN 0 ELSE 1 END,
         r.created_at DESC
       LIMIT 300
@@ -47,6 +48,7 @@ export async function PATCH(request: NextRequest) {
   if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
   if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
 
+  const allowedCategories = getAdminCategories(scope) ?? [];
   try {
     const body = await request.json();
     const id = Number(body.id);
@@ -69,7 +71,7 @@ export async function PATCH(request: NextRequest) {
       `;
       if (!req) return "not_found";
       if (scope.role === "admin") {
-        const [target] = await tx`SELECT id FROM alumni WHERE id = ${req.alumniId} AND upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan, '')) = ${scope.kategoriProgram ?? ""} LIMIT 1`;
+        const [target] = await tx`SELECT id FROM alumni WHERE id = ${req.alumniId} AND upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan, '')) = ANY(${allowedCategories}) LIMIT 1`;
         if (!target) return "not_found";
       }
       if (req.status !== "Menunggu") return "already_reviewed";

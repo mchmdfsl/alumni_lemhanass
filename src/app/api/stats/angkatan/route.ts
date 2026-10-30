@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getAdminScope } from "@/lib/admin-scope";
+import { getAdminCategories, getAdminScope } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +13,7 @@ export async function GET() {
   if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
   if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
 
+  const allowedCategories = getAdminCategories(scope) ?? [];
   try {
     type AngkatanStat = {
       angkatan: string;
@@ -42,7 +43,7 @@ export async function GET() {
           COALESCE(NULLIF(trim(nomor_angkatan), ''), legacy_parts[2], '-') AS "nomorAngkatan",
           tahun_angkatan AS "tahunAngkatan", status, wilayah
         FROM normalized
-        WHERE (${scope.role === "super_admin"} = TRUE OR CASE WHEN legacy_parts[1] IS NOT NULL AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, '')))) THEN legacy_parts[1] ELSE COALESCE(NULLIF(upper(trim(kategori_program)), ''), legacy_parts[1], angkatan, '') END = ${scope.kategoriProgram ?? ""})
+        WHERE (${scope.role === "super_admin"} = TRUE OR CASE WHEN legacy_parts[1] IS NOT NULL AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, '')))) THEN legacy_parts[1] ELSE COALESCE(NULLIF(upper(trim(kategori_program)), ''), legacy_parts[1], angkatan, '') END = ANY(${allowedCategories}))
       ),
       grouped AS (
         SELECT "kategoriProgram" AS angkatan, "kategoriProgram", "nomorAngkatan", "tahunAngkatan",
@@ -71,7 +72,7 @@ export async function GET() {
 
     const typedRows = rows as unknown as AngkatanStat[];
     const existingCategories = new Set(typedRows.map((row) => row.kategoriProgram));
-    const visibleCategories = scope.role === "super_admin" ? categories : categories.filter((category) => category === scope.kategoriProgram);
+    const visibleCategories = scope.role === "super_admin" ? categories : categories.filter((category) => allowedCategories.includes(category));
     const emptyCategories: AngkatanStat[] = visibleCategories
       .filter((category) => !existingCategories.has(category))
       .map((category) => ({

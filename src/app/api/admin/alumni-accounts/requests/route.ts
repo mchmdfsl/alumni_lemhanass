@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getAdminScope } from "@/lib/admin-scope";
+import { getAdminCategories, getAdminScope } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +11,7 @@ export async function GET() {
   if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
   if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
 
+  const allowedCategories = getAdminCategories(scope) ?? [];
   try {
     const sql = db();
 
@@ -44,7 +45,7 @@ export async function GET() {
       FROM alumni_account_requests r
       LEFT JOIN alumni a ON a.id = r.alumni_id
       WHERE lower(trim(r.status)) = lower('Menunggu')
-        AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, r.submitted_kategori_program, r.submitted_angkatan, '')) = ${scope.kategoriProgram ?? ""})
+        AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, r.submitted_kategori_program, r.submitted_angkatan, '')) = ANY(${allowedCategories}))
       ORDER BY r.created_at DESC, r.id DESC
       LIMIT 100
     `;

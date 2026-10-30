@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAdminActor } from "@/lib/admin-audit";
-import { getAdminScope } from "@/lib/admin-scope";
+import { adminCanManageCategory, getAdminCategories, getAdminScope } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 
@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
 
   if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
 
+  const allowedCategories = getAdminCategories(scope) ?? [];
   try {
     const query = request.nextUrl.searchParams;
 
@@ -94,7 +95,7 @@ export async function GET(request: NextRequest) {
         END = ${angkatan}
       )
       AND (${wilayah} = '' OR a.wilayah = ${wilayah})
-      AND (${scope.role === "super_admin"} = TRUE OR CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan, '') END = ${scope.kategoriProgram ?? ""})
+      AND (${scope.role === "super_admin"} = TRUE OR CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan, '') END = ANY(${allowedCategories}))
       ORDER BY a.updated_at DESC, a.id DESC
       LIMIT ${limit}
       OFFSET ${offset}
@@ -113,7 +114,7 @@ export async function GET(request: NextRequest) {
           WHERE status = 'Ditolak'
         )::int AS ditolak
       FROM alumni a
-      WHERE (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], a.angkatan, '')) = ${scope.kategoriProgram ?? ""})
+      WHERE (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], a.angkatan, '')) = ANY(${allowedCategories}))
     `;
 
     return NextResponse.json({
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
       typeof body.nama === "string" ? body.nama.trim() : "";
 
     const kategoriProgram = typeof body.kategoriProgram === "string" ? body.kategoriProgram.trim().toLocaleUpperCase("id-ID") : "";
-    if (scope.role === "admin" && kategoriProgram !== scope.kategoriProgram) return NextResponse.json({ error: "Admin hanya boleh menambah alumni pada kategori yang ditetapkan." }, { status: 403 });
+    if (scope.role === "admin" && !adminCanManageCategory(scope, kategoriProgram)) return NextResponse.json({ error: "Admin hanya boleh menambah alumni pada kategori kelompoknya." }, { status: 403 });
     const nomorAngkatan = typeof body.nomorAngkatan === "string" ? body.nomorAngkatan.trim() : "";
     const tahunAngkatan = Number(body.tahunAngkatan);
 

@@ -60,6 +60,11 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+.text-sm { font-size: 1rem; line-height: 1.5rem; }
+.text-xs { font-size: 0.8125rem; line-height: 1.25rem; }
+.text-\\[10px\\] { font-size: 0.75rem; line-height: 1.1rem; }
+.text-\\[11px\\] { font-size: 0.8125rem; line-height: 1.25rem; }
+
 ::selection {
   background: rgba(201, 162, 39, 0.24);
   color: var(--lemhannas-navy);

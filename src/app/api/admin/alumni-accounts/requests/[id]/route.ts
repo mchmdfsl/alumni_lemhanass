@@ -3,7 +3,7 @@ import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
 import { assignAlumniNumber } from "@/lib/alumni-number";
-import { getAdminScope } from "@/lib/admin-scope";
+import { adminCanManageCategory, getAdminScope } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,9 +72,9 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       if (scope.role === "admin") {
         if (req.alumni_id === null) {
           const submittedCategory = String(req.submitted_kategori_program || req.submitted_angkatan || "").trim().toLocaleUpperCase("id-ID");
-          if (submittedCategory !== scope.kategoriProgram) return { error: "NOT_FOUND" };
+          if (!adminCanManageCategory(scope, submittedCategory)) return { error: "NOT_FOUND" };
         } else {
-          const [target] = await tx`SELECT id FROM alumni WHERE id = ${req.alumni_id} AND upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan, '')) = ${scope.kategoriProgram ?? ""} LIMIT 1`;
+          const [target] = await tx`SELECT id FROM alumni WHERE id = ${req.alumni_id} AND upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan, '')) = ANY(${(await import("@/lib/admin-scope")).getAdminCategories(scope) ?? []}) LIMIT 1`;
           if (!target) return { error: "NOT_FOUND" };
         }
       }

@@ -142,7 +142,7 @@ export default function AdminSidebar() {
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-20 shrink-0 items-center gap-3 border-b border-slate-100 px-6">
+        <div className="flex min-h-20 shrink-0 items-center gap-3 border-b border-slate-100 px-6">
           <Link href="/admin" onClick={closeMobileSidebar} className="flex min-w-0 items-center gap-3">
             <Image
               src="/images/logo-lemhannas.png"
@@ -154,7 +154,7 @@ export default function AdminSidebar() {
             />
             <div className="min-w-0">
               <h1 className="truncate text-sm font-bold text-[#0b1f3a]">LEMHANNAS RI</h1>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-[#94a3b8]">Panel Administrator</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-[#94a3b8]">Panel Administrator</p>
             </div>
           </Link>
           <button
@@ -168,7 +168,7 @@ export default function AdminSidebar() {
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
-          <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#94a3b8]">Menu Utama</p>
+          <p className="mb-3 px-3 text-xs font-bold uppercase tracking-[0.2em] text-[#94a3b8]">Menu Utama</p>
           {menuItems.filter((item) => !(("superAdminOnly" in item) && item.superAdminOnly) || currentRole === "super_admin").map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -178,7 +178,7 @@ export default function AdminSidebar() {
                 href={item.href}
                 onClick={closeMobileSidebar}
                 aria-current={active ? "page" : undefined}
-                className={`group flex items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors ${
+                className={`group flex items-center justify-between gap-3 rounded-xl px-3 py-3 text-base font-semibold transition-colors ${
                   active ? "bg-[#0b1f3a] text-white shadow-sm" : "text-[#64748b] hover:bg-slate-50 hover:text-[#0b1f3a]"
                 }`}
               >

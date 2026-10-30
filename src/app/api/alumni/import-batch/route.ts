@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assignAlumniNumber } from "@/lib/alumni-number";
-import { getAdminScope } from "@/lib/admin-scope";
+import { adminCanManageCategory, getAdminCategories, getAdminScope } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
   const scope = await getAdminScope();
   if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
   if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
+  const allowedCategories = getAdminCategories(scope) ?? [];
   try {
     const body = await request.json();
     if (!Array.isArray(body?.rows) || body.rows.length < 1 || body.rows.length > 100) {
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
       alamat: str(row.alamat, 3000),
       nomorHp: str(row.nomorHp, 50),
     }));
-    if (scope.role === "admin" && normalized.some((row) => row.kategoriProgram !== scope.kategoriProgram)) return NextResponse.json({ error: "Admin hanya boleh mengimpor data untuk kategori yang ditetapkan." }, { status: 403 });
+    if (scope.role === "admin" && normalized.some((row) => !adminCanManageCategory(scope, row.kategoriProgram))) return NextResponse.json({ error: "Admin hanya boleh mengimpor data untuk kategori kelompoknya." }, { status: 403 });
     const invalid = normalized.find((row) => row.nama.length < 2 || !/^[A-Z0-9]+(?:[ ][A-Z0-9]+){0,3}$/.test(row.kategoriProgram) || !row.nomorAngkatan || !/^\d{4}$/.test(row.tahunAngkatan) || Number(row.tahunAngkatan) < 1900 || Number(row.tahunAngkatan) > new Date().getFullYear() + 5 || !row.instansi || !row.jabatan || !row.wilayah || !row.alamat || !row.nomorHp);
     if (invalid) return NextResponse.json({ error: `Baris ke-${invalid.index + 1} tidak valid. Nama, kategori, nomor angkatan, tahun, instansi, jabatan, wilayah, alamat, dan nomor HP wajib diisi dengan benar.` }, { status: 400 });
 
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       for (const row of normalized) {
         let matches: Array<{ id: number }> = [];
         if (row.nomorAlumni) {
-          matches = await tx`SELECT id FROM alumni WHERE trim(COALESCE(nomor_alumni, '')) = ${row.nomorAlumni} AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan, '')) = ${scope.kategoriProgram ?? ""}) ORDER BY id ASC LIMIT 2 FOR UPDATE`;
+          matches = await tx`SELECT id FROM alumni WHERE trim(COALESCE(nomor_alumni, '')) = ${row.nomorAlumni} AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan, '')) = ANY(${allowedCategories})) ORDER BY id ASC LIMIT 2 FOR UPDATE`;
           if (matches.length > 1) throw new Error(`Nomor alumni duplikat di database pada baris ${row.index + 1}.`);
         }
         if (!matches.length) {

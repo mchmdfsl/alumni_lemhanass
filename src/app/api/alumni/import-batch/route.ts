@@ -7,7 +7,7 @@ import { adminCanManageCategory, getAdminCategories, getAdminScope } from "@/lib
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type ImportRecord = { nomorAlumni?: unknown; nama?: unknown; kategoriProgram?: unknown; nomorAngkatan?: unknown; tahunAngkatan?: unknown; instansi?: unknown; jabatan?: unknown; wilayah?: unknown; alamat?: unknown; nomorHp?: unknown };
+type ImportRecord = { nomorAlumni?: unknown; nama?: unknown; kategoriProgram?: unknown; nomorAngkatan?: unknown; tahunAngkatan?: unknown; status?: unknown; instansi?: unknown; jabatan?: unknown; wilayah?: unknown; alamat?: unknown; nomorHp?: unknown };
 const str = (value: unknown, max = 3000) => typeof value === "string" ? value.trim().slice(0, max) : "";
 
 export async function POST(request: NextRequest) {
@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       kategoriProgram: str(row.kategoriProgram, 80).toLocaleUpperCase("id-ID"),
       nomorAngkatan: str(row.nomorAngkatan, 40),
       tahunAngkatan: str(row.tahunAngkatan, 4),
+      status: str(row.status, 30),
       instansi: str(row.instansi, 250),
       jabatan: str(row.jabatan, 200),
       wilayah: str(row.wilayah, 150),
@@ -36,8 +37,8 @@ export async function POST(request: NextRequest) {
       nomorHp: str(row.nomorHp, 50),
     }));
     if (scope.role === "admin" && normalized.some((row) => !adminCanManageCategory(scope, row.kategoriProgram))) return NextResponse.json({ error: "Admin hanya boleh mengimpor data untuk kategori kelompoknya." }, { status: 403 });
-    const invalid = normalized.find((row) => row.nama.length < 2 || !/^[A-Z0-9]+(?:[ ][A-Z0-9]+){0,3}$/.test(row.kategoriProgram) || !row.nomorAngkatan || !/^\d{4}$/.test(row.tahunAngkatan) || Number(row.tahunAngkatan) < 1900 || Number(row.tahunAngkatan) > new Date().getFullYear() + 5 || !row.instansi || !row.jabatan || !row.wilayah || !row.alamat || !row.nomorHp);
-    if (invalid) return NextResponse.json({ error: `Baris ke-${invalid.index + 1} tidak valid. Nama, kategori, nomor angkatan, tahun, instansi, jabatan, wilayah, alamat, dan nomor HP wajib diisi dengan benar.` }, { status: 400 });
+    const invalid = normalized.find((row) => row.nama.length < 2 || !/^[A-Z0-9]+(?:[ ][A-Z0-9]+){0,3}$/.test(row.kategoriProgram) || !row.nomorAngkatan || !/^\d{4}$/.test(row.tahunAngkatan) || Number(row.tahunAngkatan) < 1900 || Number(row.tahunAngkatan) > new Date().getFullYear() + 5 || row.status !== "Menunggu");
+    if (invalid) return NextResponse.json({ error: `Baris ke-${invalid.index + 1} tidak valid. Nama, kategori, nomor angkatan, tahun angkatan wajib diisi dan status harus Menunggu. Kolom profil lainnya opsional.` }, { status: 400 });
 
     const result = await db().begin(async (tx) => {
       const outcomes: Array<{ index: number; action: "inserted" | "updated" }> = [];

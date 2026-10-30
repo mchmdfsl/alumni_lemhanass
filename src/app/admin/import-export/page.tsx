@@ -19,6 +19,7 @@ type ImportRow = {
   wilayah: string;
   alamat: string;
   nomorHp: string;
+  status: string;
 };
 
 function parseCsv(text: string): string[][] {
@@ -275,7 +276,7 @@ export default function ImportExportPage() {
   }
 
   function handleTemplateDownload() {
-    const headers = ["nama", "kategori program", "nomor angkatan", "tahun angkatan", "instansi", "jabatan", "wilayah", "alamat", "nomor hp"];
+    const headers = ["nama", "kategori program", "nomor angkatan", "tahun angkatan", "status", "instansi", "jabatan", "wilayah", "alamat", "nomor hp"];
     const csv = headers.map((value) => '"' + value.replace(/"/g, '""') + '"').join(",") + "\r\n";
     const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -362,10 +363,11 @@ export default function ImportExportPage() {
         wilayah: get(row, "wilayah"),
         alamat: get(row, "alamat"),
         nomorHp: get(row, "nomor hp", "nomorhp", "no hp", "no. hp"),
+        status: get(row, "status") || "Menunggu",
       })).filter((row) => row.nama);
       if (!mapped.length) throw new Error("Kolom Nama tidak ditemukan atau tidak ada data alumni.");
-      const invalid = mapped.findIndex((row) => !row.kategoriProgram || !row.nomorAngkatan || !/^\d{4}$/.test(row.tahunAngkatan) || Number(row.tahunAngkatan) < 1900 || Number(row.tahunAngkatan) > new Date().getFullYear() + 5 || !row.instansi || !row.jabatan || !row.wilayah || !row.alamat || !row.nomorHp);
-      if (invalid >= 0) throw new Error("Baris data ke-" + (invalid + 2) + " belum lengkap. Semua kolom wajib diisi kecuali Nomor Alumni yang dibuat otomatis oleh sistem.");
+      const invalid = mapped.findIndex((row) => !row.nama || !row.kategoriProgram || !row.nomorAngkatan || !/^\d{4}$/.test(row.tahunAngkatan) || Number(row.tahunAngkatan) < 1900 || Number(row.tahunAngkatan) > new Date().getFullYear() + 5 || row.status !== "Menunggu");
+      if (invalid >= 0) throw new Error("Baris data ke-" + (invalid + 2) + " belum valid. Nama, kategori, nomor angkatan, tahun angkatan wajib diisi dan status harus Menunggu. Kolom profil lainnya opsional.");
       setImportRows(mapped);
     } catch (error) {
       setImportError(error instanceof Error ? error.message : "File CSV tidak bisa dibaca.");
@@ -412,6 +414,7 @@ export default function ImportExportPage() {
                 wilayah: row.wilayah,
                 alamat: row.alamat,
                 nomorHp: row.nomorHp,
+                status: row.status,
               })),
             }),
           });
@@ -595,8 +598,8 @@ export default function ImportExportPage() {
               </div>
               <div className="mt-4 rounded-xl bg-slate-50 p-4 text-xs leading-5 text-slate-600">
                 <p className="font-semibold text-slate-800">Petunjuk pengisian</p>
-                <p>Semua kolom wajib diisi kecuali Nomor Alumni. Nomor Alumni dibuat otomatis oleh sistem saat data berhasil diimpor.</p>
-                <p className="mt-2">Jangan mengubah nama header. Nomor Alumni, status, sumber data, dan sumber file tidak perlu diisi karena ditentukan otomatis oleh sistem.</p>
+                <p>Kolom wajib: nama, kategori program, nomor angkatan, tahun angkatan, dan status. Status harus Menunggu. Instansi, jabatan, wilayah, alamat, dan nomor HP opsional dan dapat dilengkapi kemudian melalui menu Profil.</p>
+                <p className="mt-2">Jangan mengubah nama header. Nomor Alumni, sumber data, dan sumber file ditentukan otomatis oleh sistem. Isi status dengan Menunggu.</p>
                 <p className="mt-2">Kategori program yang berlaku: KRA, PRA, PPRA, P4N, KSA, PSA, PPSA, P3N, TAPLAI, PPNK, PPNK KOLABORASI, atau TOT.</p>
               </div>
             </section>

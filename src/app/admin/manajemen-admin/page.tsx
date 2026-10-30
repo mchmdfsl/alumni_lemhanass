@@ -13,7 +13,6 @@ const adminGroups = [
   { value: "ADMIN_GROUP_2", label: "Admin 2 · TAPLAI, PPNK, PPNK KOLABORASI" },
   { value: "ADMIN_GROUP_3", label: "Admin 3 · TOT" },
 ];
-const adminGroupLabel = (value: string | null) => adminGroups.find((group) => group.value === value)?.label || "Kelompok belum ditetapkan";
 
 export default function ManajemenAdminPage() {
   const router = useRouter();

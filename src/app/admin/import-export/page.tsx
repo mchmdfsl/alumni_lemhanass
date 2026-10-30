@@ -412,7 +412,7 @@ export default function ImportExportPage() {
           if (issues.length < 5) issues.push(`Batch baris ${start + 1}-${start + batch.length}: ${error instanceof Error ? error.message : "gagal disimpan"}`);
         }
       }
-      setImportStatus(`Selesai: ${success} baris disinkronkan ke database (${insertedCount} data baru, ${updatedCount} data diperbarui); ${failed} baris gagal.`);
+      setImportStatus(`Selesai: ${success} baris diproses (${insertedCount} data baru ditambahkan, ${updatedCount} data sudah ada dan diperbarui, tanpa membuat duplikat); ${failed} baris gagal.`);
       if (issues.length) setImportError(issues.join("\n"));
       if (successfulRows.length) {
         setImportRows((current) => current.filter((row) => !successfulRows.includes(row)));

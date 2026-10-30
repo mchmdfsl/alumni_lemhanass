@@ -9,17 +9,19 @@
   --lemhannas-white: #ffffff;
   --lemhannas-background: #f5f7fa;
   --lemhannas-text: #172033;
-  --lemhannas-muted: #64748b;
+  --lemhannas-muted: #526176;
   --lemhannas-border: #dbe1e8;
+  --content-width: 1440px;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-html,
-body {
-  min-height: 100%;
+html, body { min-height: 100%; }
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -27,9 +29,44 @@ body {
   background: var(--lemhannas-background);
   color: var(--lemhannas-text);
   font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
 }
 
-button,
-input {
-  font: inherit;
+button, input, select, textarea { font: inherit; }
+
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, [role="button"], input[type="checkbox"], input[type="radio"] {
+  cursor: pointer;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(201, 162, 39, 0.55);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgba(201, 162, 39, 0.24);
+  color: var(--lemhannas-navy);
+}
+
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  main { min-width: 0; }
+  table { min-width: 640px; }
 }

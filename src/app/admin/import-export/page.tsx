@@ -311,6 +311,19 @@ export default function ImportExportPage() {
     }
   }
 
+  function inferImportMetadataFromFilename(filename: string) {
+    const normalized = filename.toLocaleUpperCase("id-ID").replace(/[_-]+/g, " ");
+    const categories = ["PPNK KOLABORASI", "TAPLAI", "PPRA", "PPSA", "PPNK", "PRA", "P4N", "PSA", "P3N", "KRA", "KSA", "TOT"];
+    const category = categories.find((value) => new RegExp("(?:^|[^A-Z0-9])" + value.replace(/ /g, "\\s+") + "(?=$|[^A-Z0-9])").test(normalized)) || "";
+    const yearMatch = normalized.match(/(?:19|20)\\d{2}/);
+    const year = yearMatch?.[0] || "";
+    return {
+      kategoriProgram: category,
+      nomorAngkatan: year ? String(Number(year) % 100).padStart(2, "0") : "",
+      tahunAngkatan: year,
+    };
+  }
+
   async function handleFileChange(selected: File | null) {
     setFile(selected);
     setImportRows([]);
@@ -336,13 +349,14 @@ export default function ImportExportPage() {
         const i = index(...names);
         return i < 0 ? "" : (row[i] ?? "").trim();
       };
+      const fileMetadata = inferImportMetadataFromFilename(selected.name);
       const mapped = parsed.slice(1).map((row, rowIndex) => ({
         rowKey: String(rowIndex),
         nomorAlumni: get(row, "nomor alumni", "nomoralumni"),
         nama: get(row, "nama"),
-        kategoriProgram: get(row, "kategori program", "angkatan", "kategoriprogram"),
-        nomorAngkatan: get(row, "nomor angkatan", "nomorangkatan"),
-        tahunAngkatan: get(row, "tahun angkatan", "tahunangkatan"),
+        kategoriProgram: fileMetadata.kategoriProgram || get(row, "kategori program", "angkatan", "kategoriprogram"),
+        nomorAngkatan: fileMetadata.nomorAngkatan || get(row, "nomor angkatan", "nomorangkatan"),
+        tahunAngkatan: fileMetadata.tahunAngkatan || get(row, "tahun angkatan", "tahunangkatan"),
         instansi: get(row, "instansi"),
         jabatan: get(row, "jabatan"),
         wilayah: get(row, "wilayah"),
@@ -596,7 +610,7 @@ export default function ImportExportPage() {
                 <label className="block text-sm font-semibold text-slate-800">File Excel (.xlsx) atau CSV
                   <input type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onChange={(e) => void handleFileChange(e.target.files?.[0] ?? null)} className="mt-3 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#0b1f3a] file:px-3 file:py-2 file:font-semibold file:text-white" />
                 </label>
-                <p className="mt-2 text-xs text-slate-500">Semua kolom wajib diisi kecuali Nomor Alumni. Sistem akan membuat Nomor Alumni secara otomatis.</p>
+                <p className="mt-2 text-xs text-slate-500">Semua kolom wajib diisi kecuali Nomor Alumni. Sistem akan membuat Nomor Alumni secara otomatis. Jika nama file memuat kategori dan tahun, keduanya menjadi acuan utama: contoh REKAP ALUMNI TAPLAI 2024 akan dibaca sebagai TAPLAI, nomor angkatan 24, tahun angkatan 2024.</p>
               </div>
               {file && <p className="mt-3 text-xs text-slate-600">File: <strong>{file.name}</strong> · {importRows.length} baris tersisa untuk diperiksa</p>}
               {importRows.length > 0 && <>

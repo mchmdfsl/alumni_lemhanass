@@ -123,7 +123,7 @@ window.dispatchEvent(new Event("admin-sidebar-toggle"));
 }
 
 return (
-<header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-slate-200 bg-white/95 px-3 backdrop-blur sm:px-6 lg:h-20 lg:px-8">
+<header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-2 border-b border-slate-200 bg-white/95 px-3 backdrop-blur sm:px-6 lg:h-20 lg:px-8">
 {/* Bagian kiri: hamburger, pencarian, dan identitas */}
 <div className="flex min-w-0 flex-1 items-center gap-3">
 <button
@@ -154,7 +154,7 @@ className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border
         LEMHANNAS RI
       </p>
 
-      <p className="text-[10px] text-[#94a3b8]">
+      <p className="text-xs text-[#94a3b8]">
         Admin Panel
       </p>
     </div>
@@ -198,7 +198,7 @@ className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border
               </h3>
 
               {pendingCount > 0 && (
-                <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700">
                   {pendingCount} Baru
                 </span>
               )}
@@ -230,7 +230,7 @@ className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border
                   Semua Data Bersih
                 </p>
 
-                <p className="mt-0.5 text-[11px] text-slate-400">
+                <p className="mt-0.5 text-sm text-slate-400">
                   Tidak ada pengajuan yang menunggu verifikasi.
                 </p>
               </div>
@@ -242,7 +242,7 @@ className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border
                     {pendingCount} Pengajuan Menunggu
                   </p>
 
-                  <p className="mt-1 text-[11px] leading-relaxed text-amber-700">
+                  <p className="mt-1 text-sm leading-relaxed text-amber-700">
                     Data alumni baru siap diperiksa dan divalidasi
                     oleh administrator.
                   </p>
@@ -257,7 +257,7 @@ className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border
                       {alumni.nama}
                     </p>
 
-                    <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-500">
+                    <p className="mt-0.5 line-clamp-1 text-sm text-slate-500">
                       {alumni.angkatan} •{" "}
                       {alumni.instansi || "Instansi belum diisi"}
                     </p>
@@ -271,7 +271,7 @@ className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border
             <Link
               href="/admin/verifikasi-alumni"
               onClick={() => setShowNotifications(false)}
-              className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#0b1f3a] py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[#1a365d]"
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#0b1f3a] py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1a365d]"
             >
               Buka Halaman Verifikasi
               <ChevronRight size={14} />
@@ -300,11 +300,11 @@ className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border
         </div>
 
         <div className="hidden text-left sm:block">
-          <p className="line-clamp-1 text-xs font-bold text-[#172033]">
+          <p className="line-clamp-1 text-sm font-bold text-[#172033]">
             {adminUser.username}
           </p>
 
-          <p className="text-[10px] text-[#94a3b8]">
+          <p className="text-xs text-[#94a3b8]">
             Administrator
           </p>
         </div>
@@ -313,11 +313,11 @@ className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border
       {showUserMenu && (
         <div className="fixed right-3 top-[4.5rem] z-50 w-[min(16rem,calc(100vw-1.5rem))] rounded-2xl border border-slate-200 bg-white p-3 shadow-xl sm:absolute sm:right-0 sm:top-auto sm:mt-2">
           <div className="border-b border-slate-100 px-2 pb-3 pt-1">
-            <p className="text-xs font-bold text-[#172033]">
+            <p className="text-sm font-bold text-[#172033]">
               Akun Administrator
             </p>
 
-            <p className="mt-0.5 truncate text-[11px] text-slate-500">
+            <p className="mt-0.5 truncate text-sm text-slate-500">
               {adminUser.email}
             </p>
           </div>
@@ -326,7 +326,7 @@ className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border
             <Link
               href="/admin/pengaturan"
               onClick={() => setShowUserMenu(false)}
-              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-[#0b1f3a]"
+              className="flex items-center gap-2.5 rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-[#0b1f3a]"
             >
               <Settings size={15} className="text-[#b28b16]" />
               Pengaturan Sistem
@@ -335,7 +335,7 @@ className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border
             <Link
               href="/admin/alumni"
               onClick={() => setShowUserMenu(false)}
-              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-[#0b1f3a]"
+              className="flex items-center gap-2.5 rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-[#0b1f3a]"
             >
               <Users size={15} className="text-slate-500" />
               Daftar Alumni
@@ -346,7 +346,7 @@ className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border
             <button
               type="button"
               onClick={handleLogout}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50"
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-3 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
             >
               <LogOut size={15} />
               Keluar dari Sistem

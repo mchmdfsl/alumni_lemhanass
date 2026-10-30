@@ -147,7 +147,7 @@ export default function UserLayout({
             <p className="text-sm font-bold text-[#0b1f3a]">
               LEMHANNAS RI
             </p>
-            <p className="text-[10px] font-medium uppercase tracking-wider text-[#94a3b8]">
+            <p className="text-xs font-medium uppercase tracking-wider text-[#94a3b8]">
               Portal Alumni
             </p>
           </div>
@@ -163,7 +163,7 @@ export default function UserLayout({
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-5">
-          <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#94a3b8]">
+          <p className="mb-3 px-3 text-xs font-bold uppercase tracking-[0.2em] text-[#94a3b8]">
             Menu Alumni
           </p>
 
@@ -176,7 +176,7 @@ export default function UserLayout({
                 key={item.href}
                 href={item.href}
                 onClick={() => setMenuOpen(false)}
-                className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${
+                className={`flex items-center gap-3 rounded-xl px-3 py-3 text-base font-semibold transition ${
                   active
                     ? "bg-[#0b1f3a] text-white shadow-sm"
                     : "text-[#64748b] hover:bg-slate-50 hover:text-[#0b1f3a]"
@@ -197,7 +197,7 @@ export default function UserLayout({
                 Portal Alumni
               </p>
             </div>
-            <p className="mt-1 text-[11px] leading-relaxed text-[#64748b]">
+            <p className="mt-1 text-sm leading-relaxed text-[#64748b]">
               Perbarui data langsung melalui halaman Profil Saya. Setiap perubahan akan tersimpan ke database.
             </p>
           </div>
@@ -210,10 +210,10 @@ export default function UserLayout({
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-bold text-[#172033]">
+              <p className="truncate text-sm font-bold text-[#172033]">
                 {loadingUser ? "Memuat akun..." : displayName}
               </p>
-              <p className="truncate text-[11px] text-[#94a3b8]">
+              <p className="truncate text-sm text-[#94a3b8]">
                 {user.nomorAlumni || user.email || "Alumni terverifikasi"}
               </p>
             </div>
@@ -232,7 +232,7 @@ export default function UserLayout({
       </aside>
 
       <div className="min-h-screen lg:pl-72">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:h-20 lg:px-8">
+        <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:h-20 lg:px-8">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -247,7 +247,7 @@ export default function UserLayout({
               <p className="text-sm font-bold text-[#0b1f3a]">
                 Portal Alumni
               </p>
-              <p className="text-[10px] text-[#94a3b8]">
+              <p className="text-xs text-[#94a3b8]">
                 Sistem Informasi Alumni LEMHANNAS RI
               </p>
             </div>
@@ -255,7 +255,7 @@ export default function UserLayout({
 
           <Link href="/user/pengajuan" aria-label="Lihat notifikasi pengajuan" className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#0b1f3a] hover:bg-slate-50">
             <Bell size={19} />
-            {resolvedRequests > 0 && <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">{resolvedRequests > 99 ? "99+" : resolvedRequests}</span>}
+            {resolvedRequests > 0 && <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-bold text-white">{resolvedRequests > 99 ? "99+" : resolvedRequests}</span>}
           </Link>
 
           <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-[#fafbfc] px-3 py-2 sm:flex">

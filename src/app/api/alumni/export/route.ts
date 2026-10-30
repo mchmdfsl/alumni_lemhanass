@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getAdminScope } from "@/lib/admin-scope";
+import { getAdminCategories, getAdminScope } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 
@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
   if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
 
+  const allowedCategories = getAdminCategories(scope) ?? [];
   const query = request.nextUrl.searchParams;
   const status = query.get("status") ?? "";
   const angkatan = query.get("kategoriProgram") ?? query.get("angkatan") ?? "";
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
           THEN TO_CHAR(verified_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI:SS')
           ELSE '' END AS "verifiedAt"
       FROM alumni
-      WHERE (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(kategori_program), ''), (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], angkatan, '')) = ${scope.kategoriProgram ?? ""})
+      WHERE (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(kategori_program), ''), (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], angkatan, '')) = ANY(${allowedCategories}))
         AND (${alumniId} = '' OR id::text = ${alumniId})
         AND (${status} = '' OR status = ${status})
         AND (${angkatan} = '' OR upper(CASE WHEN (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] IS NOT NULL AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, '')))) THEN (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] ELSE COALESCE(NULLIF(upper(trim(kategori_program)), ''), (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], angkatan) END) = upper(${angkatan}))

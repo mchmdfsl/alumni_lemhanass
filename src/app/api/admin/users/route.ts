@@ -3,6 +3,7 @@ import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
+import { getAdminCategoryGroup } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body.password === "string" ? body.password : "";
     const kategoriProgram = typeof body.kategoriProgram === "string" ? body.kategoriProgram.trim().toLocaleUpperCase("id-ID") : "";
-    if (!/^(KRA|PPRA|P4N|KSA|PSA|PPSA|P3N|TAPLAI|PPNK|PPNK KOLABORASI|PRA|TOT)$/.test(kategoriProgram)) return NextResponse.json({ error: "Pilih kategori program admin yang valid." }, { status: 400 });
+    if (!getAdminCategoryGroup(kategoriProgram)) return NextResponse.json({ error: "Pilih kelompok Admin yang valid." }, { status: 400 });
     if (!/^[a-zA-Z0-9._-]{3,80}$/.test(username)) return NextResponse.json({ error: "Username tidak valid." }, { status: 400 });
     if (!/^[^\s@]+@[^\s@]+[.][^\s@]+$/.test(email) || email.length > 254) return NextResponse.json({ error: "Format email tidak valid." }, { status: 400 });
     if (password.length < 12 || Buffer.byteLength(password, "utf8") > 1024) return NextResponse.json({ error: "Password harus minimal 12 karakter." }, { status: 400 });

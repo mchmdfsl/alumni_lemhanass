@@ -51,14 +51,28 @@ export default function KtmCard({ profile }: { profile: Profile }) {
   const year = profile.tahunAngkatan || "-";
   const alumniNo = profile.nomorAlumni || "-";
 
+  const printKtmOnly = () => {
+    const cleanup = () => document.body.classList.remove("ktm-only-printing");
+    window.addEventListener("afterprint", cleanup, { once: true });
+    document.body.classList.add("ktm-only-printing");
+    window.print();
+  };
+
   return (
+    <>
+      <style>{`@media print {
+        body.ktm-only-printing * { visibility: hidden !important; }
+        body.ktm-only-printing .ktm-print-area, body.ktm-only-printing .ktm-print-area * { visibility: visible !important; }
+        body.ktm-only-printing .ktm-print-area { position: fixed !important; inset: 0 auto auto 0 !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 8mm !important; background: #fff !important; }
+        body.ktm-only-printing .ktm-print-area article { break-inside: avoid !important; page-break-inside: avoid !important; box-shadow: none !important; }
+      }`}</style>
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm print:overflow-visible print:rounded-none print:border-0 print:shadow-none">
       <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 print:hidden">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5b2878]">Identitas Alumni</p>
           <h2 className="mt-1 text-lg font-bold text-[#32104c]">Kartu Tanda Alumni (KTM)</h2>
         </div>
-        <button type="button" onClick={() => window.print()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#35104f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#4a1a69]">
+        <button type="button" onClick={printKtmOnly} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#35104f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#4a1a69]">
           <Download size={16} /> Cetak / Simpan PDF
         </button>
       </div>
@@ -66,7 +80,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
       {loading ? (
         <div className="flex items-center justify-center gap-2 p-10 text-sm text-slate-500 print:hidden"><LoaderCircle className="animate-spin" size={18} /> Memuat tanda tangan pejabat...</div>
       ) : (
-        <div className="grid gap-6 p-4 sm:p-6 xl:grid-cols-2 print:grid-cols-2 print:gap-3 print:p-0">
+        <div className="ktm-print-area grid gap-6 p-4 sm:p-6 xl:grid-cols-2 print:grid-cols-2 print:gap-3 print:p-0">
           {/* SISI DEPAN: panel lambang ungu di kiri, identitas pada bidang putih di kanan */}
           <article className="relative isolate flex aspect-[1.586/1] overflow-hidden rounded-[14px] border border-[#ded9e3] bg-[#faf9fb] text-[#28113f] shadow-lg print:break-inside-avoid print:shadow-none">
             <div className="relative flex w-[24%] shrink-0 flex-col items-center justify-center overflow-hidden bg-[#32104b]">
@@ -179,5 +193,6 @@ export default function KtmCard({ profile }: { profile: Profile }) {
       )}
       <p className="px-5 pb-5 text-xs text-slate-500 print:hidden">Data kartu mengikuti profil alumni. QR pada tampilan ini masih placeholder sampai layanan verifikasi KTM tersedia.</p>
     </section>
+    </>
   );
 }

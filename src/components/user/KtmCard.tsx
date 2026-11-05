@@ -58,55 +58,64 @@ export default function KtmCard({ profile }: { profile: Profile }) {
         <div className="flex items-center justify-center gap-2 p-10 text-sm text-slate-500"><LoaderCircle className="animate-spin" size={18} /> Memuat tanda tangan pejabat...</div>
       ) : (
         <div className="grid gap-5 p-4 sm:p-6 xl:grid-cols-2 print:grid-cols-2">
-          <article className="relative isolate aspect-[1.586/1] overflow-hidden rounded-2xl border border-[#5d347b] bg-gradient-to-br from-[#250b43] via-[#421267] to-[#17072c] p-4 text-white shadow-lg sm:p-6 print:break-inside-avoid">
-            <div className="absolute -right-12 -top-16 h-56 w-56 rounded-full border-[24px] border-white/5" />
-            <div className="absolute -bottom-24 right-20 h-64 w-64 rotate-45 border-2 border-amber-300/20" />
-            <div className="relative flex items-center gap-3 border-b border-amber-300/50 pb-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 text-amber-200"><IdCard size={27} /></div>
-              <div><p className="text-sm font-bold tracking-wide">LEMHANNAS RI</p><p className="text-[9px] text-white/75 sm:text-[10px]">Lembaga Ketahanan Nasional</p></div>
-              <div className="ml-auto text-right"><p className="text-xs font-semibold">Kartu Tanda Alumni</p><p className="text-[9px] italic text-white/70">Alumni Lemhannas RI</p></div>
+          {/* DEPAN: desain putih pilihan nomor 2, foto dan identitas utama */}
+          <article className="relative isolate aspect-[1.586/1] overflow-hidden rounded-xl border border-[#d9d2c4] bg-white p-4 text-[#263247] shadow-md sm:p-6 print:break-inside-avoid">
+            <div className="absolute inset-x-0 top-0 h-2 bg-[#6b4a82]" />
+            <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full border-[18px] border-[#f3eff6]" />
+            <div className="relative flex items-center gap-3 border-b border-[#e6dfd2] pb-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#f4f0f6] text-[#6b4a82]"><IdCard size={24} /></div>
+              <div><p className="text-sm font-extrabold tracking-wide text-[#33233e]">LEMHANNAS RI</p><p className="text-[9px] text-slate-500 sm:text-[10px]">Lembaga Ketahanan Nasional Republik Indonesia</p></div>
+              <div className="ml-auto text-right"><p className="text-[10px] font-bold text-[#6b4a82] sm:text-xs">KARTU TANDA ALUMNI</p><p className="text-[8px] text-slate-500">ALUMNI LEMHANNAS RI</p></div>
             </div>
             <div className="relative mt-4 flex gap-3 sm:gap-4">
-              <div className="relative h-28 w-20 shrink-0 overflow-hidden rounded-lg border-2 border-white/80 bg-slate-200 sm:h-36 sm:w-28">
+              <div className="relative h-28 w-20 shrink-0 overflow-hidden rounded-md border border-[#d8d2c8] bg-slate-100 sm:h-36 sm:w-28">
                 {profile.fotoProfil ? <Image src={profile.fotoProfil} alt="Foto alumni" fill unoptimized sizes="112px" className="object-cover" /> : <div className="flex h-full items-center justify-center text-center text-[9px] text-slate-500">Foto alumni</div>}
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="line-clamp-2 text-sm font-bold sm:text-lg">{profile.nama || "Nama Alumni"}</h3>
-                <p className="mt-1 text-[9px] text-white/85 sm:text-xs">No. Alumni: {alumniNo}</p>
-                <p className="mt-2 text-[9px] text-white/85 sm:text-xs">Program: {category}</p>
-                <p className="text-[9px] text-white/85 sm:text-xs">Angkatan: {cohort} / {year}</p>
-                <div className={`mt-3 flex h-12 max-w-[170px] items-end justify-center overflow-hidden rounded-md px-2 py-1 ${signature?.formatTtd === "tot_white" ? "bg-white" : "bg-transparent"}`}>
-                  {signature?.signatureUrl ? <Image src={signature.signatureUrl} alt="Tanda tangan Deputi" width={150} height={48} unoptimized className="max-h-11 w-auto object-contain" /> : <span className="text-[9px] text-white/50">Tanda tangan belum tersedia</span>}
-                </div>
-                <p className="mt-1 text-[9px] font-semibold leading-tight">{signature?.namaDeputi || "Nama Deputi belum diatur"}</p>
-                <p className="text-[8px] text-white/75">{signature?.jabatanDeputi || "Deputi"}</p>
+                <p className="text-[8px] font-semibold uppercase tracking-wider text-[#8b7548]">Identitas Alumni</p>
+                <h3 className="mt-1 line-clamp-2 text-sm font-extrabold text-[#242033] sm:text-lg">{profile.nama || "Nama Alumni"}</h3>
+                <p className="mt-1 text-[9px] text-slate-700 sm:text-xs">No. Alumni: <strong>{alumniNo}</strong></p>
+                <p className="mt-2 text-[9px] text-slate-700 sm:text-xs">Program: <strong>{category}</strong></p>
+                <p className="text-[9px] text-slate-700 sm:text-xs">Angkatan: <strong>{cohort} / {year}</strong></p>
               </div>
             </div>
-            <div className="absolute bottom-3 right-4 flex items-center gap-1 text-[8px] text-white/70"><ShieldCheck size={11} /> Kartu identitas alumni</div>
+            <div className="absolute inset-x-4 bottom-3 flex items-end justify-between border-t border-[#e6dfd2] pt-2 sm:inset-x-6">
+              <p className="text-[8px] text-slate-500">Kartu identitas alumni</p>
+              <p className="text-[8px] font-semibold tracking-wide text-[#6b4a82]">LEMHANNAS RI</p>
+            </div>
           </article>
 
-          <article className="relative isolate aspect-[1.586/1] overflow-hidden rounded-2xl border border-[#5d347b] bg-gradient-to-br from-[#250b43] via-[#421267] to-[#17072c] p-4 text-white shadow-lg sm:p-6 print:break-inside-avoid">
-            <div className="absolute -right-12 -top-16 h-56 w-56 rounded-full border-[24px] border-white/5" />
-            <div className="relative flex items-center gap-3 border-b border-amber-300/50 pb-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-amber-200"><IdCard size={24} /></div>
-              <div><p className="text-sm font-bold tracking-wide">LEMHANNAS RI</p><p className="text-[9px] text-white/75">Lembaga Ketahanan Nasional</p></div>
-              <p className="ml-auto text-right text-[9px] italic text-white/80">Alumni Bersatu,<br />Untuk Indonesia Maju</p>
+          {/* BELAKANG: sisi informasi putih yang berbeda dari sisi depan */}
+          <article className="relative isolate aspect-[1.586/1] overflow-hidden rounded-xl border border-[#d9d2c4] bg-white p-4 text-[#263247] shadow-md sm:p-6 print:break-inside-avoid">
+            <div className="absolute inset-x-0 top-0 h-2 bg-[#6b4a82]" />
+            <div className="relative flex items-center justify-between border-b border-[#e6dfd2] pb-3">
+              <div><p className="text-sm font-extrabold tracking-wide text-[#33233e]">LEMHANNAS RI</p><p className="text-[9px] text-slate-500">Informasi dan pengesahan kartu</p></div>
+              <p className="text-right text-[8px] italic text-[#6b4a82]">Alumni Bersatu,<br />Untuk Indonesia Maju</p>
             </div>
             <div className="relative mt-4 grid grid-cols-[1fr_auto] gap-3">
-              <div className="space-y-2 text-[9px] sm:text-xs">
-                <p className="mb-3 text-xs font-bold sm:text-sm">Informasi Alumni</p>
-                <p>Nama : {profile.nama || "-"}</p>
-                <p>No. Alumni : {alumniNo}</p>
-                <p>Program : {category}</p>
-                <p>Angkatan : {cohort}</p>
-                <p>Tahun : {year}</p>
+              <div className="space-y-2 text-[9px] text-slate-700 sm:text-xs">
+                <p className="mb-3 text-xs font-bold text-[#33233e] sm:text-sm">INFORMASI ALUMNI</p>
+                <p>Nama: <strong>{profile.nama || "-"}</strong></p>
+                <p>Nomor Alumni: <strong>{alumniNo}</strong></p>
+                <p>Program: <strong>{category}</strong></p>
+                <p>Angkatan: <strong>{cohort}</strong></p>
+                <p>Tahun: <strong>{year}</strong></p>
               </div>
-              <div className="flex w-20 flex-col items-center justify-center border-l border-white/30 pl-3 text-center sm:w-28">
-                <div className="flex h-16 w-16 items-center justify-center rounded-lg border-4 border-white/90 bg-white text-center text-[8px] font-bold text-[#351052] sm:h-20 sm:w-20">QR<br />VERIFIKASI</div>
-                <span className="mt-1 text-[8px] leading-tight text-white/80">Verifikasi KTM<br />melalui portal</span>
+              <div className="flex w-20 flex-col items-center justify-center border-l border-[#e6dfd2] pl-3 text-center sm:w-28">
+                <div className="flex h-16 w-16 items-center justify-center rounded-md border-2 border-[#6b4a82] bg-[#f7f4f8] text-center text-[8px] font-bold text-[#49345b] sm:h-20 sm:w-20">QR<br />VERIFIKASI</div>
+                <span className="mt-1 text-[8px] leading-tight text-slate-500">Verifikasi KTM<br />melalui portal</span>
               </div>
             </div>
-            <div className="absolute inset-x-4 bottom-3 border-t border-amber-300/40 pt-2 text-[8px] text-white/70 sm:inset-x-6">Kartu identitas resmi alumni Lemhannas RI</div>
+            <div className="absolute inset-x-4 bottom-3 flex items-end justify-between border-t border-[#e6dfd2] pt-2 sm:inset-x-6">
+              <div className="min-w-0">
+                <div className={`flex h-8 max-w-[145px] items-center justify-start overflow-hidden ${signature?.formatTtd === "tot_white" ? "bg-white" : "bg-transparent"}`}>
+                  {signature?.signatureUrl ? <Image src={signature.signatureUrl} alt="Tanda tangan Deputi" width={130} height={32} unoptimized className="max-h-8 w-auto object-contain object-left" /> : <span className="text-[8px] text-slate-400">Tanda tangan belum tersedia</span>}
+                </div>
+                <p className="text-[8px] font-bold leading-tight text-[#33233e]">{signature?.namaDeputi || "Nama Deputi belum diatur"}</p>
+                <p className="text-[7px] text-slate-500">{signature?.jabatanDeputi || "Deputi"}</p>
+              </div>
+              <div className="flex items-center gap-1 text-[8px] text-slate-500"><ShieldCheck size={11} className="text-[#6b4a82]" /> Kartu Alumni</div>
+            </div>
           </article>
         </div>
       )}

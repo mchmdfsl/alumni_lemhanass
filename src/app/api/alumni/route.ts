@@ -25,7 +25,9 @@ export async function GET(request: NextRequest) {
 
     const search = (query.get("search") ?? "").trim().slice(0, 120);
     const status = query.get("status") ?? "";
-    const angkatan = query.get("angkatan") ?? "";
+    const kategoriProgram = query.get("kategoriProgram") ?? query.get("angkatan") ?? "";
+    const nomorAngkatan = query.get("nomorAngkatan") ?? "";
+    const tahunAngkatan = query.get("tahunAngkatan") ?? "";
     const wilayah = query.get("wilayah") ?? "";
 
     const requestedLimit = Number(query.get("limit") ?? 100);
@@ -82,18 +84,20 @@ export async function GET(request: NextRequest) {
       ) legacy
       WHERE (
         ${search} = ''
-        OR CONCAT_WS(' ', a.nama, a.nomor_alumni, a.email, a.instansi, a.nomor_hp, a.alamat) ILIKE ${"%" + search + "%"}
+        OR CONCAT_WS(' ', a.nama, a.nomor_alumni, a.email, a.instansi, a.jabatan, a.nomor_hp, a.alamat, a.wilayah, CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan) END, COALESCE(NULLIF(trim(a.nomor_angkatan), ''), legacy.parts[2], ''), a.tahun_angkatan::text) ILIKE ${"%" + search + "%"}
       )
       AND (${status} = '' OR a.status = ${status})
       AND (
-        ${angkatan} = ''
+        ${kategoriProgram} = ''
         OR CASE
           WHEN legacy.parts[1] IS NOT NULL
             AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, ''))))
             THEN legacy.parts[1]
           ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan)
-        END = ${angkatan}
+        END = ${kategoriProgram}
       )
+      AND (${nomorAngkatan} = '' OR COALESCE(NULLIF(trim(a.nomor_angkatan), ''), legacy.parts[2], '') = ${nomorAngkatan})
+      AND (${tahunAngkatan} = '' OR a.tahun_angkatan::text = ${tahunAngkatan})
       AND (${wilayah} = '' OR a.wilayah = ${wilayah})
       AND (${scope.role === "super_admin"} = TRUE OR CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan, '') END = ANY(${allowedCategories}))
       ORDER BY a.updated_at DESC, a.id DESC
@@ -102,24 +106,31 @@ export async function GET(request: NextRequest) {
 `;
 
     const [counts] = await db()`
-      SELECT
-        COUNT(*)::int AS total,
-        COUNT(*) FILTER (
-          WHERE status = 'Terverifikasi'
-        )::int AS terverifikasi,
-        COUNT(*) FILTER (
-          WHERE status = 'Menunggu'
-        )::int AS menunggu,
-        COUNT(*) FILTER (
-          WHERE status = 'Ditolak'
-        )::int AS ditolak
-      FROM alumni a
-      WHERE (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], a.angkatan, '')) = ANY(${allowedCategories}))
+      SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE a.status = 'Terverifikasi')::int AS terverifikasi, COUNT(*) FILTER (WHERE a.status = 'Menunggu')::int AS menunggu, COUNT(*) FILTER (WHERE a.status = 'Ditolak')::int AS ditolak
+      FROM alumni a CROSS JOIN LATERAL (SELECT regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)') AS parts) legacy
+      WHERE (${search} = '' OR CONCAT_WS(' ', a.nama, a.nomor_alumni, a.email, a.instansi, a.jabatan, a.nomor_hp, a.alamat, a.wilayah, CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan) END, COALESCE(NULLIF(trim(a.nomor_angkatan), ''), legacy.parts[2], ''), a.tahun_angkatan::text) ILIKE ${"%" + search + "%"})
+      AND (${status} = '' OR a.status = ${status})
+      AND (${kategoriProgram} = '' OR CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan) END = ${kategoriProgram})
+      AND (${nomorAngkatan} = '' OR COALESCE(NULLIF(trim(a.nomor_angkatan), ''), legacy.parts[2], '') = ${nomorAngkatan})
+      AND (${tahunAngkatan} = '' OR a.tahun_angkatan::text = ${tahunAngkatan})
+      AND (${wilayah} = '' OR a.wilayah = ${wilayah})
+      AND (${scope.role === "super_admin"} = TRUE OR CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan) END = ANY(${allowedCategories}))
+    `;
+
+    const filterOptionsRows = await db()`
+      SELECT DISTINCT CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan) END AS kategori, COALESCE(NULLIF(trim(a.nomor_angkatan), ''), legacy.parts[2], '') AS "nomorAngkatan", COALESCE(a.tahun_angkatan::text, '') AS "tahunAngkatan", COALESCE(a.wilayah, '') AS wilayah
+      FROM alumni a CROSS JOIN LATERAL (SELECT regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)') AS parts) legacy
+      WHERE (${scope.role === "super_admin"} = TRUE OR CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan) END = ANY(${allowedCategories}))
     `;
 
     return NextResponse.json({
-      data: rows,
-      counts,
+      data: rows, total: counts?.total ?? 0, counts,
+      filterOptions: {
+        kategori: [...new Set(filterOptionsRows.map((row: { kategori: string | null }) => row.kategori).filter(Boolean))],
+        nomorAngkatan: [...new Set(filterOptionsRows.map((row: { nomorAngkatan: string }) => row.nomorAngkatan).filter(Boolean))].sort((a, b) => a.localeCompare(b, "id", { numeric: true })),
+        tahunAngkatan: [...new Set(filterOptionsRows.map((row: { tahunAngkatan: string }) => row.tahunAngkatan).filter(Boolean))].sort((a, b) => Number(b) - Number(a)),
+        wilayah: [...new Set(filterOptionsRows.map((row: { wilayah: string }) => row.wilayah).filter(Boolean))].sort((a, b) => a.localeCompare(b, "id")),
+      },
     });
   } catch (error) {
     console.error("GET /api/alumni failed:", error);

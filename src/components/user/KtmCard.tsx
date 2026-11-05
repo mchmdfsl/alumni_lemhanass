@@ -52,7 +52,11 @@ export default function KtmCard({ profile }: { profile: Profile }) {
   const alumniNo = profile.nomorAlumni || "-";
 
   const downloadKtmPdf = async () => {
-    const cards = Array.from(document.querySelectorAll<HTMLElement>(".ktm-print-area > article"));
+    if (loading) {
+      alert("KTM masih dimuat. Tunggu sebentar sampai kedua sisi kartu tampil.");
+      return;
+    }
+    const cards = Array.from(document.querySelectorAll<HTMLElement>(".ktm-print-area article"));
     if (cards.length !== 2) {
       alert("Kartu KTM depan dan belakang belum siap. Muat ulang halaman lalu coba lagi.");
       return;
@@ -120,7 +124,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5b2878]">Identitas Alumni</p>
           <h2 className="mt-1 text-lg font-bold text-[#32104c]">Kartu Tanda Alumni (KTM)</h2>
         </div>
-        <button type="button" onClick={downloadKtmPdf} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#35104f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#4a1a69]">
+        <button type="button" onClick={downloadKtmPdf} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#35104f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#4a1a69]">
           <Download size={16} /> Unduh KTM (PDF)
         </button>
       </div>

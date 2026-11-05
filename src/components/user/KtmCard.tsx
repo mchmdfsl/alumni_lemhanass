@@ -81,8 +81,8 @@ export default function KtmCard({ profile }: { profile: Profile }) {
 
     try {
       await Promise.all([
-        loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
-        loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"),
+        loadScript("https://cdn.jsdelivr.net/npm/html2canvas-pro@1.5.11/dist/html2canvas-pro.min.js"),
+        loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"),
       ]);
       const win = window as typeof window & {
         html2canvas?: (element: HTMLElement, options: Record<string, unknown>) => Promise<HTMLCanvasElement>;
@@ -112,7 +112,8 @@ export default function KtmCard({ profile }: { profile: Profile }) {
       pdf.save(`KTM_${safeName || "Alumni"}.pdf`);
     } catch (error) {
       console.error("KTM PDF download failed:", error);
-      alert("PDF KTM gagal dibuat. Periksa koneksi internet lalu coba kembali.");
+      const detail = error instanceof Error ? error.message : String(error);
+      alert(`PDF KTM gagal dibuat: ${detail}`);
     }
   };
 

@@ -51,11 +51,65 @@ export default function KtmCard({ profile }: { profile: Profile }) {
   const year = profile.tahunAngkatan || "-";
   const alumniNo = profile.nomorAlumni || "-";
 
-  const printKtmOnly = () => {
-    const cleanup = () => document.body.classList.remove("ktm-only-printing");
-    window.addEventListener("afterprint", cleanup, { once: true });
-    document.body.classList.add("ktm-only-printing");
-    window.print();
+  const downloadKtmPdf = async () => {
+    const cards = Array.from(document.querySelectorAll<HTMLElement>(".ktm-print-area > article"));
+    if (cards.length !== 2) {
+      alert("Kartu KTM depan dan belakang belum siap. Muat ulang halaman lalu coba lagi.");
+      return;
+    }
+
+    const loadScript = (src: string) => new Promise<void>((resolve, reject) => {
+      const existing = document.querySelector<HTMLScriptElement>(`script[data-ktm-lib="${src}"]`);
+      if (existing?.dataset.loaded === "true") return resolve();
+      if (existing) {
+        existing.addEventListener("load", () => resolve(), { once: true });
+        existing.addEventListener("error", () => reject(new Error("Gagal memuat pustaka PDF.")), { once: true });
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = src;
+      script.async = true;
+      script.dataset.ktmLib = src;
+      script.onload = () => { script.dataset.loaded = "true"; resolve(); };
+      script.onerror = () => reject(new Error("Gagal memuat pustaka PDF."));
+      document.head.appendChild(script);
+    });
+
+    try {
+      await Promise.all([
+        loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
+        loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"),
+      ]);
+      const win = window as typeof window & {
+        html2canvas?: (element: HTMLElement, options: Record<string, unknown>) => Promise<HTMLCanvasElement>;
+        jspdf?: { jsPDF: new (options: Record<string, unknown>) => {
+          addImage: (data: string, type: string, x: number, y: number, width: number, height: number) => void;
+          addPage: (format: number[]) => void;
+          save: (filename: string) => void;
+        } };
+      };
+      if (!win.html2canvas || !win.jspdf?.jsPDF) throw new Error("Pustaka pembuat PDF tidak tersedia.");
+
+      const pdf = new win.jspdf.jsPDF({ orientation: "landscape", unit: "mm", format: [85.6, 54], compress: true });
+      for (let index = 0; index < cards.length; index += 1) {
+        const canvas = await win.html2canvas(cards[index], {
+          scale: 3,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: null,
+          logging: false,
+          width: cards[index].scrollWidth,
+          height: cards[index].scrollHeight,
+        });
+        if (index > 0) pdf.addPage([85.6, 54]);
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.96), "JPEG", 0, 0, 85.6, 54);
+      }
+      const safeName = (profile.nama || "Alumni").normalize("NFKD").replace(/[\\u0300-\\u036f]/g, "").replace(/[^a-zA-Z0-9_-]+/g, "_").replace(/^_+|_+$/g, "");
+      pdf.save(`KTM_${safeName || "Alumni"}.pdf`);
+    } catch (error) {
+      console.error("KTM PDF download failed:", error);
+      alert("PDF KTM gagal dibuat. Periksa koneksi internet lalu coba kembali.");
+    }
   };
 
   return (
@@ -72,17 +126,17 @@ export default function KtmCard({ profile }: { profile: Profile }) {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5b2878]">Identitas Alumni</p>
           <h2 className="mt-1 text-lg font-bold text-[#32104c]">Kartu Tanda Alumni (KTM)</h2>
         </div>
-        <button type="button" onClick={printKtmOnly} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#35104f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#4a1a69]">
-          <Download size={16} /> Cetak / Simpan PDF
+        <button type="button" onClick={downloadKtmPdf} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#35104f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#4a1a69]">
+          <Download size={16} /> Unduh KTM (PDF)
         </button>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center gap-2 p-10 text-sm text-slate-500 print:hidden"><LoaderCircle className="animate-spin" size={18} /> Memuat tanda tangan pejabat...</div>
       ) : (
-        <div className="ktm-print-area grid gap-6 p-4 sm:p-6 xl:grid-cols-2 print:grid-cols-2 print:gap-3 print:p-0">
+        <div className="ktm-print-area mx-auto grid max-w-[1160px] grid-cols-1 items-start gap-5 p-4 sm:gap-6 sm:p-6 lg:grid-cols-2 print:grid-cols-2 print:gap-3 print:p-0">
           {/* SISI DEPAN: panel lambang ungu di kiri, identitas pada bidang putih di kanan */}
-          <article className="relative isolate flex aspect-[1.586/1] overflow-hidden rounded-[14px] border border-[#ded9e3] bg-[#faf9fb] text-[#28113f] shadow-lg print:break-inside-avoid print:shadow-none">
+          <article className="relative isolate flex aspect-[1.586/1] w-full min-w-0 container-type-inline-size overflow-hidden rounded-[14px] border border-[#ded9e3] bg-[#faf9fb] text-[#28113f] shadow-lg print:break-inside-avoid print:shadow-none">
             <div className="relative flex w-[24%] shrink-0 flex-col items-center justify-center overflow-hidden bg-[#32104b]">
               
               
@@ -142,7 +196,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
           </article>
 
           {/* SISI BELAKANG: bidang ungu, watermark gedung, data alumni dan informasi resmi */}
-          <article className="relative isolate flex aspect-[1.586/1] flex-col overflow-hidden rounded-[14px] border border-[#4b2861] bg-[#32104b] text-white shadow-lg print:break-inside-avoid print:shadow-none">
+          <article className="relative isolate flex aspect-[1.586/1] w-full min-w-0 container-type-inline-size flex-col overflow-hidden rounded-[14px] border border-[#4b2861] bg-[#32104b] text-white shadow-lg print:break-inside-avoid print:shadow-none">
             <div className="pointer-events-none absolute inset-0 opacity-[0.20]">
               <Image src="/images/lemhannas-header.jpg" alt="" fill unoptimized sizes="700px" className="object-cover object-center" />
             </div>

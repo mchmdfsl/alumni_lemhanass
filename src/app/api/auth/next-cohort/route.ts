@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const allowedCategories = new Set(["KRA", "PRA", "PPRA", "P4N", "KSA", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"]);
+const allowedCategories = new Set(["KRA", "KRA", "PPRA", "P4N", "KSA", "KSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"]);
 
 export async function GET(request: NextRequest) {
   const category = (request.nextUrl.searchParams.get("kategori") || "").trim().toLocaleUpperCase("id-ID");
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       CROSS JOIN LATERAL (
         SELECT regexp_match(
           upper(trim(coalesce(angkatan, ''))),
-          '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'
+          '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'
         ) AS parts
       ) legacy
       WHERE upper(trim(coalesce(

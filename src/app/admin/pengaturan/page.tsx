@@ -12,6 +12,7 @@ import {
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
+import KtmSignatureSettings from "@/components/admin/KtmSignatureSettings";
 
 export default function PengaturanPage() {
   const [adminUser, setAdminUser] = useState({
@@ -75,6 +76,8 @@ export default function PengaturanPage() {
                 Kelola profil administrator, keamanan akun, dan konfigurasi database.
               </p>
             </div>
+
+            <KtmSignatureSettings />
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               {/* Left Column: Admin Profile & Credentials */}

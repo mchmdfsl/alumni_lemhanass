@@ -55,7 +55,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm print:overflow-visible print:rounded-none print:border-0 print:shadow-none">
       <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 print:hidden">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b6a24]">Identitas Alumni</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5b2878]">Identitas Alumni</p>
           <h2 className="mt-1 text-lg font-bold text-[#32104c]">Kartu Tanda Alumni (KTM)</h2>
           <p className="mt-1 text-sm text-slate-500">Desain Klasik Elegan · Layout 2</p>
         </div>
@@ -71,8 +71,8 @@ export default function KtmCard({ profile }: { profile: Profile }) {
           {/* SISI DEPAN: panel lambang ungu di kiri, identitas pada bidang putih di kanan */}
           <article className="relative isolate flex aspect-[1.586/1] overflow-hidden rounded-[14px] border border-[#ded9e3] bg-[#faf9fb] text-[#28113f] shadow-lg print:break-inside-avoid print:shadow-none">
             <div className="relative flex w-[24%] shrink-0 flex-col items-center justify-center overflow-hidden bg-[#32104b]">
-              <div className="absolute inset-0 opacity-50" style={{ backgroundImage: "repeating-linear-gradient(135deg, transparent 0 9px, rgba(255,255,255,.045) 9px 11px), repeating-linear-gradient(45deg, transparent 0 16px, rgba(255,255,255,.035) 16px 18px)" }} />
-              <div className="absolute right-0 top-0 h-full w-[3px] bg-gradient-to-b from-[#f7e3a1] via-[#b88a31] to-[#f7e3a1]" />
+              
+              
               <div className="relative z-10 flex w-full -translate-y-3 flex-col items-center px-2">
                 <span className="mb-1 text-2xl text-[#e7bd51]">★</span>
                 <Image src="/images/logo-lemhannas.png" alt="Lambang Lemhannas RI" width={112} height={112} priority className="h-auto w-[76%] max-w-[112px] object-contain drop-shadow-md" />
@@ -87,13 +87,13 @@ export default function KtmCard({ profile }: { profile: Profile }) {
                 <Image src="/images/lemhannas-header.jpg" alt="" fill unoptimized sizes="600px" className="object-cover object-center" />
               </div>
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-white/70" />
-              <div className="relative flex items-start justify-between gap-2 border-b border-[#d9cfdf] pb-2">
+              <div className="relative flex items-start justify-between gap-2 pb-2">
                 <div>
                   <h3 className="text-[clamp(11px,1.45vw,19px)] font-extrabold leading-tight tracking-wide text-[#32104b]">LEMHANNAS RI</h3>
                   <p className="text-[clamp(7px,.78vw,10px)] font-medium text-[#3c2a4b]">Lembaga Ketahanan Nasional</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[clamp(7px,.85vw,11px)] font-bold underline decoration-[#b48b3c] underline-offset-2">Kartu Tanda Alumni</p>
+                  <p className="text-[clamp(7px,.85vw,11px)] font-bold ">Kartu Tanda Alumni</p>
                   <p className="text-[clamp(6px,.7vw,9px)] italic">Alumni Lemhannas RI</p>
                 </div>
               </div>
@@ -136,9 +136,9 @@ export default function KtmCard({ profile }: { profile: Profile }) {
               <Image src="/images/lemhannas-header.jpg" alt="" fill unoptimized sizes="700px" className="object-cover object-center" />
             </div>
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#32104b]/95 via-[#32104b]/80 to-[#32104b]/65" />
-            <div className="pointer-events-none absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(135deg, transparent 0 12px, rgba(255,255,255,.08) 12px 14px)" }} />
+            
 
-            <header className="relative flex items-center gap-2 border-b border-[#b58b3d] px-3 py-2 sm:gap-3 sm:px-5 sm:py-3">
+            <header className="relative flex items-center gap-2  px-3 py-2 sm:gap-3 sm:px-5 sm:py-3">
               <Image src="/images/logo-lemhannas.png" alt="Lambang Lemhannas RI" width={54} height={54} className="h-9 w-9 shrink-0 object-contain sm:h-12 sm:w-12" />
               <div>
                 <h3 className="text-[clamp(9px,1.1vw,14px)] font-extrabold tracking-wide">LEMHANNAS RI</h3>
@@ -164,12 +164,12 @@ export default function KtmCard({ profile }: { profile: Profile }) {
               </div>
             </div>
 
-            <footer className="relative grid grid-cols-[1fr_1fr_1fr] border-t border-[#b58b3d] px-2 py-2 sm:px-4 sm:py-2.5">
-              <div className="flex min-w-0 items-start gap-1.5 border-r border-white/25 pr-2">
+            <footer className="relative grid grid-cols-[1fr_1fr_1fr]  px-2 py-2 sm:px-4 sm:py-2.5">
+              <div className="flex min-w-0 items-start gap-1.5 pr-2">
                 <MapPin size={14} className="mt-0.5 shrink-0 text-white" />
                 <p className="text-[clamp(5px,.62vw,8px)] leading-tight">Lemhannas RI<br />Jl. Medan Merdeka Selatan No.10<br />Jakarta Pusat, 10110</p>
               </div>
-              <div className="flex min-w-0 items-start gap-1.5 border-r border-white/25 px-2">
+              <div className="flex min-w-0 items-start gap-1.5 px-2">
                 <Globe2 size={14} className="mt-0.5 shrink-0 text-white" />
                 <p className="break-words text-[clamp(5px,.62vw,8px)] leading-tight">www.lemhannas.go.id<br />Kartu ini merupakan identitas resmi alumni Lemhannas RI</p>
               </div>

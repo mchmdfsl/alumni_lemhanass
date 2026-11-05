@@ -46,6 +46,7 @@ type Profile = {
   nomorHp: string;
   status?: string;
   fotoProfil?: string | null;
+  ktmVerificationToken?: string | null;
 };
 
 type Notice = {
@@ -123,6 +124,7 @@ export default function ProfilUser() {
 
         const loadedProfile: Profile = {
           id: data.id,
+          ktmVerificationToken: data.ktmVerificationToken || null,
           nomorAlumni: data.nomorAlumni || "",
           nama: data.nama || "",
           angkatan: String(data.angkatan || ""),

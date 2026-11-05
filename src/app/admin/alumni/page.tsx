@@ -80,20 +80,38 @@ export default function AlumniPage() {
     if (back === "angkatan") setCohortBackLink(backCategory ? `/admin/angkatan?kategori=${encodeURIComponent(backCategory)}` : "/admin/angkatan");
   }, []);
 
-  const loadAlumni = () => {
-    let active = true;
-    setLoadError("");
-    fetch("/api/alumni?limit=500", { cache: "no-store" })
-      .then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || "Gagal memuat data alumni.");
-        if (active) setAlumniData(d.data ?? []);
-      })
-      .catch((e) => { if (active) setLoadError(e.message || "Gagal memuat data alumni."); });
-    return () => { active = false; };
-  };
+  const [totalData, setTotalData] = useState(0);
+  const [filterOptions, setFilterOptions] = useState<{ kategori: string[]; nomorAngkatan: string[]; tahunAngkatan: string[]; wilayah: string[] }>({ kategori: [], nomorAngkatan: [], tahunAngkatan: [], wilayah: [] });
+  const [loading, setLoading] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  useEffect(loadAlumni, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setLoading(true); setLoadError("");
+      try {
+        const params = new URLSearchParams();
+        if (search.trim()) params.set("search", search.trim());
+        if (status !== "Semua Status") params.set("status", status);
+        if (kategori !== "Semua Kategori Program") params.set("kategoriProgram", kategori);
+        if (nomorAngkatanFilter !== "Semua Nomor Angkatan") params.set("nomorAngkatan", nomorAngkatanFilter);
+        if (tahunAngkatanFilter !== "Semua Tahun Angkatan") params.set("tahunAngkatan", tahunAngkatanFilter);
+        if (wilayah !== "Semua Wilayah") params.set("wilayah", wilayah);
+        params.set("limit", String(ITEMS_PER_PAGE));
+        params.set("offset", String((page - 1) * ITEMS_PER_PAGE));
+        const response = await fetch(`/api/alumni?${params.toString()}`, { cache: "no-store", signal: controller.signal });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Gagal memuat data alumni.");
+        setAlumniData(Array.isArray(result.data) ? result.data : []);
+        setTotalData(Number(result.total ?? 0));
+        if (result.filterOptions) setFilterOptions(result.filterOptions);
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") return;
+        setLoadError(error instanceof Error ? error.message : "Gagal memuat data alumni.");
+      } finally { if (!controller.signal.aborted) setLoading(false); }
+    }, search.trim() ? 250 : 0);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [search, status, kategori, nomorAngkatanFilter, tahunAngkatanFilter, wilayah, page, reloadKey]);
 
   useEffect(() => {
     let active = true;
@@ -146,63 +164,17 @@ export default function AlumniPage() {
     }
   };
 
-  // Keep program category, cohort number, and cohort year as independent filters.
+  // Filter dropdown options are loaded from distinct values in the database.
   const categoryOrder = ["KRA", "PRA", "PPRA", "P4N", "KSA", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
-  const kategoriOptions = useMemo(() => {
-    const found = new Set(alumniData.map((a) => a.kategoriProgram || a.angkatan).filter(Boolean));
-    const ordered = [
-      ...categoryOrder.filter((item) => found.has(item)),
-      ...Array.from(found).filter((item) => !categoryOrder.includes(item)).sort((a, b) => a.localeCompare(b, "id")),
-    ];
-    return ["Semua Kategori Program", ...ordered];
-  }, [alumniData]);
-
-  const nomorAngkatanOptions = useMemo(() => {
-    const values = Array.from(new Set(alumniData.map((a) => a.nomorAngkatan).filter(Boolean)))
-      .sort((a, b) => a.localeCompare(b, "id", { numeric: true }));
-    return ["Semua Nomor Angkatan", ...values];
-  }, [alumniData]);
-
-  const tahunAngkatanOptions = useMemo(() => {
-    const values = Array.from(new Set(alumniData.map((a) => String(a.tahunAngkatan || "")).filter(Boolean)))
-      .sort((a, b) => Number(b) - Number(a));
-    return ["Semua Tahun Angkatan", ...values];
-  }, [alumniData]);
-
-  const wilayahOptions = useMemo(() => {
-    const opts = Array.from(new Set(alumniData.map((a) => a.wilayah).filter(Boolean))).sort();
-    return ["Semua Wilayah", ...opts];
-  }, [alumniData]);
-
-  const filteredAlumni = useMemo(() => {
-    return alumniData.filter((a) => {
-      const kw = search.toLowerCase().trim();
-      const matchesSearch =
-        a.nama.toLowerCase().includes(kw) ||
-        a.nomorAlumni.toLowerCase().includes(kw) ||
-        a.email.toLowerCase().includes(kw) ||
-        a.instansi.toLowerCase().includes(kw) ||
-        a.nomorHp.toLowerCase().includes(kw) ||
-        a.alamat.toLowerCase().includes(kw) ||
-        (a.kategoriProgram || "").toLowerCase().includes(kw) ||
-        (a.nomorAngkatan || "").toLowerCase().includes(kw) ||
-        String(a.tahunAngkatan || "").includes(kw);
-      const matchesStatus = status === "Semua Status" || a.status === status;
-      const categoryValue = a.kategoriProgram || a.angkatan;
-      const matchesKategori = kategori === "Semua Kategori Program" || categoryValue === kategori;
-      const matchesNomorAngkatan = nomorAngkatanFilter === "Semua Nomor Angkatan" || a.nomorAngkatan === nomorAngkatanFilter;
-      const matchesTahunAngkatan = tahunAngkatanFilter === "Semua Tahun Angkatan" || String(a.tahunAngkatan || "") === tahunAngkatanFilter;
-      const matchesWilayah = wilayah === "Semua Wilayah" || a.wilayah === wilayah;
-      return matchesSearch && matchesStatus && matchesKategori && matchesNomorAngkatan && matchesTahunAngkatan && matchesWilayah;
-    });
-  }, [search, status, kategori, nomorAngkatanFilter, tahunAngkatanFilter, wilayah, alumniData]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredAlumni.length / ITEMS_PER_PAGE));
+  const kategoriOptions = ["Semua Kategori Program", ...categoryOrder.filter((item) => filterOptions.kategori.includes(item)), ...filterOptions.kategori.filter((item) => !categoryOrder.includes(item)).sort((a, b) => a.localeCompare(b, "id"))];
+  const nomorAngkatanOptions = ["Semua Nomor Angkatan", ...filterOptions.nomorAngkatan];
+  const tahunAngkatanOptions = ["Semua Tahun Angkatan", ...filterOptions.tahunAngkatan];
+  const wilayahOptions = ["Semua Wilayah", ...filterOptions.wilayah];
+  const filteredAlumni = alumniData;
+  const totalPages = Math.max(1, Math.ceil(totalData / ITEMS_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
-  const paginatedAlumni = filteredAlumni.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
+  const paginatedAlumni = filteredAlumni;
   const resetFilter = () => { setSearch(""); setStatus("Semua Status"); setKategori("Semua Kategori Program"); setNomorAngkatanFilter("Semua Nomor Angkatan"); setTahunAngkatanFilter("Semua Tahun Angkatan"); setWilayah("Semua Wilayah"); setPage(1); };
-
   // Edit alumni
   const handleSaveEdit = async (updated: Partial<Alumni>) => {
     if (!editAlumni) return;
@@ -215,7 +187,7 @@ export default function AlumniPage() {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Gagal menyimpan data.");
-      setAlumniData((prev) => prev.map((a) => (a.id === editAlumni.id ? { ...a, ...d.data } : a)));
+      setReloadKey((value) => value + 1);
       setEditAlumni(null);
     } catch (e) {
       alert(e instanceof Error ? e.message : "Gagal menyimpan data.");
@@ -233,6 +205,7 @@ export default function AlumniPage() {
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Gagal menghapus data.");
       setAlumniData((prev) => prev.filter((a) => a.id !== deleteAlumni.id));
+      setTotalData((prev) => Math.max(0, prev - 1));
       setDeleteAlumni(null);
     } catch (e) {
       alert(e instanceof Error ? e.message : "Gagal menghapus data.");
@@ -252,7 +225,7 @@ export default function AlumniPage() {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Gagal menambah alumni.");
-      loadAlumni();
+      setReloadKey((value) => value + 1);
       setShowAddModal(false);
     } catch (e) {
       alert(e instanceof Error ? e.message : "Gagal menambah alumni.");
@@ -332,7 +305,7 @@ export default function AlumniPage() {
 
                   <div>
                     <h2 className="text-sm font-bold text-[#172033]">Filter Data</h2>
-                    <p className="hidden text-xs text-[#94a3b8] sm:block">Cari berdasarkan informasi alumni</p>
+                    <p className="hidden text-xs text-[#94a3b8] sm:block">Filter langsung dari seluruh data di database</p>
                   </div>
                 </div>
 
@@ -355,7 +328,7 @@ export default function AlumniPage() {
                     type="text"
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                    placeholder="Cari nama, nomor, email, HP..."
+                    placeholder="Cari nama, nomor alumni, email, HP, jabatan, instansi, alamat..."
                     className="h-11 w-full rounded-xl border border-slate-200 bg-[#fafbfc] pl-10 pr-4 text-sm text-[#172033] outline-none transition placeholder:text-[#94a3b8] focus:border-[#0b1f3a] focus:bg-white focus:ring-4 focus:ring-[#0b1f3a]/5"
                   />
                 </div>
@@ -375,8 +348,8 @@ export default function AlumniPage() {
                   <h2 className="font-bold text-[#172033]">Daftar Alumni</h2>
                   <p className="mt-1 text-xs text-[#94a3b8]">
                     Menampilkan{" "}
-                    <span className="font-semibold text-[#475569]">{filteredAlumni.length}</span>{" "}
-                    data alumni
+                    <span className="font-semibold text-[#475569]">{totalData}</span>{" "}
+                    data sesuai filter {loading ? "(memuat...)" : ""}
                   </p>
                 </div>
 
@@ -386,7 +359,9 @@ export default function AlumniPage() {
                 </div>
               </div>
 
-              {paginatedAlumni.length > 0 ? (
+              {loading && paginatedAlumni.length === 0 ? (
+                <div className="px-5 py-12 text-center text-sm text-slate-500">Memuat hasil pencarian dari database...</div>
+              ) : paginatedAlumni.length > 0 ? (
                 <>
                   {/* DESKTOP */}
                   <div className="hidden overflow-x-auto lg:block">
@@ -432,7 +407,7 @@ export default function AlumniPage() {
                   <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    totalData={filteredAlumni.length}
+                    totalData={totalData}
                     onPrevious={() => setPage((prev) => Math.max(1, prev - 1))}
                     onNext={() => setPage((prev) => Math.min(totalPages, prev + 1))}
                   />

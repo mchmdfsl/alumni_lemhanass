@@ -165,7 +165,7 @@ export default function AlumniPage() {
   };
 
   // Filter dropdown options are loaded from distinct values in the database.
-  const categoryOrder = ["KRA", "KRA", "PPRA", "P4N", "KSA", "KSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
+  const categoryOrder = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
   const kategoriOptions = ["Semua Kategori Program", ...categoryOrder.filter((item) => filterOptions.kategori.includes(item)), ...filterOptions.kategori.filter((item) => !categoryOrder.includes(item)).sort((a, b) => a.localeCompare(b, "id"))];
   const nomorAngkatanOptions = ["Semua Nomor Angkatan", ...filterOptions.nomorAngkatan];
   const tahunAngkatanOptions = ["Semua Tahun Angkatan", ...filterOptions.tahunAngkatan];

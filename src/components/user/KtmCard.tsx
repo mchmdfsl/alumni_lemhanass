@@ -57,7 +57,6 @@ export default function KtmCard({ profile }: { profile: Profile }) {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5b2878]">Identitas Alumni</p>
           <h2 className="mt-1 text-lg font-bold text-[#32104c]">Kartu Tanda Alumni (KTM)</h2>
-          <p className="mt-1 text-sm text-slate-500">Desain Klasik Elegan · Layout 2</p>
         </div>
         <button type="button" onClick={() => window.print()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#35104f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#4a1a69]">
           <Download size={16} /> Cetak / Simpan PDF
@@ -77,9 +76,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
                 <span className="mb-1 text-2xl text-[#e7bd51]">★</span>
                 <Image src="/images/logo-lemhannas.png" alt="Lambang Lemhannas RI" width={112} height={112} priority className="h-auto w-[76%] max-w-[112px] object-contain drop-shadow-md" />
               </div>
-              <div className="absolute -bottom-3 -left-5 h-12 w-[125%] rotate-[9deg] bg-[#c71932]" />
-              <div className="absolute bottom-1 -left-5 h-7 w-[125%] rotate-[9deg] border-y-[5px] border-white bg-[#f8f7f5]" />
-              <div className="absolute bottom-[-20px] -left-5 h-9 w-[125%] rotate-[9deg] bg-[#32104b]" />
+              <div className="absolute -bottom-5 -left-5 h-14 w-[135%] rotate-[9deg] bg-[#4a1b68]" />
             </div>
 
             <div className="relative min-w-0 flex-1 overflow-hidden px-3 py-3 sm:px-5 sm:py-4">

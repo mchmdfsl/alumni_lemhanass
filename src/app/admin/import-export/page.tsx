@@ -600,7 +600,7 @@ export default function ImportExportPage() {
                 <p className="font-semibold text-slate-800">Petunjuk pengisian</p>
                 <p>Kolom wajib: nama, kategori program, nomor angkatan, tahun angkatan, dan status. Status harus Menunggu. Instansi, jabatan, wilayah, alamat, dan nomor HP opsional dan dapat dilengkapi kemudian melalui menu Profil.</p>
                 <p className="mt-2">Jangan mengubah nama header. Nomor Alumni, sumber data, dan sumber file ditentukan otomatis oleh sistem. Isi status dengan Menunggu.</p>
-                <p className="mt-2">Kategori program yang berlaku: KRA, PRA, PPRA, P4N, KSA, PSA, PPSA, P3N, TAPLAI, PPNK, PPNK KOLABORASI, atau TOT.</p>
+                <p className="mt-2">Kategori program yang berlaku: KRA, PPRA, P4N, KSA, PPSA, P3N, TAPLAI, PPNK, PPNK KOLABORASI, atau TOT.</p>
               </div>
             </section>
 

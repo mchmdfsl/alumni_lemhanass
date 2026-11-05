@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const allowedCategories = new Set(["KRA", "KRA", "PPRA", "P4N", "KSA", "KSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"]);
+const allowedCategories = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"]);
 
 export async function GET(request: NextRequest) {
   const category = (request.nextUrl.searchParams.get("kategori") || "").trim().toLocaleUpperCase("id-ID");

@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import Image from "next/image";
+import KtmCard from "@/components/user/KtmCard";
 import Link from "next/link";
 import {
   UserRound,
@@ -402,6 +403,8 @@ export default function ProfilUser() {
           Kelola foto dan lihat informasi profil alumni kamu.
         </p>
       </section>
+
+      <KtmCard profile={savedProfile} />
 
       {/* Kartu foto dan identitas */}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

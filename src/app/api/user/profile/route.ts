@@ -13,6 +13,7 @@ async function getVerifiedAlumni() {
   const [alumni] = await db()`
     SELECT
       a.id,
+      a.ktm_verification_token AS "ktmVerificationToken",
       a.nomor_alumni AS "nomorAlumni",
       a.nama,
       a.angkatan,

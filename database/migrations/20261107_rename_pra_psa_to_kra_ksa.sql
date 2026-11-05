@@ -34,6 +34,25 @@ SET submitted_kategori_program = CASE
 WHERE upper(trim(coalesce(submitted_kategori_program, ''))) IN ('PRA', 'PSA')
    OR upper(trim(coalesce(submitted_angkatan, ''))) ~ '^(PRA|PSA)([[:space:]]|$)';
 
+-- Pindahkan pengaturan tanda tangan KTM agar tetap terhubung ke kategori baru.
+CREATE TABLE IF NOT EXISTS public.ktm_signature_settings (
+  id BIGSERIAL PRIMARY KEY,
+  kategori_program TEXT NOT NULL UNIQUE,
+  nama_deputi TEXT NOT NULL DEFAULT '',
+  jabatan_deputi TEXT NOT NULL DEFAULT 'Deputi',
+  signature_url TEXT,
+  format_ttd TEXT NOT NULL DEFAULT 'standard' CHECK (format_ttd IN ('standard', 'tot_white')),
+  updated_by TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+UPDATE public.ktm_signature_settings
+SET kategori_program = CASE
+  WHEN upper(trim(kategori_program)) = 'PRA' THEN 'KRA'
+  WHEN upper(trim(kategori_program)) = 'PSA' THEN 'KSA'
+  ELSE kategori_program
+END
+WHERE upper(trim(kategori_program)) IN ('PRA', 'PSA');
+
 -- Data staging juga dinormalisasi agar proses impor berikutnya konsisten.
 UPDATE public.alumni_import_staging
 SET kategori_program = CASE

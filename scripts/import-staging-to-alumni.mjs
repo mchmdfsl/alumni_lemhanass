@@ -19,35 +19,35 @@ const sql = postgres(process.env.DATABASE_URL, {
   max: 1,
 });
 
-const categories = ["PRA", "PPRA", "P4N", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
+const categories = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
 
-// Normalisasi hanya alias kategori lama yang memang diminta: KRA -> PRA, KSA -> PSA.
+// Normalisasi hanya alias kategori lama yang memang diminta: KRA -> KRA, KSA -> KSA.
 // Nama kategori lainnya mengikuti label resmi menu Data Angkatan.
 const normalizeCohort = `CASE
   WHEN UPPER(TRIM(s.angkatan)) ~ '^KRA([[:space:]]|$)'
-    THEN REGEXP_REPLACE(TRIM(s.angkatan), '^KRA', 'PRA', 'i')
+    THEN REGEXP_REPLACE(TRIM(s.angkatan), '^KRA', 'KRA', 'i')
   WHEN UPPER(TRIM(s.angkatan)) ~ '^KSA([[:space:]]|$)'
-    THEN REGEXP_REPLACE(TRIM(s.angkatan), '^KSA', 'PSA', 'i')
+    THEN REGEXP_REPLACE(TRIM(s.angkatan), '^KSA', 'KSA', 'i')
   ELSE TRIM(s.angkatan)
 END`;
 
 const normalizeCategory = `CASE
-  WHEN UPPER(TRIM(s.kategori_program)) = 'KRA' THEN 'PRA'
-  WHEN UPPER(TRIM(s.kategori_program)) = 'KSA' THEN 'PSA'
-  WHEN UPPER(TRIM(s.kategori_program)) = 'PRA' THEN 'PRA'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'KRA' THEN 'KRA'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'KSA' THEN 'KSA'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'KRA' THEN 'KRA'
   WHEN UPPER(TRIM(s.kategori_program)) = 'PPRA' THEN 'PPRA'
   WHEN UPPER(TRIM(s.kategori_program)) = 'P4N' THEN 'P4N'
-  WHEN UPPER(TRIM(s.kategori_program)) = 'PSA' THEN 'PSA'
+  WHEN UPPER(TRIM(s.kategori_program)) = 'KSA' THEN 'KSA'
   WHEN UPPER(TRIM(s.kategori_program)) = 'PPSA' THEN 'PPSA'
   WHEN UPPER(TRIM(s.kategori_program)) = 'P3N' THEN 'P3N'
   WHEN UPPER(TRIM(s.kategori_program)) = 'TAPLAI' THEN 'TAPLAI'
   WHEN UPPER(TRIM(s.kategori_program)) = 'PPNK' THEN 'PPNK'
   WHEN UPPER(TRIM(s.kategori_program)) = 'PPNK KOLABORASI' THEN 'PPNK KOLABORASI'
   WHEN UPPER(TRIM(s.kategori_program)) = 'TOT' THEN 'TOT'
-  WHEN UPPER(TRIM(s.kategori_program)) ~ '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)([[:space:]]|$)'
-    THEN (REGEXP_MATCH(UPPER(TRIM(s.kategori_program)), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)'))[1]
-  WHEN UPPER(TRIM(${normalizeCohort})) ~ '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)([[:space:]]|$)'
-    THEN (REGEXP_MATCH(UPPER(TRIM(${normalizeCohort})), '^(PPNK KOLABORASI|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)'))[1]
+  WHEN UPPER(TRIM(s.kategori_program)) ~ '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)([[:space:]]|$)'
+    THEN (REGEXP_MATCH(UPPER(TRIM(s.kategori_program)), '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)'))[1]
+  WHEN UPPER(TRIM(${normalizeCohort})) ~ '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)([[:space:]]|$)'
+    THEN (REGEXP_MATCH(UPPER(TRIM(${normalizeCohort})), '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)'))[1]
   ELSE NULLIF(UPPER(TRIM(s.kategori_program)), '')
 END`;
 
@@ -68,7 +68,7 @@ try {
     const [{ count: categoriesOutsideMenu }] = await tx.unsafe(`
       SELECT COUNT(*)::int AS count
       FROM public.alumni_import_staging s
-      WHERE COALESCE(${normalizeCategory}, '') NOT IN ('PRA', 'PPRA', 'P4N', 'PSA', 'PPSA', 'P3N', 'TAPLAI', 'PPNK', 'PPNK KOLABORASI', 'TOT')
+      WHERE COALESCE(${normalizeCategory}, '') NOT IN ('KRA', 'PPRA', 'P4N', 'KSA', 'PPSA', 'P3N', 'TAPLAI', 'PPNK', 'PPNK KOLABORASI', 'TOT')
     `);
 
     const [{ count: duplicateIdentityGroups }] = await tx.unsafe(`
@@ -170,8 +170,8 @@ try {
     console.log(`Grup nomor alumni ganda di calon data baru: ${duplicateCandidateNumbers}`);
     console.log(`Calon data dengan nomor alumni yang sudah dipakai: ${existingNumberConflicts}`);
     console.log('Versi skrip: alumni-import-audit-v3');
-    console.log('Kategori menu: PRA, PPRA, P4N, PSA, PPSA, P3N, TAPLAI, PPNK, PPNK KOLABORASI, TOT');
-    console.log('Alias yang dinormalisasi: KRA → PRA, KSA → PSA saja.');
+    console.log('Kategori menu: KRA, PPRA, P4N, KSA, PPSA, P3N, TAPLAI, PPNK, PPNK KOLABORASI, TOT');
+    console.log('Alias yang dinormalisasi: KRA → KRA, KSA → KSA saja.');
     console.log('Status data baru: Menunggu | sumber_data: impor');
 
     if (!apply) {

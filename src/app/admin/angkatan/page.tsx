@@ -65,7 +65,7 @@ export default function AngkatanPage() {
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
   const realCohorts = angkatanData.filter((a) => a.total > 0);
   const totalAlumni = realCohorts.reduce((s, a) => s + a.total, 0);
-  const categories = ["KRA", "KRA", "PPRA", "P4N", "KSA", "KSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
+  const categories = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
 
   return (
     <div className="min-h-screen bg-[#f5f7fa]">

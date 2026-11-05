@@ -154,8 +154,8 @@ export default function AlumniPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Gagal menghapus data alumni.");
-      const deletedIds = new Set((result.deletedIds ?? ids.map(Number)).map(String));
-      setAlumniData((previous) => previous.filter((alumni) => !deletedIds.has(String(alumni.id))));
+      setPage(1);
+      setReloadKey((value) => value + 1);
       window.alert(result.message || "Data alumni berhasil dihapus.");
     } catch (error) {
       window.alert(error instanceof Error ? error.message : "Gagal menghapus data alumni.");
@@ -204,8 +204,7 @@ export default function AlumniPage() {
       const r = await fetch(`/api/alumni/${deleteAlumni.id}`, { method: "DELETE" });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Gagal menghapus data.");
-      setAlumniData((prev) => prev.filter((a) => a.id !== deleteAlumni.id));
-      setTotalData((prev) => Math.max(0, prev - 1));
+      setReloadKey((value) => value + 1);
       setDeleteAlumni(null);
     } catch (e) {
       alert(e instanceof Error ? e.message : "Gagal menghapus data.");

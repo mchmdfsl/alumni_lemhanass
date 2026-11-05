@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         if (!matches.length) {
           matches = await tx`
             SELECT a.id FROM alumni a
-            CROSS JOIN LATERAL (SELECT regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)') AS parts) legacy
+            CROSS JOIN LATERAL (SELECT regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)') AS parts) legacy
             WHERE lower(trim(a.nama)) = lower(${row.nama})
               AND CASE
                 WHEN legacy.parts[1] IS NOT NULL

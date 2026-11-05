@@ -114,12 +114,6 @@ export default function KtmCard({ profile }: { profile: Profile }) {
 
   return (
     <>
-      <style>{`@media print {
-        body.ktm-only-printing * { visibility: hidden !important; }
-        body.ktm-only-printing .ktm-print-area, body.ktm-only-printing .ktm-print-area * { visibility: visible !important; }
-        body.ktm-only-printing .ktm-print-area { position: fixed !important; inset: 0 auto auto 0 !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 8mm !important; background: #fff !important; }
-        body.ktm-only-printing .ktm-print-area article { break-inside: avoid !important; page-break-inside: avoid !important; box-shadow: none !important; }
-      }`}</style>
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm print:overflow-visible print:rounded-none print:border-0 print:shadow-none">
       <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 print:hidden">
         <div>
@@ -136,7 +130,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
       ) : (
         <div className="ktm-print-area mx-auto grid max-w-[1160px] grid-cols-1 items-start gap-5 p-4 sm:gap-6 sm:p-6 lg:grid-cols-2 print:grid-cols-2 print:gap-3 print:p-0">
           {/* SISI DEPAN: panel lambang ungu di kiri, identitas pada bidang putih di kanan */}
-          <article className="relative isolate flex aspect-[1.586/1] w-full min-w-0 container-type-inline-size overflow-hidden rounded-[14px] border border-[#ded9e3] bg-[#faf9fb] text-[#28113f] shadow-lg print:break-inside-avoid print:shadow-none">
+          <article className="relative isolate flex aspect-[1.586/1] w-full min-w-0 overflow-hidden rounded-[14px] border border-[#ded9e3] bg-[#faf9fb] text-[#28113f] shadow-lg print:break-inside-avoid print:shadow-none">
             <div className="relative flex w-[24%] shrink-0 flex-col items-center justify-center overflow-hidden bg-[#32104b]">
               
               
@@ -196,7 +190,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
           </article>
 
           {/* SISI BELAKANG: bidang ungu, watermark gedung, data alumni dan informasi resmi */}
-          <article className="relative isolate flex aspect-[1.586/1] w-full min-w-0 container-type-inline-size flex-col overflow-hidden rounded-[14px] border border-[#4b2861] bg-[#32104b] text-white shadow-lg print:break-inside-avoid print:shadow-none">
+          <article className="relative isolate flex aspect-[1.586/1] w-full min-w-0 flex-col overflow-hidden rounded-[14px] border border-[#4b2861] bg-[#32104b] text-white shadow-lg print:break-inside-avoid print:shadow-none">
             <div className="pointer-events-none absolute inset-0 opacity-[0.20]">
               <Image src="/images/lemhannas-header.jpg" alt="" fill unoptimized sizes="700px" className="object-cover object-center" />
             </div>

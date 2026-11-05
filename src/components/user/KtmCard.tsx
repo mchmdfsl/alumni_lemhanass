@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Download, MapPin, Globe2, ShieldCheck, LoaderCircle } from "lucide-react";
+import { Download, MapPin, Globe2, LoaderCircle } from "lucide-react";
 
 type Profile = {
   nama?: string;

@@ -21,23 +21,14 @@ const sql = postgres(process.env.DATABASE_URL, {
 
 const categories = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
 
-// Normalisasi hanya alias kategori lama yang memang diminta: KRA -> KRA, KSA -> KSA.
-// Nama kategori lainnya mengikuti label resmi menu Data Angkatan.
-const normalizeCohort = `CASE
-  WHEN UPPER(TRIM(s.angkatan)) ~ '^KRA([[:space:]]|$)'
-    THEN REGEXP_REPLACE(TRIM(s.angkatan), '^KRA', 'KRA', 'i')
-  WHEN UPPER(TRIM(s.angkatan)) ~ '^KSA([[:space:]]|$)'
-    THEN REGEXP_REPLACE(TRIM(s.angkatan), '^KSA', 'KSA', 'i')
-  ELSE TRIM(s.angkatan)
-END`;
+// KRA dan KSA adalah kategori resmi. Tidak mengubahnya menjadi label lain.
+const normalizeCohort = `TRIM(s.angkatan)`;
 
 const normalizeCategory = `CASE
   WHEN UPPER(TRIM(s.kategori_program)) = 'KRA' THEN 'KRA'
   WHEN UPPER(TRIM(s.kategori_program)) = 'KSA' THEN 'KSA'
-  WHEN UPPER(TRIM(s.kategori_program)) = 'KRA' THEN 'KRA'
   WHEN UPPER(TRIM(s.kategori_program)) = 'PPRA' THEN 'PPRA'
   WHEN UPPER(TRIM(s.kategori_program)) = 'P4N' THEN 'P4N'
-  WHEN UPPER(TRIM(s.kategori_program)) = 'KSA' THEN 'KSA'
   WHEN UPPER(TRIM(s.kategori_program)) = 'PPSA' THEN 'PPSA'
   WHEN UPPER(TRIM(s.kategori_program)) = 'P3N' THEN 'P3N'
   WHEN UPPER(TRIM(s.kategori_program)) = 'TAPLAI' THEN 'TAPLAI'

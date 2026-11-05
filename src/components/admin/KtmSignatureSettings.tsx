@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import Image from "next/image";
 import { FileImage, Save, LoaderCircle, CheckCircle2, AlertCircle } from "lucide-react";
 
-const ALL_CATEGORIES = ["PRA", "PPRA", "P4N", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
+const ALL_CATEGORIES = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
 type Setting = { kategoriProgram: string; namaDeputi: string; jabatanDeputi: string; signatureUrl: string | null; formatTtd: "standard" | "tot_white" };
 
 export default function KtmSignatureSettings() {

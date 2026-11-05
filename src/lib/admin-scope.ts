@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 export type AdminScope = { role: "admin" | "super_admin"; kategoriProgram: string | null };
 
 export const ADMIN_CATEGORY_GROUPS = {
-  ADMIN_GROUP_1: ["PRA", "PPRA", "P4N", "PSA", "PPSA", "P3N"],
+  ADMIN_GROUP_1: ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N"],
   ADMIN_GROUP_2: ["TAPLAI", "PPNK", "PPNK KOLABORASI"],
   ADMIN_GROUP_3: ["TOT"],
 } as const;

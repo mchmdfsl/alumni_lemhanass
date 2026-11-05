@@ -11,6 +11,7 @@ type Profile = {
   nomorAngkatan?: string;
   tahunAngkatan?: string | number;
   fotoProfil?: string | null;
+  ktmVerificationToken?: string | null;
 };
 
 type Signature = {
@@ -20,19 +21,23 @@ type Signature = {
   formatTtd?: "standard" | "tot_white";
 };
 
-function QrPlaceholder() {
-  return (
-    <div className="flex aspect-square w-full items-center justify-center border-[5px] border-white bg-white text-center text-[9px] font-bold leading-tight text-[#35104f] shadow-sm">
-      QR
-      <br />
-      VERIFIKASI
-    </div>
-  );
+function QrCode({ token, origin }: { token?: string | null; origin: string }) {
+  if (!token || !origin) {
+    return <div className="flex aspect-square w-full items-center justify-center bg-white text-center text-[8px] font-semibold text-[#35104f]">QR belum tersedia</div>;
+  }
+  const verifyUrl = `${origin}/verifikasi-ktm/${token}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=4&data=${encodeURIComponent(verifyUrl)}`;
+  return <Image src={qrUrl} alt="QR verifikasi keaslian KTM" width={240} height={240} unoptimized className="aspect-square w-full bg-white object-contain" />;
 }
 
 export default function KtmCard({ profile }: { profile: Profile }) {
   const [signature, setSignature] = useState<Signature | null>(null);
   const [loading, setLoading] = useState(true);
+  const [siteOrigin, setSiteOrigin] = useState("");
+
+  useEffect(() => {
+    setSiteOrigin(window.location.origin);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -176,7 +181,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
                   <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[5px] border-2 border-white bg-slate-200 shadow-sm ring-1 ring-[#c9bdd2]">
                     {profile.fotoProfil ? <Image src={profile.fotoProfil} alt="Foto alumni" fill unoptimized sizes="110px" className="object-cover" /> : <div className="flex h-full items-center justify-center px-1 text-center text-[8px] text-slate-500">Foto alumni</div>}
                   </div>
-                  <div className="w-[82%]"><QrPlaceholder /></div>
+                  <div className="w-[82%]"><QrCode token={profile.ktmVerificationToken} origin={siteOrigin} /></div>
                   <p className="text-center text-[clamp(5px,.62vw,8px)] font-semibold leading-tight">Verifikasi Keaslian Kartu<br />Scan QR Code</p>
                 </div>
               </div>
@@ -223,7 +228,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
                 </dl>
               </div>
               <div className="w-[25%] max-w-[112px] shrink-0 rounded-md bg-[#250b3a]/75 p-2 text-center">
-                <QrPlaceholder />
+                <QrCode token={profile.ktmVerificationToken} origin={siteOrigin} />
                 <p className="mt-1 text-[clamp(5px,.62vw,8px)] font-semibold leading-tight">Verifikasi Keaslian Kartu<br />Scan QR Code</p>
               </div>
             </div>

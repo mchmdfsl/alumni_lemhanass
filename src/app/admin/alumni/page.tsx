@@ -165,7 +165,7 @@ export default function AlumniPage() {
   };
 
   // Filter dropdown options are loaded from distinct values in the database.
-  const categoryOrder = ["KRA", "PRA", "PPRA", "P4N", "KSA", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
+  const categoryOrder = ["KRA", "KRA", "PPRA", "P4N", "KSA", "KSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
   const kategoriOptions = ["Semua Kategori Program", ...categoryOrder.filter((item) => filterOptions.kategori.includes(item)), ...filterOptions.kategori.filter((item) => !categoryOrder.includes(item)).sort((a, b) => a.localeCompare(b, "id"))];
   const nomorAngkatanOptions = ["Semua Nomor Angkatan", ...filterOptions.nomorAngkatan];
   const tahunAngkatanOptions = ["Semua Tahun Angkatan", ...filterOptions.tahunAngkatan];
@@ -835,7 +835,7 @@ function AlumniAddModal({ saving, onClose, onSave }: { saving: boolean; onClose:
 }
 
 function CategorySelect({ label, value, onChange, name, required = false }: { label: string; value?: string; onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void; name?: string; required?: boolean }) {
-  const categories = ["PRA", "PPRA", "P4N", "PSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
+  const categories = ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"];
   const options = value && !categories.includes(value) ? [value, ...categories] : categories;
   return (
     <div className="flex flex-col gap-1.5">

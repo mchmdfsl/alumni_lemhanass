@@ -12,11 +12,26 @@ export async function GET() {
   const allowedCategories = getAdminCategories(scope) ?? [];
   try {
     const rows = await db()`
-      SELECT
-        CASE WHEN wilayah = '' OR wilayah IS NULL THEN 'Tidak Diketahui' ELSE wilayah END AS wilayah,
-        COUNT(*)::int AS jumlah
-      FROM alumni
-      WHERE (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(kategori_program), ''), angkatan, '')) = ANY(${allowedCategories}))
+      WITH resolved AS (
+        SELECT
+          CASE
+            WHEN legacy.parts[1] IS NOT NULL
+              AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, ''))))
+              THEN legacy.parts[1]
+            ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan, '')
+          END AS kategori,
+          COALESCE(NULLIF(trim(a.wilayah), ''), 'Tidak Diketahui') AS wilayah
+        FROM alumni a
+        CROSS JOIN LATERAL (
+          SELECT regexp_match(
+            upper(trim(coalesce(a.angkatan, ''))),
+            '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'
+          ) AS parts
+        ) legacy
+      )
+      SELECT wilayah, COUNT(*)::int AS jumlah
+      FROM resolved
+      WHERE (${scope.role === "super_admin"} = TRUE OR kategori = ANY(${allowedCategories}))
       GROUP BY wilayah
       ORDER BY jumlah DESC
       LIMIT 20`;

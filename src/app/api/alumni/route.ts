@@ -117,19 +117,19 @@ export async function GET(request: NextRequest) {
       AND (${scope.role === "super_admin"} = TRUE OR CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan) END = ANY(${allowedCategories}))
     `;
 
-    const filterOptionsRows = await db()`
+    const filterOptionsRows = (await db()`
       SELECT DISTINCT CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan) END AS kategori, COALESCE(NULLIF(trim(a.nomor_angkatan), ''), legacy.parts[2], '') AS "nomorAngkatan", COALESCE(a.tahun_angkatan::text, '') AS "tahunAngkatan", COALESCE(a.wilayah, '') AS wilayah
       FROM alumni a CROSS JOIN LATERAL (SELECT regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PRA|PPRA|P4N|PSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)') AS parts) legacy
       WHERE (${scope.role === "super_admin"} = TRUE OR CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan) END = ANY(${allowedCategories}))
-    `;
+    `) as { kategori: string | null; nomorAngkatan: string; tahunAngkatan: string; wilayah: string }[];
 
     return NextResponse.json({
       data: rows, total: counts?.total ?? 0, counts,
       filterOptions: {
-        kategori: [...new Set(filterOptionsRows.map((row: { kategori: string | null }) => row.kategori).filter(Boolean))],
-        nomorAngkatan: [...new Set(filterOptionsRows.map((row: { nomorAngkatan: string }) => row.nomorAngkatan).filter(Boolean))].sort((a, b) => a.localeCompare(b, "id", { numeric: true })),
-        tahunAngkatan: [...new Set(filterOptionsRows.map((row: { tahunAngkatan: string }) => row.tahunAngkatan).filter(Boolean))].sort((a, b) => Number(b) - Number(a)),
-        wilayah: [...new Set(filterOptionsRows.map((row: { wilayah: string }) => row.wilayah).filter(Boolean))].sort((a, b) => a.localeCompare(b, "id")),
+        kategori: [...new Set(filterOptionsRows.map((row) => row.kategori).filter(Boolean))],
+        nomorAngkatan: [...new Set(filterOptionsRows.map((row) => row.nomorAngkatan).filter(Boolean))].sort((a, b) => a.localeCompare(b, "id", { numeric: true })),
+        tahunAngkatan: [...new Set(filterOptionsRows.map((row) => row.tahunAngkatan).filter(Boolean))].sort((a, b) => Number(b) - Number(a)),
+        wilayah: [...new Set(filterOptionsRows.map((row) => row.wilayah).filter(Boolean))].sort((a, b) => a.localeCompare(b, "id")),
       },
     });
   } catch (error) {

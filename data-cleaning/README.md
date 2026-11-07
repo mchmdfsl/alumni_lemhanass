@@ -54,6 +54,6 @@ input, skrip juga dapat memilihnya otomatis.
 - `output/extraction_errors.csv`: file yang gagal dibaca atau butuh penanganan khusus.
 - `output/extraction_summary.xlsx`: ringkasan jumlah file, baris, dan blok teks.
 
-PDF hasil scan/gambar belum menjalani OCR. File DOC lama memerlukan LibreOffice.
+PDF hasil scan/gambar belum menjalani OCR. File DOC lama dibaca menggunakan pustaka Python `legacy-doc`; LibreOffice hanya menjadi opsi cadangan jika pustaka tersebut gagal.
 Tahap ini hanya inventarisasi dan ekstraksi, belum normalisasi final, deduplikasi,
 pencocokan ke 8.723 data database, atau pembuatan file impor produksi.

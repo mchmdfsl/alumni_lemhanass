@@ -43,3 +43,8 @@ yarn-error.log*
 *.xlsx
 *.xls
 /data/
+data-cleaning/input/
+data-cleaning/output/
+data-cleaning/.venv/
+__pycache__/
+*.py[cod]

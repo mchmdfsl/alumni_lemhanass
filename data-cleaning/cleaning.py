@@ -10,6 +10,11 @@ import fitz
 import pandas as pd
 from docx import Document
 
+try:
+    from legacy_doc import extract_text as extract_legacy_doc_text
+except ImportError:
+    extract_legacy_doc_text = None
+
 BASE_DIR = Path(__file__).resolve().parent
 INPUT_DIR = BASE_DIR / "input"
 OUTPUT_DIR = BASE_DIR / "output"
@@ -114,12 +119,32 @@ def process_pdf(file: Path) -> None:
 
 
 def process_legacy_doc(file: Path) -> None:
+    # Prefer the Python-only reader so Windows users do not need LibreOffice.
+    if extract_legacy_doc_text is not None:
+        try:
+            result = extract_legacy_doc_text(file.read_bytes())
+            content = getattr(result, "text", "") or ""
+            if content.strip():
+                add_text(file, "Legacy DOC (legacy-doc)", content)
+                return
+            errors.append({
+                "file": str(file),
+                "error": "legacy-doc tidak menemukan teks; dicoba dengan konverter alternatif",
+            })
+        except Exception as exc:
+            errors.append({
+                "file": str(file),
+                "error": f"legacy-doc gagal: {exc!r}",
+            })
+
+    # Optional fallback when LibreOffice happens to be installed.
     office = shutil.which("soffice") or shutil.which("libreoffice")
     if not office:
-        errors.append({
-            "file": str(file),
-            "error": "File .doc lama perlu LibreOffice untuk dikonversi",
-        })
+        if extract_legacy_doc_text is None:
+            errors.append({
+                "file": str(file),
+                "error": "Pembaca .doc belum tersedia. Jalankan: python -m pip install legacy-doc",
+            })
         return
 
     conversion_dir = OUTPUT_DIR / "doc_conversion"
@@ -138,13 +163,13 @@ def process_legacy_doc(file: Path) -> None:
         if converted.exists():
             add_text(
                 file,
-                "Converted legacy DOC",
+                "Converted legacy DOC (LibreOffice fallback)",
                 converted.read_text(encoding="utf-8", errors="replace"),
             )
         else:
             errors.append({
                 "file": str(file),
-                "error": "LibreOffice tidak menghasilkan file TXT",
+                "error": "Konverter alternatif tidak menghasilkan file TXT",
             })
     except Exception as exc:
         errors.append({"file": str(file), "error": repr(exc)})

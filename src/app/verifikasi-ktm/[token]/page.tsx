@@ -32,7 +32,6 @@ export default async function VerifyKtmPage({ params }: { params: Promise<{ toke
   const valid = alumni.alumniStatus === "Terverifikasi" && alumni.hasAccount && alumni.accountActive;
   const inactive = alumni.alumniStatus === "Terverifikasi" && alumni.hasAccount && !alumni.accountActive;
   const unverified = alumni.alumniStatus !== "Terverifikasi";
-  const missingAccount = alumni.alumniStatus === "Terverifikasi" && !alumni.hasAccount;
   const statusLabel = valid ? "AKTIF" : inactive ? "NONAKTIF" : unverified ? "BELUM TERVERIFIKASI" : "BELUM ADA AKUN";
   const statusTitle = valid ? "KARTU VALID · AKUN AKTIF" : inactive ? "KARTU TERDAFTAR · AKUN NONAKTIF" : unverified ? "BELUM TERVERIFIKASI" : "BELUM MEMILIKI AKUN";
   const statusDescription = valid ? "Identitas alumni terverifikasi dan akun saat ini aktif." : inactive ? "Identitas alumni terdaftar, tetapi akun telah dinonaktifkan oleh Admin." : unverified ? "Data alumni ditemukan, tetapi belum disetujui melalui proses verifikasi." : "Data alumni sudah terverifikasi, tetapi belum memiliki akun yang dapat digunakan.";

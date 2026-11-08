@@ -51,6 +51,8 @@ export async function GET(request: NextRequest) {
     const rows = await db()`
       SELECT
         a.id,
+        account.id AS "accountId",
+        COALESCE(account.is_active, FALSE) AS "accountActive",
         COALESCE(a.nomor_alumni, '') AS "nomorAlumni",
         a.nama,
         CASE
@@ -82,6 +84,11 @@ export async function GET(request: NextRequest) {
           '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'
         ) AS parts
       ) legacy
+      LEFT JOIN LATERAL (
+        SELECT id, is_active FROM alumni_accounts
+        WHERE alumni_id = a.id
+        ORDER BY id ASC LIMIT 1
+      ) account ON TRUE
       WHERE (
         ${search} = ''
         OR CONCAT_WS(' ', a.nama, a.nomor_alumni, a.email, a.instansi, a.jabatan, a.nomor_hp, a.alamat, a.wilayah, CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan) END, COALESCE(NULLIF(trim(a.nomor_angkatan), ''), legacy.parts[2], ''), a.tahun_angkatan::text) ILIKE ${"%" + search + "%"}

@@ -31,6 +31,11 @@ export default async function VerifyKtmPage({ params }: { params: Promise<{ toke
   if (!alumni) notFound();
   const valid = alumni.alumniStatus === "Terverifikasi" && alumni.hasAccount && alumni.accountActive;
   const inactive = alumni.alumniStatus === "Terverifikasi" && alumni.hasAccount && !alumni.accountActive;
+  const unverified = alumni.alumniStatus !== "Terverifikasi";
+  const missingAccount = alumni.alumniStatus === "Terverifikasi" && !alumni.hasAccount;
+  const statusLabel = valid ? "AKTIF" : inactive ? "NONAKTIF" : unverified ? "BELUM TERVERIFIKASI" : "BELUM ADA AKUN";
+  const statusTitle = valid ? "KARTU VALID · AKUN AKTIF" : inactive ? "KARTU TERDAFTAR · AKUN NONAKTIF" : unverified ? "BELUM TERVERIFIKASI" : "BELUM MEMILIKI AKUN";
+  const statusDescription = valid ? "Identitas alumni terverifikasi dan akun saat ini aktif." : inactive ? "Identitas alumni terdaftar, tetapi akun telah dinonaktifkan oleh Admin." : unverified ? "Data alumni ditemukan, tetapi belum disetujui melalui proses verifikasi." : "Data alumni sudah terverifikasi, tetapi belum memiliki akun yang dapat digunakan.";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">
@@ -40,16 +45,16 @@ export default async function VerifyKtmPage({ params }: { params: Promise<{ toke
           <h1 className="mt-2 text-2xl font-bold">Verifikasi Kartu Alumni</h1>
         </div>
         <div className="p-6 sm:p-8">
-          <div className={`mb-6 flex items-center gap-3 rounded-2xl p-4 ${valid ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>
+          <div className={`mb-6 flex items-center gap-3 rounded-2xl p-4 ${valid ? "bg-emerald-50 text-emerald-800" : inactive ? "bg-amber-50 text-amber-800" : "bg-red-50 text-red-800"}`}>
             {valid ? <ShieldCheck size={30} /> : <XCircle size={30} />}
             <div>
-              <p className="font-bold">{valid ? "KARTU VALID · AKUN AKTIF" : inactive ? "KARTU TERDAFTAR · AKUN NONAKTIF" : "KARTU TIDAK VALID"}</p>
-              <p className="text-sm">{valid ? "Identitas alumni terverifikasi dan akun saat ini aktif." : inactive ? "Identitas alumni terdaftar, tetapi akun telah dinonaktifkan oleh Admin." : "Alumni belum terverifikasi atau belum memiliki akun aktif."}</p>
+              <p className="font-bold">{statusTitle}</p>
+              <p className="text-sm">{statusDescription}</p>
             </div>
           </div>
           <div className="mb-5 flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
             <span className="text-sm text-slate-600">Status akun</span>
-            <span className={`rounded-full px-3 py-1 text-xs font-bold ${valid ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>{valid ? "AKTIF" : "NONAKTIF / TIDAK VALID"}</span>
+            <span className={`rounded-full px-3 py-1 text-xs font-bold ${valid ? "bg-emerald-100 text-emerald-800" : inactive ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-800"}`}>{statusLabel}</span>
           </div>
           <dl className="space-y-3 text-sm">
             <div><dt className="text-slate-500">Nama alumni</dt><dd className="font-semibold text-slate-900">{alumni.nama}</dd></div>

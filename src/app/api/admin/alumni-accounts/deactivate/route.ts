@@ -14,8 +14,11 @@ export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
     const accountId = Number(body.accountId);
+    const alumniId = Number(body.alumniId);
     const reason = typeof body.reason === "string" ? body.reason.trim().slice(0, 1000) : "";
-    if (!Number.isSafeInteger(accountId) || accountId < 1 || !reason) {
+    const hasAccountId = Number.isSafeInteger(accountId) && accountId > 0;
+    const hasAlumniId = Number.isSafeInteger(alumniId) && alumniId > 0;
+    if ((!hasAccountId && !hasAlumniId) || !reason) {
       return NextResponse.json({ error: "ID akun dan alasan penonaktifan wajib diisi." }, { status: 400 });
     }
 
@@ -25,7 +28,10 @@ export async function PATCH(request: NextRequest) {
           a.nama, a.kategori_program AS "kategoriProgram", a.angkatan
         FROM alumni_accounts aa
         INNER JOIN alumni a ON a.id = aa.alumni_id
-        WHERE aa.id = ${accountId}
+        WHERE (${hasAccountId} = TRUE AND aa.id = ${accountId})
+           OR (${hasAlumniId} = TRUE AND aa.alumni_id = ${alumniId})
+        ORDER BY aa.id ASC
+        LIMIT 1
         FOR UPDATE OF aa
       `;
       if (!account) return { kind: "not_found" as const };
@@ -38,7 +44,7 @@ export async function PATCH(request: NextRequest) {
         SET is_active = FALSE, updated_at = NOW()
         WHERE id = ${accountId}
       `;
-      return { kind: "deactivated" as const, alumniId: Number(account.alumniId), nama: String(account.nama || ""), category };
+      return { kind: "deactivated" as const, accountId: Number(account.id), alumniId: Number(account.alumniId), nama: String(account.nama || ""), category };
     });
 
     if (result.kind === "not_found") return NextResponse.json({ error: "Akun alumni tidak ditemukan." }, { status: 404 });
@@ -46,7 +52,7 @@ export async function PATCH(request: NextRequest) {
     if (result.kind === "inactive") return NextResponse.json({ error: "Akun sudah nonaktif." }, { status: 409 });
 
     await writeAdminAudit(actor, "alumni_account_deactivated", {
-      accountId, reason, kategoriProgram: result.category, nama: result.nama,
+      accountId: result.accountId, reason, kategoriProgram: result.category, nama: result.nama,
     }, result.alumniId);
     return NextResponse.json({ ok: true, message: "Akun alumni berhasil dinonaktifkan. Data alumni tetap tersimpan." });
   } catch (error) {

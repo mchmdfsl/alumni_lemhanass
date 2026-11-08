@@ -9,9 +9,10 @@ import AdminHeader from "@/components/admin/AdminHeader";
 type AdminUser = { id: number; username: string; email: string; kategoriProgram: string | null; isActive: boolean; createdAt?: string; updatedAt?: string };
 
 const adminGroups = [
-  { value: "ADMIN_GROUP_1", label: "Admin 1 · KRA, PPRA, P4N, KSA, PPSA, P3N" },
-  { value: "ADMIN_GROUP_2", label: "Admin 2 · TAPLAI, PPNK, PPNK KOLABORASI" },
-  { value: "ADMIN_GROUP_3", label: "Admin 3 · TOT" },
+  { value: "ADMIN_GROUP_1", label: "Admin 1 · PRA, PPRA, P4N" },
+  { value: "ADMIN_GROUP_2", label: "Admin 2 · PSA, PPSA, P3N" },
+  { value: "ADMIN_GROUP_3", label: "Admin 3 · TAPLAI, PPNK, PPNK KOLABORASI" },
+  { value: "ADMIN_GROUP_4", label: "Admin 4 · TOT" },
 ];
 
 export default function ManajemenAdminPage() {

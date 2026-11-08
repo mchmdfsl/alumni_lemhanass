@@ -31,7 +31,6 @@ const menuItems = [
   { label: "Pengajuan Akun", href: "/admin/pengajuan-akun", icon: UserRoundCheck },
   { label: "Data Alumni", href: "/admin/alumni", icon: Users },
   { label: "Verifikasi Alumni", href: "/admin/verifikasi-alumni", icon: ClipboardCheck, showBadge: true },
-  { label: "Permintaan Alumni", href: "/admin/permintaan-alumni", icon: ClipboardCheck },
   { label: "Angkatan", href: "/admin/angkatan", icon: GraduationCap },
   { label: "Wilayah", href: "/admin/wilayah", icon: MapPin },
   { label: "Laporan", href: "/admin/laporan", icon: FileBarChart },

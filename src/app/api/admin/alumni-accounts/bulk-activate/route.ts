@@ -65,8 +65,13 @@ export async function POST(request: NextRequest) {
         ORDER BY a.angkatan ASC NULLS LAST, a.id ASC LIMIT ${BATCH_SIZE} FOR UPDATE OF a
       `;
 
+      const prepared = await mapWithConcurrency(rows, 4, async (row) => {
+        const password = makePassword();
+        return { row, password, passwordHash: await hashPassword(password) };
+      });
       const created: Array<{ nama: string; angkatan: string; nomorAlumni: string; email: string; password: string }> = [];
-      for (const row of rows) {
+      for (const item of prepared) {
+        const row = item.row;
         const alumniId = Number(row.id);
         const angkatan = String(row.angkatan ?? "");
         const nomorAlumni = await assignAlumniNumber(
@@ -75,8 +80,8 @@ export async function POST(request: NextRequest) {
           angkatan,
           typeof row.nomorAlumni === "string" ? row.nomorAlumni : null,
         );
-        const password = makePassword();
-        const passwordHash = await hashPassword(password);
+        const password = item.password;
+        const passwordHash = item.passwordHash;
         // Email sengaja NULL sampai alumni sendiri mengisinya melalui halaman profil.
         await tx`
           INSERT INTO alumni_accounts (alumni_id, email, password_hash, is_active)

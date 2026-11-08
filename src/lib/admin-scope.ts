@@ -8,7 +8,7 @@ export type AdminScope = { role: "admin" | "super_admin"; kategoriProgram: strin
 /** Canonical program categories. Legacy aliases are accepted at input boundaries only. */
 export function normalizeProgramCategory(value: unknown): string {
   if (typeof value !== "string") return "";
-  const category = value.trim().toLocaleUpperCase("id-ID").replace(/\\s+/g, " ");
+  const category = value.trim().toLocaleUpperCase("id-ID").replace(/\s+/g, " ");
   if (category === "PRA") return "KRA";
   if (category === "PSA") return "KSA";
   return category;

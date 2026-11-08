@@ -28,6 +28,9 @@ function labelAction(action: string) {
     account_request_rejected: "Tolak pendaftaran akun",
     alumni_accounts_bulk_activated: "Buat akun alumni massal",
     alumni_passwords_bulk_reset: "Reset password alumni massal",
+    alumni_account_deactivated: "Nonaktifkan akun alumni",
+    alumni_account_reactivated: "Aktifkan kembali akun alumni",
+    alumni_category_changed_by_user: "Alumni mengubah kategori program",
     settings_updated: "Ubah pengaturan",
   };
   return known[action] || action.replaceAll("_", " ");

@@ -138,9 +138,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
           {/* FRONT: komposisi kartu disamakan dengan desain yang disetujui */}
           <article className="relative isolate flex aspect-[1.586/1] w-full min-w-0 overflow-hidden rounded-[14px] border border-[#d8d2bd] bg-[#f4f1df] text-[#17132f] shadow-lg print:break-inside-avoid print:shadow-none">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_18%,rgba(255,255,255,.95),transparent_55%),linear-gradient(115deg,#f7f4e6_0%,#eeecd9_58%,#f8f5e8_100%)]" />
-            <div className="pointer-events-none absolute inset-0 opacity-[0.16]">
-              <Image src="/images/lemhannas-header.jpg" alt="" fill unoptimized sizes="700px" className="object-cover object-center grayscale" />
-            </div>
+            <div className="pointer-events-none absolute inset-0 opacity-[0.07] bg-[repeating-linear-gradient(135deg,transparent_0px,transparent_10px,rgba(177,151,86,.18)_11px,transparent_12px)]" />
             <div className="pointer-events-none absolute inset-0 opacity-25 bg-[repeating-linear-gradient(135deg,transparent_0px,transparent_8px,rgba(177,151,86,.12)_9px,transparent_10px)]" />
             <div className="relative flex w-[25%] shrink-0 flex-col items-center overflow-hidden bg-[#17132f]">
               <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_20%,#665b8d_0_1px,transparent_2px),radial-gradient(circle_at_75%_38%,#8a7da7_0_1px,transparent_2px),repeating-linear-gradient(135deg,transparent_0px,transparent_9px,rgba(255,255,255,.08)_10px,transparent_11px)]" />
@@ -203,10 +201,12 @@ export default function KtmCard({ profile }: { profile: Profile }) {
 
           {/* BACK: navy, watermark gedung, blok data kiri, QR kanan, footer institusi */}
           <article className="relative isolate flex aspect-[1.586/1] w-full min-w-0 flex-col overflow-hidden rounded-[14px] border border-[#282343] bg-[#17132f] text-white shadow-lg print:break-inside-avoid print:shadow-none">
-            <div className="pointer-events-none absolute inset-0 opacity-[0.25]">
-              <Image src="/images/lemhannas-header.jpg" alt="" fill unoptimized sizes="700px" className="object-cover object-center" />
-            </div>
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#17132f]/95 via-[#17132f]/85 to-[#17132f]/70" />
+            <div
+              className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.10]"
+              style={{ backgroundImage: "url(https://images.unsplash.com/photo-1695815870617-31bef23919fb?auto=format&fit=crop&w=1600&q=80)" }}
+              aria-hidden="true"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#17132f]/95 via-[#17132f]/90 to-[#17132f]/85" />
             <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent_0px,transparent_23px,rgba(255,255,255,.035)_24px,transparent_25px)]" />
 
             <header className="relative flex items-center gap-[2.5%] border-b border-[#c8b477]/30 px-[4%] py-[3%]">

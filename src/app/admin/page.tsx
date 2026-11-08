@@ -135,10 +135,8 @@ export default function AdminDashboardPage() {
               <DashboardAction href="/admin/verifikasi-alumni" title="Verifikasi Alumni" description="Tinjau data yang menunggu verifikasi" />
               <DashboardAction href="/admin/pengajuan-akun" title="Pengajuan Akun" description="Periksa permohonan pembuatan akun" />
               <DashboardAction href="/admin/alumni" title="Kelola Data Alumni" description="Cari dan perbarui data alumni" />
-              {adminRole === "super_admin" ? (
+              {adminRole === "super_admin" && (
                 <DashboardAction href="/admin/manajemen-admin" title="Manajemen Admin" description="Kelola akun dan akses administrator" />
-              ) : (
-                <DashboardAction href="/admin/permintaan-alumni" title="Permintaan Alumni" description="Tinjau permohonan penonaktifan akun" />
               )}
             </section>
             {/* =====================================

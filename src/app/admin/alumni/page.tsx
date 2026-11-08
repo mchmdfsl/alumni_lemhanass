@@ -27,6 +27,8 @@ import AdminHeader from "@/components/admin/AdminHeader";
 
 interface Alumni {
   id: number;
+  accountId?: number | null;
+  accountActive: boolean;
   nomorAlumni: string;
   nama: string;
   angkatan: string;
@@ -560,7 +562,8 @@ function AlumniTableRow({ alumni, onDetail, onEdit, onDelete, onDeactivate, deac
         <div className="flex justify-end gap-1">
           <ActionButton label="Detail" onClick={onDetail}><Eye size={16} /></ActionButton>
           <ActionButton label="Edit" onClick={onEdit}><Pencil size={16} /></ActionButton>
-          {alumni.status === "Terverifikasi" && <ActionButton label={deactivating ? "Menonaktifkan..." : "Nonaktifkan akun"} danger onClick={onDeactivate}><UserX size={16} /></ActionButton>}
+          {alumni.status === "Terverifikasi" && alumni.accountActive && <ActionButton label={deactivating ? "Menonaktifkan..." : "Nonaktifkan akun"} danger onClick={onDeactivate}><UserX size={16} /></ActionButton>}
+          {alumni.status === "Terverifikasi" && !alumni.accountActive && <span className="px-2 text-[10px] font-semibold text-slate-400">Akun nonaktif</span>}
           <ActionButton label="Hapus" danger onClick={onDelete}><Trash2 size={16} /></ActionButton>
         </div>
       </td>
@@ -603,7 +606,8 @@ function AlumniMobileCard({ alumni, onDetail, onEdit, onDelete, onDeactivate, de
         <button type="button" onClick={onEdit} className="flex h-9 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-[#64748b] transition hover:bg-slate-50">
           <Pencil size={15} />
         </button>
-        {alumni.status === "Terverifikasi" && <button type="button" onClick={onDeactivate} disabled={deactivating} title="Nonaktifkan akun" className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-50"><UserX size={15} />{deactivating ? "Memproses..." : "Nonaktifkan"}</button>}
+        {alumni.status === "Terverifikasi" && alumni.accountActive && <button type="button" onClick={onDeactivate} disabled={deactivating} title="Nonaktifkan akun" className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-50"><UserX size={15} />{deactivating ? "Memproses..." : "Nonaktifkan"}</button>}
+        {alumni.status === "Terverifikasi" && !alumni.accountActive && <span className="flex h-9 items-center px-2 text-xs text-slate-400">Akun nonaktif</span>}
         <button type="button" onClick={onDelete} className="flex h-9 w-10 items-center justify-center rounded-lg border border-red-100 bg-red-50 text-red-500 transition hover:bg-red-100">
           <Trash2 size={15} />
         </button>

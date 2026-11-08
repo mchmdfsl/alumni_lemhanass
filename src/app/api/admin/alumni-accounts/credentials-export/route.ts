@@ -29,7 +29,7 @@ export async function HEAD() {
   if (role !== "super_admin") return new Response(null, { status: 403 });
 
   try {
-    const [progress] = await db()\`
+    const [progress] = await db()`
       WITH saved AS (
         SELECT COUNT(*)::int AS saved_count, COALESCE(MAX(account_id), 0)::bigint AS last_account_id
         FROM alumni_credential_vault
@@ -47,7 +47,7 @@ export async function HEAD() {
                  AND v.account_id IS NULL
              ) AS "missingBeforeCursor"
       FROM saved
-    \`;
+    `;
     return new Response(null, {
       status: 200,
       headers: {

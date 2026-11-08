@@ -21,7 +21,21 @@ export async function GET() {
       ORDER BY CASE WHEN r.status = 'Menunggu' THEN 0 ELSE 1 END, r.created_at DESC
       LIMIT 300
     `;
-    const filtered = scope.role === "super_admin" ? data : data.filter((row: { currentKategoriProgram: string; requestedKategoriProgram: string }) =>
+    type CategoryTransferRow = {
+      id: number;
+      alumniId: number;
+      currentKategoriProgram: string;
+      requestedKategoriProgram: string;
+      reason: string;
+      status: string;
+      adminNote: string | null;
+      createdAt: Date | string;
+      reviewedAt: Date | string | null;
+      nama: string;
+      nomorAlumni: string | null;
+    };
+    const rows = data as unknown as CategoryTransferRow[];
+    const filtered = scope.role === "super_admin" ? rows : rows.filter((row) =>
       adminCanManageCategory(scope, normalizeProgramCategory(row.currentKategoriProgram)) &&
       adminCanManageCategory(scope, normalizeProgramCategory(row.requestedKategoriProgram))
     );

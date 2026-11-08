@@ -87,6 +87,21 @@ export async function POST(request: NextRequest) {
         RETURNING alumni_id
       `;
       const insertedIds = new Set(inserted.map((item) => Number(item.alumni_id)));
+      const newlyCreated = prepared.filter((item) => insertedIds.has(Number(item.row.id)));
+      const encrypted = newlyCreated.map((item) => encryptCredential(item.password));
+      if (newlyCreated.length) {
+        await tx`
+          INSERT INTO alumni_credential_vault (account_id, encrypted_password, iv, auth_tag, created_at)
+          SELECT input.account_id, input.encrypted_password, input.iv, input.auth_tag, NOW()
+          FROM unnest(
+            ${tx.array(inserted.map((item) => Number(item.alumni_id)))}::bigint[],
+            ${tx.array(encrypted.map((item) => item.ciphertext))}::text[],
+            ${tx.array(encrypted.map((item) => item.iv))}::text[],
+            ${tx.array(encrypted.map((item) => item.authTag))}::text[]
+          ) AS input(account_id, encrypted_password, iv, auth_tag)
+          INNER JOIN alumni_accounts aa ON aa.alumni_id = input.account_id
+        `;
+      }
       return prepared
         .filter((item) => insertedIds.has(Number(item.row.id)))
         .map((item) => ({

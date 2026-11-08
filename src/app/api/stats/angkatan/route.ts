@@ -31,29 +31,29 @@ export async function GET() {
     // bukan kolom alumni yang belum dikelompokkan.
     const rows = await db() `
       WITH normalized AS (
-        SELECT a.*, regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|PRA|KRA|PPRA|P4N|PSA|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)') AS legacy_parts
+        SELECT a.*, regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KRA|PPRA|P4N|KSA|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)') AS legacy_parts
         FROM alumni a
       ),
       resolved AS (
         SELECT
           CASE
-            WHEN upper(trim(coalesce(kategori_program, ''))) = 'PRA' THEN 'KRA'
-            WHEN upper(trim(coalesce(kategori_program, ''))) = 'PSA' THEN 'KSA'
-            WHEN upper(trim(coalesce(kategori_program, ''))) LIKE 'PRA %' THEN regexp_replace(upper(trim(kategori_program)), '^PRA', 'KRA')
-            WHEN upper(trim(coalesce(kategori_program, ''))) LIKE 'PSA %' THEN regexp_replace(upper(trim(kategori_program)), '^PSA', 'KSA')
+            WHEN upper(trim(coalesce(kategori_program, ''))) = 'KRA' THEN 'KRA'
+            WHEN upper(trim(coalesce(kategori_program, ''))) = 'KSA' THEN 'KSA'
+            WHEN upper(trim(coalesce(kategori_program, ''))) LIKE 'KRA %' THEN regexp_replace(upper(trim(kategori_program)), '^KRA', 'KRA')
+            WHEN upper(trim(coalesce(kategori_program, ''))) LIKE 'KSA %' THEN regexp_replace(upper(trim(kategori_program)), '^KSA', 'KSA')
             WHEN legacy_parts[1] IS NOT NULL AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, ''))))
-              THEN CASE legacy_parts[1] WHEN 'PRA' THEN 'KRA' WHEN 'PSA' THEN 'KSA' ELSE legacy_parts[1] END
+              THEN CASE legacy_parts[1] WHEN 'KRA' THEN 'KRA' WHEN 'KSA' THEN 'KSA' ELSE legacy_parts[1] END
             ELSE COALESCE(NULLIF(upper(trim(kategori_program)), ''), legacy_parts[1], NULLIF(trim(angkatan), ''), 'Tidak Diketahui')
           END AS "kategoriProgram",
           COALESCE(NULLIF(trim(nomor_angkatan), ''), legacy_parts[2], '-') AS "nomorAngkatan",
           tahun_angkatan AS "tahunAngkatan", status, wilayah
         FROM normalized
         WHERE (${scope.role === "super_admin"} = TRUE OR CASE
-          WHEN upper(trim(coalesce(kategori_program, ''))) = 'PRA' THEN 'KRA'
-          WHEN upper(trim(coalesce(kategori_program, ''))) = 'PSA' THEN 'KSA'
-          WHEN upper(trim(coalesce(kategori_program, ''))) LIKE 'PRA %' THEN regexp_replace(upper(trim(kategori_program)), '^PRA', 'KRA')
-          WHEN upper(trim(coalesce(kategori_program, ''))) LIKE 'PSA %' THEN regexp_replace(upper(trim(kategori_program)), '^PSA', 'KSA')
-          WHEN legacy_parts[1] IS NOT NULL AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, '')))) THEN CASE legacy_parts[1] WHEN 'PRA' THEN 'KRA' WHEN 'PSA' THEN 'KSA' ELSE legacy_parts[1] END
+          WHEN upper(trim(coalesce(kategori_program, ''))) = 'KRA' THEN 'KRA'
+          WHEN upper(trim(coalesce(kategori_program, ''))) = 'KSA' THEN 'KSA'
+          WHEN upper(trim(coalesce(kategori_program, ''))) LIKE 'KRA %' THEN regexp_replace(upper(trim(kategori_program)), '^KRA', 'KRA')
+          WHEN upper(trim(coalesce(kategori_program, ''))) LIKE 'KSA %' THEN regexp_replace(upper(trim(kategori_program)), '^KSA', 'KSA')
+          WHEN legacy_parts[1] IS NOT NULL AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, '')))) THEN CASE legacy_parts[1] WHEN 'KRA' THEN 'KRA' WHEN 'KSA' THEN 'KSA' ELSE legacy_parts[1] END
           ELSE COALESCE(NULLIF(upper(trim(kategori_program)), ''), legacy_parts[1], angkatan, '')
         END = ANY(${allowedCategories}))
       ),

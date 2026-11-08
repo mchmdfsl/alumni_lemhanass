@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { createRealtimeClient, type SealedLiveQuery } from "@neon/realtime/client";
+import { createRealtimeClient, type MaterializedLiveQuerySubscription, type SealedLiveQuery } from "@neon/realtime/client";
 
 type AlumniChangeRow = {
   id: number;
@@ -18,7 +18,7 @@ export function useAlumniRealtime(onChange: () => void) {
     if (!url) return;
 
     let disposed = false;
-    let subscription: ReturnType<ReturnType<typeof createRealtimeClient>["subscribe"]> | undefined;
+    let subscription: MaterializedLiveQuerySubscription<AlumniChangeRow> | undefined;
     const client = createRealtimeClient({ url });
 
     async function connect() {

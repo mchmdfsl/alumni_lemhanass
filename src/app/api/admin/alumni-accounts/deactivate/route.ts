@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
-import { adminCanManageCategory, getAdminScope } from "@/lib/admin-scope";
+import { adminCanManageCategory, getAdminScope, normalizeProgramCategory } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,7 +29,7 @@ export async function PATCH(request: NextRequest) {
         FOR UPDATE OF aa
       `;
       if (!account) return { kind: "not_found" as const };
-      const category = String(account.kategoriProgram || account.angkatan || "").trim().toLocaleUpperCase("id-ID");
+      const category = normalizeProgramCategory(account.kategoriProgram);
       if (!adminCanManageCategory(scope, category)) return { kind: "forbidden" as const };
       if (!account.isActive) return { kind: "inactive" as const };
 

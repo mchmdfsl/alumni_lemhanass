@@ -62,13 +62,18 @@ export async function POST(request: NextRequest) {
           AND (${scope !== "cohort"} OR trim(COALESCE(NULLIF(a.nomor_angkatan, ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PPRA|P4N|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[2], '')) = ${nomorAngkatan})
           AND (${scope !== "year"} OR a.tahun_angkatan::text = ${tahunAngkatan})
         ORDER BY aa.id ASC
-        LIMIT 100
+        LIMIT ${BATCH_SIZE}
         FOR UPDATE OF aa
       `;
-      const updated: Array<{ accountId: number; nama: string; angkatan: string; nomorAlumni: string; email: string; password: string }> = [];
-      for (const row of rows) {
+      const prepared = await mapWithConcurrency(rows, 4, async (row) => {
         const password = randomBytes(18).toString("base64url");
-        const passwordHash = await hashPassword(password);
+        return { row, password, passwordHash: await hashPassword(password) };
+      });
+      const updated: Array<{ accountId: number; nama: string; angkatan: string; nomorAlumni: string; email: string; password: string }> = [];
+      for (const item of prepared) {
+        const row = item.row;
+        const password = item.password;
+        const passwordHash = item.passwordHash;
         await tx`UPDATE alumni_accounts SET password_hash = ${passwordHash}, updated_at = NOW() WHERE id = ${Number(row.accountId)}`;
         updated.push({
           accountId: Number(row.accountId),

@@ -1,6 +1,6 @@
 import { createCipheriv, createHash, randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { isAdminAuthenticated } from "@/lib/auth";
+import { getAdminCategories, getAdminScope } from "@/lib/admin-scope";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { assignAlumniNumber } from "@/lib/alumni-number";
@@ -48,16 +48,10 @@ function makePassword() {
 }
 
 export async function POST(request: NextRequest) {
-  const role = await isAdminAuthenticated();
-  if (!role) {
-    return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
-  }
-  if (role !== "super_admin") {
-    return NextResponse.json(
-      { error: "Hanya Super Admin yang boleh membuat akun secara massal." },
-      { status: 403 },
-    );
-  }
+  const adminScope = await getAdminScope();
+  if (!adminScope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  if (adminScope.role === "admin" && !adminScope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan." }, { status: 403 });
+  const allowedCategories = getAdminCategories(adminScope) ?? [];
 
   try {
     const body = await request.json().catch(() => ({}));
@@ -79,6 +73,7 @@ export async function POST(request: NextRequest) {
           AND (${!["cohort", "category"].includes(scope)} OR upper(CASE WHEN (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PPRA|P4N|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PPRA|P4N|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PPRA|P4N|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], a.angkatan) END) = upper(${kategoriProgram}))
           AND (${scope !== "cohort"} OR trim(COALESCE(NULLIF(a.nomor_angkatan, ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PPRA|P4N|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[2], '')) = ${nomorAngkatan})
           AND (${scope !== "year"} OR a.tahun_angkatan::text = ${tahunAngkatan})
+        AND (${adminScope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], a.angkatan, '')) = ANY(${allowedCategories}))
         ORDER BY a.angkatan ASC NULLS LAST, a.id ASC LIMIT ${BATCH_SIZE} FOR UPDATE OF a
       `;
 
@@ -144,12 +139,13 @@ export async function POST(request: NextRequest) {
         AND (${!["cohort", "category"].includes(scope)} OR upper(CASE WHEN (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PPRA|P4N|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PPRA|P4N|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PPRA|P4N|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], a.angkatan) END) = upper(${kategoriProgram}))
         AND (${scope !== "cohort"} OR trim(COALESCE(NULLIF(a.nomor_angkatan, ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|KSA|PPRA|P4N|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[2], '')) = ${nomorAngkatan})
         AND (${scope !== "year"} OR a.tahun_angkatan::text = ${tahunAngkatan})
+        AND (${adminScope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), (regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], a.angkatan, '')) = ANY(${allowedCategories}))
     `;
     const remaining = Number(remainingRow?.remaining ?? 0);
     const actor = await getAdminActor();
     if (actor && credentials.length) await writeAdminAudit(actor, "alumni_accounts_bulk_activated", { count: credentials.length, batchSize: BATCH_SIZE, remaining, scope, alumniId: scope === "single" ? Number(alumniId) : null, kategoriProgram, nomorAngkatan, tahunAngkatan });
 
-    // Passwords are returned only in this super-admin-authorized response so they can be
+    // Passwords are returned only to an authorized Admin within their category scope or Super Admin so they can be
     // saved once; only hashes are persisted in the database.
     return NextResponse.json({
       ok: true,

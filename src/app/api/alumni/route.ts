@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
     const nama =
       typeof body.nama === "string" ? body.nama.trim() : "";
 
-    const kategoriProgram = typeof body.kategoriProgram === "string" ? body.kategoriProgram.trim().toLocaleUpperCase("id-ID") : "";
+    const kategoriProgram = normalizeProgramCategory(body.kategoriProgram);
     if (scope.role === "admin" && !adminCanManageCategory(scope, kategoriProgram)) return NextResponse.json({ error: "Admin hanya boleh menambah alumni pada kategori kelompoknya." }, { status: 403 });
     const nomorAngkatan = typeof body.nomorAngkatan === "string" ? body.nomorAngkatan.trim() : "";
     const tahunAngkatan = Number(body.tahunAngkatan);

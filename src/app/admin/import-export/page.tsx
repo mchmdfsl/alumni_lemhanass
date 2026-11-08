@@ -330,7 +330,7 @@ export default function ImportExportPage() {
           router.replace("/login");
           return;
         }
-        if (!cancelled) { setIsSuperAdmin(result.user?.role === "super_admin"); setRoleChecked(true); if (result.user?.role === "super_admin") void refreshAccountStats(); }
+        if (!cancelled) { setIsSuperAdmin(result.user?.role === "super_admin"); setRoleChecked(true); void refreshAccountStats(); }
       })
       .catch(() => router.replace("/login"));
     return () => { cancelled = true; };
@@ -648,7 +648,7 @@ export default function ImportExportPage() {
               {exportDownload && <a href={exportDownload.url} download={exportDownload.filename} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"><Download size={16} />Unduh file CSV</a>}
             </section>}
 
-            {roleChecked && isSuperAdmin && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            {roleChecked && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-700"><KeyRound size={20} /></div>
                 <div><h2 className="font-bold text-[#172033]">Aktivasi Akun & Reset Password</h2><p className="text-xs text-slate-500">Atur akun berdasarkan cakupan yang dipilih. CSV password harus disimpan dengan aman.</p></div>
@@ -681,7 +681,7 @@ export default function ImportExportPage() {
               {(accountScope === "cohort" || accountScope === "category") && <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className="text-xs font-semibold text-slate-700">Kategori program
                   <select value={accountCategory} onChange={(e) => setAccountCategory(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
-                    <option value="">Pilih kategori...</option><option>KRA</option><option>PPRA</option><option>P4N</option><option>KSA</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option>
+                    <option value="">Pilih kategori...</option><option>KRA</option><option>PPRA</option><option>P4N</option><option>KSA</option><option>PPSA</option><option>P3N</option><option>TAPLAI</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option>
                   </select>
                 </label>
                 {accountScope === "cohort" && <label className="text-xs font-semibold text-slate-700">Nomor angkatan
@@ -703,7 +703,7 @@ export default function ImportExportPage() {
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <button type="button" disabled={accountLoading} onClick={() => void handleDownloadStoredCredentials()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-300 px-4 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"><Download size={16}/>Unduh kredensial tersimpan</button>
                 <button type="button" disabled={accountLoading} onClick={() => void handleBulkActivateAccounts()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1a365d] disabled:opacity-50"><UserRoundPlus size={16}/>{accountLoading ? "Memproses..." : "Aktivasi akun & unduh password"}</button>
-                <button type="button" disabled={accountLoading} onClick={() => void handleResetPasswords()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"><KeyRound size={16}/>{accountLoading ? "Memproses..." : "Reset password & unduh CSV"}</button>
+                {isSuperAdmin && <button type="button" disabled={accountLoading} onClick={() => void handleResetPasswords()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"><KeyRound size={16}/>{accountLoading ? "Memproses..." : "Reset password & unduh CSV"}</button>}
               </div>
               {accountStatus && <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{accountStatus}</p>}
               {credentialDownload && <a href={credentialDownload.url} download={credentialDownload.filename} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"><Download size={16} />Unduh CSV kredensial</a>}

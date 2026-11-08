@@ -13,11 +13,13 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const accountId = Number(body.accountId);
-    const alumniId = Number(body.alumniId);
+    const requestedAccountId = Number(body.accountId);
+    const requestedAlumniId = Number(body.alumniId);
+    const hasAccountId = Number.isSafeInteger(requestedAccountId) && requestedAccountId > 0;
+    const hasAlumniId = Number.isSafeInteger(requestedAlumniId) && requestedAlumniId > 0;
+    const accountId = hasAccountId ? requestedAccountId : 0;
+    const alumniId = hasAlumniId ? requestedAlumniId : 0;
     const reason = typeof body.reason === "string" ? body.reason.trim().slice(0, 1000) : "";
-    const hasAccountId = Number.isSafeInteger(accountId) && accountId > 0;
-    const hasAlumniId = Number.isSafeInteger(alumniId) && alumniId > 0;
     if ((!hasAccountId && !hasAlumniId) || !reason) {
       return NextResponse.json({ error: "ID akun dan alasan penonaktifan wajib diisi." }, { status: 400 });
     }

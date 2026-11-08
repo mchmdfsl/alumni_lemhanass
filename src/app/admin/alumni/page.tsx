@@ -25,6 +25,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
+import { useAlumniRealtime } from "@/lib/use-alumni-realtime";
 
 interface Alumni {
   id: number;
@@ -90,6 +91,7 @@ export default function AlumniPage() {
   const [filterOptions, setFilterOptions] = useState<{ kategori: string[]; nomorAngkatan: string[]; tahunAngkatan: string[]; wilayah: string[] }>({ kategori: [], nomorAngkatan: [], tahunAngkatan: [], wilayah: [] });
   const [loading, setLoading] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  useAlumniRealtime(() => setReloadKey((value) => value + 1));
 
   useEffect(() => {
     const controller = new AbortController();

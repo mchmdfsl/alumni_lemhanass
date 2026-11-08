@@ -18,9 +18,6 @@ export async function GET() {
         a.nama, a.nomor_alumni AS "nomorAlumni"
       FROM alumni_category_transfer_requests r
       INNER JOIN alumni a ON a.id = r.alumni_id
-      WHERE ${scope.role === "super_admin"} = TRUE
-        OR (r.current_kategori_program = ANY(${scope.role === "admin" ? [scope.kategoriProgram].filter(Boolean) : []})
-          OR r.requested_kategori_program = ANY(${scope.role === "admin" ? [scope.kategoriProgram].filter(Boolean) : []}))
       ORDER BY CASE WHEN r.status = 'Menunggu' THEN 0 ELSE 1 END, r.created_at DESC
       LIMIT 300
     `;

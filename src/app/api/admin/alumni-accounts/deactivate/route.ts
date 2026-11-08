@@ -44,7 +44,7 @@ export async function PATCH(request: NextRequest) {
       await tx`
         UPDATE alumni_accounts
         SET is_active = FALSE, updated_at = NOW()
-        WHERE id = ${accountId}
+        WHERE id = ${Number(account.id)}
       `;
       return { kind: "deactivated" as const, accountId: Number(account.id), alumniId: Number(account.alumniId), nama: String(account.nama || ""), category };
     });

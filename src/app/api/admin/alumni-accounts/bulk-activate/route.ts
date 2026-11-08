@@ -88,18 +88,25 @@ export async function POST(request: NextRequest) {
       `;
       const insertedIds = new Set(inserted.map((item) => Number(item.alumni_id)));
       const newlyCreated = prepared.filter((item) => insertedIds.has(Number(item.row.id)));
-      const encrypted = newlyCreated.map((item) => encryptCredential(item.password));
       if (newlyCreated.length) {
+        const accountRows = await tx`
+          SELECT id, alumni_id FROM alumni_accounts
+          WHERE alumni_id = ANY(${tx.array(newlyCreated.map((item) => Number(item.row.id)))}::bigint[])
+        `;
+        const byAlumniId = new Map(accountRows.map((row) => [Number(row.alumni_id), Number(row.id)]));
+        const vaultRows = newlyCreated.map((item) => ({
+          accountId: byAlumniId.get(Number(item.row.id)),
+          encrypted: encryptCredential(item.password),
+        })).filter((item) => item.accountId);
         await tx`
           INSERT INTO alumni_credential_vault (account_id, encrypted_password, iv, auth_tag, created_at)
           SELECT input.account_id, input.encrypted_password, input.iv, input.auth_tag, NOW()
           FROM unnest(
-            ${tx.array(inserted.map((item) => Number(item.alumni_id)))}::bigint[],
-            ${tx.array(encrypted.map((item) => item.ciphertext))}::text[],
-            ${tx.array(encrypted.map((item) => item.iv))}::text[],
-            ${tx.array(encrypted.map((item) => item.authTag))}::text[]
+            ${tx.array(vaultRows.map((item) => item.accountId as number))}::bigint[],
+            ${tx.array(vaultRows.map((item) => item.encrypted.ciphertext))}::text[],
+            ${tx.array(vaultRows.map((item) => item.encrypted.iv))}::text[],
+            ${tx.array(vaultRows.map((item) => item.encrypted.authTag))}::text[]
           ) AS input(account_id, encrypted_password, iv, auth_tag)
-          INNER JOIN alumni_accounts aa ON aa.alumni_id = input.account_id
         `;
       }
       return prepared

@@ -7,6 +7,7 @@ import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const BATCH_SIZE = 500;
 

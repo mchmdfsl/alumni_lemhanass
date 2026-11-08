@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 100;
 
 async function mapWithConcurrency<T, R>(items: T[], concurrency: number, mapper: (item: T) => Promise<R>): Promise<R[]> {
   const results = new Array<R>(items.length);
@@ -68,35 +68,34 @@ export async function POST(request: NextRequest) {
 
       const prepared = await mapWithConcurrency(rows, 4, async (row) => {
         const password = makePassword();
-        return { row, password, passwordHash: await hashPassword(password) };
+        const existingNumber = typeof row.nomorAlumni === "string" ? row.nomorAlumni : null;
+        const nomorAlumni = existingNumber?.trim()
+          ? existingNumber.trim()
+          : await assignAlumniNumber(tx, Number(row.id), String(row.angkatan ?? ""), null);
+        return { row, password, passwordHash: await hashPassword(password), nomorAlumni };
       });
-      const created: Array<{ nama: string; angkatan: string; nomorAlumni: string; email: string; password: string }> = [];
-      for (const item of prepared) {
-        const row = item.row;
-        const alumniId = Number(row.id);
-        const angkatan = String(row.angkatan ?? "");
-        const nomorAlumni = await assignAlumniNumber(
-          tx,
-          alumniId,
-          angkatan,
-          typeof row.nomorAlumni === "string" ? row.nomorAlumni : null,
-        );
-        const password = item.password;
-        const passwordHash = item.passwordHash;
-        // Email sengaja NULL sampai alumni sendiri mengisinya melalui halaman profil.
-        await tx`
-          INSERT INTO alumni_accounts (alumni_id, email, password_hash, is_active)
-          VALUES (${alumniId}, NULL, ${passwordHash}, TRUE)
-        `;
-        created.push({
-          nama: String(row.nama ?? ""),
-          angkatan,
-          nomorAlumni,
+
+      // Insert akun sekaligus, bukan satu query database per alumni.
+      // Ini memangkas round-trip database tanpa mengurangi kekuatan hash password.
+      const inserted = await tx`
+        INSERT INTO alumni_accounts (alumni_id, email, password_hash, is_active)
+        SELECT input.alumni_id, NULL, input.password_hash, TRUE
+        FROM unnest(${tx.array(prepared.map((item) => Number(item.row.id))) }::bigint[],
+                    ${tx.array(prepared.map((item) => item.passwordHash)) }::text[])
+          AS input(alumni_id, password_hash)
+        ON CONFLICT (alumni_id) DO NOTHING
+        RETURNING alumni_id
+      `;
+      const insertedIds = new Set(inserted.map((item) => Number(item.alumni_id)));
+      return prepared
+        .filter((item) => insertedIds.has(Number(item.row.id)))
+        .map((item) => ({
+          nama: String(item.row.nama ?? ""),
+          angkatan: String(item.row.angkatan ?? ""),
+          nomorAlumni: item.nomorAlumni,
           email: "",
-          password,
-        });
-      }
-      return created;
+          password: item.password,
+        }));
     });
 
     const [remainingRow] = await db()`

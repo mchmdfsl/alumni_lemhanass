@@ -17,8 +17,8 @@ export async function POST(request: NextRequest) {
   const allowedCategories = getAdminCategories(scope) ?? [];
   try {
     const body = await request.json();
-    if (!Array.isArray(body?.rows) || body.rows.length < 1 || body.rows.length > 100) {
-      return NextResponse.json({ error: "Kirim 1 sampai 100 baris per batch." }, { status: 400 });
+    if (!Array.isArray(body?.rows) || body.rows.length < 1 || body.rows.length > 250) {
+      return NextResponse.json({ error: "Kirim 1 sampai 250 baris per batch." }, { status: 400 });
     }
     const rows = body.rows as ImportRecord[];
     const sourceFile = str(body?.sourceFile, 255) || "import-manual.csv";

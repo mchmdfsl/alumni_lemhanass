@@ -10,6 +10,7 @@ import {
 } from "react";
 import Image from "next/image";
 import KtmCard from "@/components/user/KtmCard";
+import { useAlumniRealtime } from "@/lib/use-alumni-realtime";
 import Link from "next/link";
 import {
   UserRound,
@@ -85,6 +86,7 @@ export default function ProfilUser() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [deletingPhoto, setDeletingPhoto] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  useAlumniRealtime(() => window.location.reload());
 
   useEffect(() => {
     let active = true;

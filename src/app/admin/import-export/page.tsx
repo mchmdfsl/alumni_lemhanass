@@ -135,6 +135,29 @@ export default function ImportExportPage() {
     }
   }
   async function searchAccountAlumni() { const term = accountSearch.trim(); if (term.length < 2) { setAccountSearchError("Masukkan minimal 2 karakter nama atau nomor alumni."); setAccountResults([]); return; } setAccountSearching(true); setAccountSearchError(""); try { const response = await fetch("/api/alumni?search=" + encodeURIComponent(term) + "&limit=10", { cache: "no-store" }); const result = await response.json(); if (!response.ok) throw new Error(result.error || "Pencarian alumni gagal."); setAccountResults(Array.isArray(result.data) ? result.data : []); setAccountAlumniId(""); if (!result.data?.length) setAccountSearchError("Alumni tidak ditemukan."); } catch (error) { setAccountSearchError(error instanceof Error ? error.message : "Pencarian alumni gagal."); } finally { setAccountSearching(false); } }
+  async function handleDownloadStoredCredentials() {
+    setAccountLoading(true);
+    setAccountError("");
+    setAccountStatus("");
+    try {
+      const response = await fetch("/api/admin/alumni-accounts/credentials-export", { cache: "no-store" });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || "Unduh kredensial tersimpan gagal.");
+      }
+      const blob = await response.blob();
+      const count = Number(response.headers.get("X-Credential-Count") || 0);
+      if (!count || !blob.size) throw new Error("Belum ada kredensial tersimpan. Jalankan reset massal setelah fitur terbaru aktif.");
+      const url = URL.createObjectURL(blob);
+      setCredentialDownload({ url, filename: "kredensial-alumni-lengkap-" + new Date().toISOString().slice(0, 10) + ".csv" });
+      setAccountStatus("Berhasil menyiapkan " + count.toLocaleString("id-ID") + " kredensial dari penyimpanan aman. Klik Unduh CSV kredensial.");
+    } catch (error) {
+      setAccountError(error instanceof Error ? error.message : "Unduh kredensial tersimpan gagal.");
+    } finally {
+      setAccountLoading(false);
+    }
+  }
+
   async function handleExportAccountList() {
     setAccountListLoading(true);
     setAccountListError("");
@@ -589,6 +612,7 @@ export default function ImportExportPage() {
               </div>
               <p className="mt-3 text-xs leading-5 text-slate-500">Aktivasi membuat akun yang belum ada. Reset mengganti password akun aktif. Keduanya hanya memproses alumni terverifikasi sesuai cakupan.</p>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <button type="button" disabled={accountLoading} onClick={() => void handleDownloadStoredCredentials()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-300 px-4 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"><Download size={16}/>Unduh kredensial tersimpan</button>
                 <button type="button" disabled={accountLoading} onClick={() => void handleBulkActivateAccounts()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1a365d] disabled:opacity-50"><UserRoundPlus size={16}/>{accountLoading ? "Memproses..." : "Aktivasi akun & unduh password"}</button>
                 <button type="button" disabled={accountLoading} onClick={() => void handleResetPasswords()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"><KeyRound size={16}/>{accountLoading ? "Memproses..." : "Reset password & unduh CSV"}</button>
               </div>

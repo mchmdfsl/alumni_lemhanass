@@ -120,7 +120,7 @@ export default function VerifikasiAlumniPage() {
 
 
   const handleBulkVerify = async () => {
-    if (!window.confirm("Verifikasi massal akan memproses SEMUA data hasil impor berstatus Menunggu dalam kelompok 100 data per permintaan. Proses bisa berlangsung beberapa menit. Lanjutkan?")) return;
+    if (!window.confirm("Verifikasi massal akan memproses SEMUA data hasil impor berstatus Menunggu dalam kelompok 500 data per permintaan. Proses bisa berlangsung beberapa menit. Lanjutkan?")) return;
     setBulkLoading(true);
     let totalUpdated = 0;
     try {

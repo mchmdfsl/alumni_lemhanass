@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAdminActor } from "@/lib/admin-audit";
-import { adminCanManageCategory, getAdminCategories, getAdminScope } from "@/lib/admin-scope";
+import { adminCanManageCategory, getAdminCategories, getAdminScope, normalizeProgramCategory } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     const search = (query.get("search") ?? "").trim().slice(0, 120);
     const status = query.get("status") ?? "";
-    const kategoriProgram = query.get("kategoriProgram") ?? query.get("angkatan") ?? "";
+    const kategoriProgram = normalizeProgramCategory(query.get("kategoriProgram") ?? query.get("angkatan") ?? "");
     const nomorAngkatan = query.get("nomorAngkatan") ?? "";
     const tahunAngkatan = query.get("tahunAngkatan") ?? "";
     const wilayah = query.get("wilayah") ?? "";
@@ -124,9 +124,9 @@ export async function GET(request: NextRequest) {
     `) as { kategori: string | null; nomorAngkatan: string; tahunAngkatan: string; wilayah: string }[];
 
     return NextResponse.json({
-      data: rows, total: counts?.total ?? 0, counts,
+      data: rows.map((row) => ({ ...row, kategoriProgram: normalizeProgramCategory(row.kategoriProgram) })), total: counts?.total ?? 0, counts,
       filterOptions: {
-        kategori: [...new Set(filterOptionsRows.map((row) => row.kategori).filter(Boolean))],
+        kategori: [...new Set(filterOptionsRows.map((row) => normalizeProgramCategory(row.kategori)).filter(Boolean))],
         nomorAngkatan: [...new Set(filterOptionsRows.map((row) => row.nomorAngkatan).filter(Boolean))].sort((a, b) => a.localeCompare(b, "id", { numeric: true })),
         tahunAngkatan: [...new Set(filterOptionsRows.map((row) => row.tahunAngkatan).filter(Boolean))].sort((a, b) => Number(b) - Number(a)),
         wilayah: [...new Set(filterOptionsRows.map((row) => row.wilayah).filter(Boolean))].sort((a, b) => a.localeCompare(b, "id")),

@@ -12,8 +12,8 @@ export const maxDuration = 60;
 const BATCH_SIZE = 500;
 
 function encryptCredential(password: string) {
-  const key = createHash("sha256").update(process.env.DATABASE_URL || "").digest();
-  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL belum dikonfigurasi.");
+  const key = createHash("sha256").update(process.env.SESSION_SECRET || "").digest();
+  if (!process.env.SESSION_SECRET) throw new Error("SESSION_SECRET belum dikonfigurasi.");
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
   const ciphertext = Buffer.concat([cipher.update(password, "utf8"), cipher.final()]);

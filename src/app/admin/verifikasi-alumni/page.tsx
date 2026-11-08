@@ -324,11 +324,11 @@ export default function VerifikasiAlumniPage() {
                   }}
                   options={[
                     "Semua Angkatan",
-                    "PRA",
+                    "KRA",
                     "KRA",
                     "PPRA",
                     "P4N",
-                    "PSA",
+                    "KSA",
                     "KSA",
                     "PPSA",
                     "P3N",

@@ -8,14 +8,12 @@ import {
   LayoutDashboard,
   UserRound,
   Users,
-  FileText,
   Settings,
   LogOut,
   Menu,
   X,
   GraduationCap,
   ShieldCheck,
-  Bell,
 } from "lucide-react";
 
 type AlumniUser = {
@@ -29,7 +27,6 @@ const menuItems = [
   { label: "Dashboard", href: "/user", icon: LayoutDashboard },
   { label: "Profil Saya", href: "/user/profil", icon: UserRound },
   { label: "Direktori Alumni", href: "/user/angkatan", icon: Users },
-  { label: "Pengajuan", href: "/user/pengajuan", icon: FileText },
   { label: "Pengaturan", href: "/user/pengaturan", icon: Settings },
 ];
 
@@ -45,7 +42,6 @@ export default function UserLayout({
   const [loggingOut, setLoggingOut] = useState(false);
   const [user, setUser] = useState<AlumniUser>({});
   const [loadingUser, setLoadingUser] = useState(true);
-  const [resolvedRequests, setResolvedRequests] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -67,14 +63,6 @@ export default function UserLayout({
       .finally(() => {
         if (active) setLoadingUser(false);
       });
-
-    fetch("/api/user/requests", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) return;
-        const result = await response.json();
-        if (active) setResolvedRequests((result.data ?? []).filter((item: { status?: string }) => item.status === "Disetujui" || item.status === "Ditolak").length);
-      })
-      .catch(() => {});
 
     return () => {
       active = false;
@@ -252,11 +240,6 @@ export default function UserLayout({
               </p>
             </div>
           </div>
-
-          <Link href="/user/pengajuan" aria-label="Lihat notifikasi pengajuan" className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#0b1f3a] hover:bg-slate-50">
-            <Bell size={19} />
-            {resolvedRequests > 0 && <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-bold text-white">{resolvedRequests > 99 ? "99+" : resolvedRequests}</span>}
-          </Link>
 
           <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-[#fafbfc] px-3 py-2 sm:flex">
             <GraduationCap size={17} className="text-[#b28b16]" />

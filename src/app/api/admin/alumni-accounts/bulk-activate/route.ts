@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createCipheriv, createHash, randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -11,6 +11,22 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const BATCH_SIZE = 100;
+
+function encryptCredential(password: string) {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error("SESSION_SECRET harus berisi minimal 32 karakter.");
+  }
+  const key = createHash("sha256").update(secret).digest();
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const ciphertext = Buffer.concat([cipher.update(password, "utf8"), cipher.final()]);
+  return {
+    ciphertext: ciphertext.toString("base64"),
+    iv: iv.toString("base64"),
+    authTag: cipher.getAuthTag().toString("base64"),
+  };
+}
 
 async function mapWithConcurrency<T, R>(items: T[], concurrency: number, mapper: (item: T) => Promise<R>): Promise<R[]> {
   const results = new Array<R>(items.length);

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
@@ -144,7 +145,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
             nomor_alumni, nama, angkatan, kategori_program, nomor_angkatan, tahun_angkatan,
             instansi, jabatan, wilayah, alamat, email, nomor_hp, status, sumber_data, verified_at, updated_at
           ) VALUES (
-            NULL, ${nama}, ${kategoriProgram}, ${kategoriProgram}, ${nomorAngkatan}, ${tahunAngkatan},
+            ${"PENDING-" + randomUUID()}, ${nama}, ${kategoriProgram}, ${kategoriProgram}, ${nomorAngkatan}, ${tahunAngkatan},
             ${req.submitted_instansi || ""}, ${req.submitted_jabatan || ""},
             ${req.submitted_wilayah || ""}, ${req.submitted_alamat || ""},
             ${req.email}, ${req.submitted_nomor_hp || ""}, 'Terverifikasi',

@@ -7,7 +7,7 @@ import { getAdminActor } from "@/lib/admin-audit";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const BATCH_SIZE = 100;
+const BATCH_SIZE = 500;
 
 export async function POST() {
   const role = await isAdminAuthenticated();

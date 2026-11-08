@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { normalizeProgramCategory } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
       typeof body[key] === "string" ? body[key].trim().slice(0, max) : "";
 
     const nama = value("nama", 200);
-    const kategoriProgram = value("kategoriProgram", 80).toLocaleUpperCase("id-ID");
+    const kategoriProgram = normalizeProgramCategory(value("kategoriProgram", 80));
     const tahunAngkatanRaw = value("tahunAngkatan", 4);
     const tahunAngkatan = /^\d{4}$/.test(tahunAngkatanRaw) ? Number(tahunAngkatanRaw) : NaN;
     const nomorHp = value("nomorHp", 50);

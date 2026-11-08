@@ -8,6 +8,22 @@ import { getAdminActor, writeAdminAudit } from "@/lib/admin-audit";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const BATCH_SIZE = 500;
+
+async function mapWithConcurrency<T, R>(items: T[], concurrency: number, mapper: (item: T) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (true) {
+      const index = nextIndex++;
+      if (index >= items.length) return;
+      results[index] = await mapper(items[index]);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
 export async function POST(request: NextRequest) {
   const role = await isAdminAuthenticated();
   if (!role) {
@@ -87,7 +103,7 @@ export async function POST(request: NextRequest) {
       lastId,
       hasMore: remaining > 0,
       remaining,
-      message: credentials.length ? "Password direset untuk batch 100 akun ini." : "Tidak ada akun aktif terverifikasi lagi.",
+      message: credentials.length ? `Password direset untuk batch ${BATCH_SIZE} akun ini.` : "Tidak ada akun aktif terverifikasi lagi.",
     });
   } catch (error) {
     console.error("POST /api/admin/alumni-accounts/reset-passwords:", error);

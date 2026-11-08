@@ -58,7 +58,7 @@ export default async function VerifyKtmPage({ params }: { params: Promise<{ toke
             <div><dt className="text-slate-500">Angkatan</dt><dd className="font-semibold text-slate-900">{alumni.nomorAngkatan || "-"}</dd></div>
             <div><dt className="text-slate-500">Tahun</dt><dd className="font-semibold text-slate-900">{alumni.tahunAngkatan || "-"}</dd></div>
           </dl>
-          <p className="mt-7 border-t border-slate-100 pt-4 text-center text-xs text-slate-500">Halaman ini hanya menampilkan informasi minimum untuk pemeriksaan keaslian KTM.</p>
+          <p className="mt-7 border-t border-slate-100 pt-4 text-center text-xs text-slate-500">Status akun diperiksa langsung dari database saat QR dipindai. Status dapat berubah mengikuti tindakan Admin.</p>
         </div>
       </section>
     </main>

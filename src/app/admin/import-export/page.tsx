@@ -394,8 +394,8 @@ export default function ImportExportPage() {
     let insertedCount = 0;
     let updatedCount = 0;
     try {
-      for (let start = 0; start < selectedRows.length; start += 100) {
-        const batch = selectedRows.slice(start, start + 100);
+      for (let start = 0; start < selectedRows.length; start += 250) {
+        const batch = selectedRows.slice(start, start + 250);
         try {
           const response = await fetch("/api/alumni/import-batch", {
             method: "POST",

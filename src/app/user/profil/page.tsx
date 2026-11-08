@@ -29,6 +29,8 @@ import {
   Camera,
   Upload,
   Trash2,
+  ArrowLeftRight,
+  Clock3,
 } from "lucide-react";
 
 type Profile = {
@@ -85,6 +87,11 @@ export default function ProfilUser() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [deletingPhoto, setDeletingPhoto] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [transferTarget, setTransferTarget] = useState("");
+  const [transferReason, setTransferReason] = useState("");
+  const [transferHistory, setTransferHistory] = useState<Array<{ id: number; currentKategoriProgram: string; requestedKategoriProgram: string; reason: string; status: string; adminNote?: string | null; createdAt: string }>>([]);
+  const [transferLoading, setTransferLoading] = useState(false);
+  const [transferSubmitting, setTransferSubmitting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -164,6 +171,51 @@ export default function ProfilUser() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/user/category-transfer", { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Gagal memuat riwayat pengajuan.");
+        if (active) setTransferHistory(Array.isArray(result.data) ? result.data : []);
+      })
+      .catch((error) => {
+        if (active) setNotice({ type: "error", message: error instanceof Error ? error.message : "Gagal memuat riwayat pengajuan." });
+      })
+      .finally(() => { if (active) setTransferLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  async function handleCategoryTransfer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!transferTarget || !transferReason.trim()) {
+      setNotice({ type: "error", message: "Pilih kategori tujuan dan isi alasan perpindahan." });
+      return;
+    }
+    setTransferSubmitting(true);
+    setNotice(null);
+    try {
+      const response = await fetch("/api/user/category-transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ requestedKategoriProgram: transferTarget, reason: transferReason.trim() }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || result.message || "Pengajuan gagal dikirim.");
+      setTransferTarget("");
+      setTransferReason("");
+      const historyResponse = await fetch("/api/user/category-transfer", { cache: "no-store" });
+      const historyResult = await historyResponse.json();
+      if (historyResponse.ok) setTransferHistory(Array.isArray(historyResult.data) ? historyResult.data : []);
+      setNotice({ type: "success", message: result.message || "Pengajuan perpindahan kategori berhasil dikirim." });
+    } catch (error) {
+      setNotice({ type: "error", message: error instanceof Error ? error.message : "Pengajuan gagal dikirim." });
+    } finally {
+      setTransferSubmitting(false);
+    }
+  }
 
   function updateField(field: keyof Profile, value: string) {
     setProfile((previous) => ({
@@ -600,6 +652,61 @@ export default function ProfilUser() {
           <p>{notice.message}</p>
         </div>
       )}
+
+      {/* Pengajuan perpindahan kategori */}
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-start gap-3 border-b border-slate-100 px-5 py-5 sm:px-6">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0b1f3a]/5 text-[#0b1f3a]">
+            <ArrowLeftRight size={21} />
+          </div>
+          <div>
+            <h2 className="font-bold text-[#172033]">Perpindahan Kategori Program</h2>
+            <p className="mt-1 text-sm text-slate-500">Pengajuan akan ditinjau Admin. Kategori hanya berubah setelah disetujui.</p>
+          </div>
+        </div>
+        <form onSubmit={handleCategoryTransfer} className="space-y-4 p-5 sm:p-6">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-700">Kategori saat ini</label>
+              <input value={savedProfile.kategoriProgram || savedProfile.angkatan || "-"} readOnly className={inputClass + " bg-slate-50"} />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-700">Kategori tujuan</label>
+              <select value={transferTarget} onChange={(event) => setTransferTarget(event.target.value)} className={inputClass} required>
+                <option value="">Pilih kategori tujuan</option>
+                {["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"].filter((category) => category !== (savedProfile.kategoriProgram || "").toUpperCase()).map((category) => <option key={category} value={category}>{category}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-700">Alasan perpindahan</label>
+            <textarea value={transferReason} onChange={(event) => setTransferReason(event.target.value)} rows={3} maxLength={2000} required placeholder="Jelaskan alasan pengajuan perpindahan kategori..." className={inputClass + " resize-y"} />
+          </div>
+          <button type="submit" disabled={transferSubmitting || transferLoading || transferHistory.some((item) => item.status === "Menunggu")} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#18385f] disabled:cursor-not-allowed disabled:opacity-50">
+            {transferSubmitting ? <LoaderCircle size={17} className="animate-spin" /> : <ArrowLeftRight size={17} />}
+            {transferSubmitting ? "Mengirim pengajuan..." : "Ajukan Perpindahan"}
+          </button>
+          {transferHistory.some((item) => item.status === "Menunggu") && <p className="text-xs text-amber-700">Masih ada pengajuan yang menunggu keputusan Admin. Pengajuan baru belum dapat dikirim.</p>}
+        </form>
+        <div className="border-t border-slate-100 px-5 py-5 sm:px-6">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-[#172033]"><Clock3 size={16} /> Riwayat Pengajuan</h3>
+          {transferLoading ? <p className="text-sm text-slate-500">Memuat riwayat...</p> : transferHistory.length === 0 ? <p className="text-sm text-slate-500">Belum ada pengajuan perpindahan kategori.</p> : (
+            <div className="space-y-3">
+              {transferHistory.map((item) => (
+                <div key={item.id} className="rounded-xl border border-slate-200 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-800">{item.currentKategoriProgram} <span className="px-1 text-slate-400">→</span> {item.requestedKategoriProgram}</p>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${item.status === "Disetujui" ? "bg-emerald-50 text-emerald-700" : item.status === "Ditolak" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>{item.status}</span>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600">{item.reason}</p>
+                  {item.adminNote && <p className="mt-2 text-xs text-slate-500">Catatan Admin: {item.adminNote}</p>}
+                  <p className="mt-2 text-xs text-slate-400">{new Date(item.createdAt).toLocaleString("id-ID")}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Pengaturan keamanan akun */}
       <section className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">

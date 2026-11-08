@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 100;
 
 function encryptCredential(password: string) {
   const key = createHash("sha256").update(process.env.SESSION_SECRET || "").digest();

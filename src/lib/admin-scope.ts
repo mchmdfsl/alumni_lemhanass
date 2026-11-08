@@ -6,14 +6,15 @@ import { db } from "@/lib/db";
 export type AdminScope = { role: "admin" | "super_admin"; kategoriProgram: string | null };
 
 export const ADMIN_CATEGORY_GROUPS = {
-  ADMIN_GROUP_1: ["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N"],
-  ADMIN_GROUP_2: ["TAPLAI", "PPNK", "PPNK KOLABORASI"],
-  ADMIN_GROUP_3: ["TOT"],
+  ADMIN_GROUP_1: ["PRA", "PPRA", "P4N"],
+  ADMIN_GROUP_2: ["PSA", "PPSA", "P3N"],
+  ADMIN_GROUP_3: ["TAPLAI", "PPNK", "PPNK KOLABORASI"],
+  ADMIN_GROUP_4: ["TOT"],
 } as const;
 export type AdminCategoryGroup = keyof typeof ADMIN_CATEGORY_GROUPS;
 
 export function getAdminCategoryGroup(value: unknown): AdminCategoryGroup | null {
-  return value === "ADMIN_GROUP_1" || value === "ADMIN_GROUP_2" || value === "ADMIN_GROUP_3" ? value : null;
+  return value === "ADMIN_GROUP_1" || value === "ADMIN_GROUP_2" || value === "ADMIN_GROUP_3" || value === "ADMIN_GROUP_4" ? value : null;
 }
 export function getAdminCategories(scope: AdminScope): string[] | null {
   if (scope.role === "super_admin") return null;

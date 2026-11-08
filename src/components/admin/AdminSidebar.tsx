@@ -18,6 +18,7 @@ import {
   X,
   MapPin,
   ShieldCheck,
+  ArrowLeftRight,
 } from "lucide-react";
 
 type SidebarData = {
@@ -32,6 +33,7 @@ const menuItems = [
   { label: "Data Alumni", href: "/admin/alumni", icon: Users },
   { label: "Verifikasi Alumni", href: "/admin/verifikasi-alumni", icon: ClipboardCheck, showBadge: true },
   { label: "Permintaan Alumni", href: "/admin/permintaan-alumni", icon: ClipboardCheck },
+  { label: "Perpindahan Kategori", href: "/admin/perpindahan-kategori", icon: ArrowLeftRight },
   { label: "Angkatan", href: "/admin/angkatan", icon: GraduationCap },
   { label: "Wilayah", href: "/admin/wilayah", icon: MapPin },
   { label: "Laporan", href: "/admin/laporan", icon: FileBarChart },

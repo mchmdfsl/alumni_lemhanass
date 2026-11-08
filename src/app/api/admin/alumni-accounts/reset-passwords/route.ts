@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createCipheriv, createHash, randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -10,6 +10,15 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const BATCH_SIZE = 500;
+
+function encryptCredential(password: string) {
+  const key = createHash("sha256").update(process.env.DATABASE_URL || "").digest();
+  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL belum dikonfigurasi.");
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const ciphertext = Buffer.concat([cipher.update(password, "utf8"), cipher.final()]);
+  return { ciphertext: ciphertext.toString("base64"), iv: iv.toString("base64"), authTag: cipher.getAuthTag().toString("base64") };
+}
 
 async function mapWithConcurrency<T, R>(items: T[], concurrency: number, mapper: (item: T) => Promise<R>): Promise<R[]> {
   const results = new Array<R>(items.length);
@@ -76,6 +85,8 @@ export async function POST(request: NextRequest) {
         const password = item.password;
         const passwordHash = item.passwordHash;
         await tx`UPDATE alumni_accounts SET password_hash = ${passwordHash}, updated_at = NOW() WHERE id = ${Number(row.accountId)}`;
+        const encrypted = encryptCredential(password);
+        await tx`INSERT INTO alumni_credential_vault (account_id, encrypted_password, iv, auth_tag, created_at) VALUES (${Number(row.accountId)}, ${encrypted.ciphertext}, ${encrypted.iv}, ${encrypted.authTag}, NOW()) ON CONFLICT (account_id) DO UPDATE SET encrypted_password = EXCLUDED.encrypted_password, iv = EXCLUDED.iv, auth_tag = EXCLUDED.auth_tag, created_at = NOW()`;
         updated.push({
           accountId: Number(row.accountId),
           nama: String(row.nama ?? ""),

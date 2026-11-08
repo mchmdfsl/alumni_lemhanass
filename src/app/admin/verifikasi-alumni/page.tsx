@@ -49,6 +49,7 @@ export default function VerifikasiAlumniPage() {
   const [accountLoading, setAccountLoading] = useState(false);
   const [credentialDownload, setCredentialDownload] = useState<{ url: string; filename: string } | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [canManageAccounts, setCanManageAccounts] = useState(false);
 
   const [selectedAlumni, setSelectedAlumni] =
     useState<VerificationAlumni | null>(null);
@@ -69,7 +70,10 @@ export default function VerifikasiAlumniPage() {
     fetch("/api/auth/me", { cache: "no-store" })
       .then(async (response) => {
         const result = await response.json();
-        if (active && response.ok) setIsSuperAdmin(result.user?.role === "super_admin");
+        if (active && response.ok) {
+          setIsSuperAdmin(result.user?.role === "super_admin");
+          setCanManageAccounts(result.user?.role === "admin" || result.user?.role === "super_admin");
+        }
       })
       .catch(() => undefined);
     fetch("/api/alumni?status=Menunggu&limit=500", { cache: "no-store" })
@@ -241,7 +245,7 @@ export default function VerifikasiAlumniPage() {
 
 
                 {isSuperAdmin && <button type="button" onClick={handleBulkVerify} disabled={bulkLoading || accountLoading} className="inline-flex items-center justify-center rounded-xl bg-[#0b1f3a] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#16345c] disabled:cursor-not-allowed disabled:opacity-60">{bulkLoading ? "Memverifikasi..." : "Verifikasi Massal Data Impor"}</button>}
-                {isSuperAdmin && <button type="button" onClick={handleBulkActivateAccounts} disabled={accountLoading || bulkLoading} className="inline-flex items-center justify-center rounded-xl border border-[#0b1f3a] bg-white px-4 py-3 text-sm font-semibold text-[#0b1f3a] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">{accountLoading ? "Membuat akun..." : "Aktivasi Massal Alumni & Unduh Password"}</button>}
+                {canManageAccounts && <button type="button" onClick={handleBulkActivateAccounts} disabled={accountLoading || bulkLoading} className="inline-flex items-center justify-center rounded-xl border border-[#0b1f3a] bg-white px-4 py-3 text-sm font-semibold text-[#0b1f3a] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">{accountLoading ? "Membuat akun..." : "Aktivasi Massal Alumni & Unduh Password"}</button>}
                 {credentialDownload && <a href={credentialDownload.url} download={credentialDownload.filename} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-800"><Download size={16} />Unduh CSV Kredensial</a>}
 
                 {/* Pending Indicator */}

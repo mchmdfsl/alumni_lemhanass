@@ -2,8 +2,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAlumniSession } from "@/lib/alumni-session";
+import { normalizeProgramCategory } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
+
+const ALLOWED_CATEGORIES = new Set(["KRA", "PPRA", "P4N", "KSA", "PPSA", "P3N", "TAPLAI", "PPNK", "PPNK KOLABORASI", "TOT"]);
 
 async function getVerifiedAlumni() {
   const session = await getAlumniSession();
@@ -78,7 +81,7 @@ export async function PATCH(request: NextRequest) {
     const nama =
       typeof body.nama === "string" ? body.nama.trim() : "";
 
-    const kategoriProgram = typeof body.kategoriProgram === "string" ? body.kategoriProgram.trim().toLocaleUpperCase("id-ID") : "";
+    const kategoriProgram = normalizeProgramCategory(body.kategoriProgram);
     const nomorAngkatan = typeof body.nomorAngkatan === "string" ? body.nomorAngkatan.trim() : "";
     const tahunAngkatan = Number(body.tahunAngkatan);
 
@@ -101,7 +104,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (!/^[A-Z0-9]+(?:[ ][A-Z0-9]+){0,3}$/.test(kategoriProgram) || !nomorAngkatan || nomorAngkatan.length > 40 || !Number.isInteger(tahunAngkatan) || tahunAngkatan < 1900 || tahunAngkatan > new Date().getFullYear() + 5) {
+    if (!ALLOWED_CATEGORIES.has(kategoriProgram) || !nomorAngkatan || nomorAngkatan.length > 40 || !Number.isInteger(tahunAngkatan) || tahunAngkatan < 1900 || tahunAngkatan > new Date().getFullYear() + 5) {
       return NextResponse.json(
         { message: "Kategori program, nomor angkatan, dan tahun angkatan wajib diisi dengan benar." },
         { status: 400 }
@@ -128,26 +131,42 @@ export async function PATCH(request: NextRequest) {
       nomorHp,
     };
 
-    const [result] = await db()`
-      UPDATE alumni
-      SET nama = ${payload.nama},
-        angkatan = ${payload.angkatan},
-        kategori_program = ${payload.kategoriProgram},
-        nomor_angkatan = ${payload.nomorAngkatan},
-        tahun_angkatan = ${payload.tahunAngkatan},
-        jabatan = ${payload.jabatan},
-        instansi = ${payload.instansi},
-        wilayah = ${payload.wilayah},
-        alamat = ${payload.alamat},
-        nomor_hp = ${payload.nomorHp},
-        updated_at = NOW()
-      WHERE id = ${alumni.id}
-      RETURNING id, nomor_alumni AS "nomorAlumni", nama, angkatan,
-        kategori_program AS "kategoriProgram",
-        nomor_angkatan AS "nomorAngkatan",
-        tahun_angkatan AS "tahunAngkatan", jabatan, instansi, wilayah,
-        alamat, nomor_hp AS "nomorHp", status
-    `;
+    const previousCategory = normalizeProgramCategory(alumni.kategoriProgram);
+    const categoryChanged = previousCategory !== payload.kategoriProgram;
+    const result = await db().begin(async (tx) => {
+      const [updated] = await tx`
+        UPDATE alumni
+        SET nama = ${payload.nama},
+          angkatan = ${payload.angkatan},
+          kategori_program = ${payload.kategoriProgram},
+          nomor_angkatan = ${payload.nomorAngkatan},
+          tahun_angkatan = ${payload.tahunAngkatan},
+          jabatan = ${payload.jabatan},
+          instansi = ${payload.instansi},
+          wilayah = ${payload.wilayah},
+          alamat = ${payload.alamat},
+          nomor_hp = ${payload.nomorHp},
+          updated_at = NOW()
+        WHERE id = ${alumni.id}
+        RETURNING id, nomor_alumni AS "nomorAlumni", nama, angkatan,
+          kategori_program AS "kategoriProgram",
+          nomor_angkatan AS "nomorAngkatan",
+          tahun_angkatan AS "tahunAngkatan", jabatan, instansi, wilayah,
+          alamat, nomor_hp AS "nomorHp", status
+      `;
+      if (updated && categoryChanged) {
+        await tx`
+          INSERT INTO admin_audit_log (action, alumni_id, actor, details)
+          VALUES (
+            'alumni_category_changed_by_user',
+            ${alumni.id},
+            ${"alumni:" + alumni.id},
+            ${JSON.stringify({ oldCategory: previousCategory, newCategory: payload.kategoriProgram, source: "profile" })}::jsonb
+          )
+        `;
+      }
+      return updated ?? null;
+    });
 
     if (!result) return NextResponse.json({ message: "Data alumni tidak ditemukan." }, { status: 404 });
 

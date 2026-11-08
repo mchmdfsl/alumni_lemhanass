@@ -62,6 +62,33 @@ CREATE INDEX IF NOT EXISTS admin_users_category_active_idx
   ON public.admin_users (UPPER(TRIM(kategori_program)))
   WHERE is_active = TRUE AND role = 'admin';
 
+
+-- Bulk activation creates login accounts before an email is supplied.
+-- Existing email values are preserved; only the restrictive null/blank rules are relaxed.
+ALTER TABLE public.alumni_accounts ALTER COLUMN email DROP NOT NULL;
+ALTER TABLE public.alumni_accounts DROP CONSTRAINT IF EXISTS alumni_accounts_email_not_blank;
+
+-- Keep the alumni self-service account-deletion request feature available.
+CREATE TABLE IF NOT EXISTS public.alumni_user_requests (
+  id BIGSERIAL PRIMARY KEY,
+  alumni_id BIGINT NOT NULL REFERENCES public.alumni(id) ON DELETE CASCADE,
+  request_type VARCHAR(30) NOT NULL
+    CHECK (request_type IN ('profile_update', 'data_update', 'delete_account')),
+  payload JSONB,
+  message TEXT NOT NULL DEFAULT '',
+  status VARCHAR(20) NOT NULL DEFAULT 'Menunggu'
+    CHECK (status IN ('Menunggu', 'Disetujui', 'Ditolak')),
+  admin_note TEXT,
+  reviewed_by VARCHAR(254),
+  reviewed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS alumni_user_requests_owner_idx
+  ON public.alumni_user_requests (alumni_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS alumni_user_requests_status_idx
+  ON public.alumni_user_requests (status, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS public.app_schema_migrations (
   migration_name VARCHAR(255) PRIMARY KEY,
   applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

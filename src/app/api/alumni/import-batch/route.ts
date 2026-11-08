@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assignAlumniNumber } from "@/lib/alumni-number";
-import { adminCanManageCategory, getAdminCategories, getAdminScope } from "@/lib/admin-scope";
+import { adminCanManageCategory, getAdminCategories, getAdminScope, normalizeProgramCategory } from "@/lib/admin-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       index,
       nomorAlumni: str(row.nomorAlumni, 80),
       nama: str(row.nama, 200),
-      kategoriProgram: str(row.kategoriProgram, 80).toLocaleUpperCase("id-ID"),
+      kategoriProgram: normalizeProgramCategory(str(row.kategoriProgram, 80)),
       nomorAngkatan: str(row.nomorAngkatan, 40),
       tahunAngkatan: str(row.tahunAngkatan, 4),
       status: str(row.status, 30),

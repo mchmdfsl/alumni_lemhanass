@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 function decryptPassword(encrypted: string, iv: string, authTag: string) {
-  const secret = process.env.DATABASE_URL;
-  if (!secret) throw new Error("DATABASE_URL belum dikonfigurasi.");
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) throw new Error("SESSION_SECRET belum dikonfigurasi.");
   const key = createHash("sha256").update(secret).digest();
   const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "base64"));
   decipher.setAuthTag(Buffer.from(authTag, "base64"));

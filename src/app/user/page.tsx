@@ -6,11 +6,9 @@ import {
   UserRound,
   GraduationCap,
   ShieldCheck,
-  FileText,
   ArrowRight,
   Users,
   CircleCheck,
-  Clock3,
   IdCard,
 } from "lucide-react";
 
@@ -25,7 +23,6 @@ type AlumniUser = {
 export default function UserDashboardPage() {
   const [user, setUser] = useState<AlumniUser>({});
   const [loading, setLoading] = useState(true);
-  const [pendingRequests, setPendingRequests] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -55,17 +52,6 @@ export default function UserDashboardPage() {
     }
 
     loadUser();
-
-    fetch("/api/user/requests", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) return;
-        const result = await response.json();
-        const pending = Array.isArray(result.data)
-          ? result.data.filter((item: { status?: string }) => item.status === "Menunggu").length
-          : 0;
-        if (active) setPendingRequests(pending);
-      })
-      .catch((error) => console.error("Gagal memuat status pengajuan:", error));
 
     return () => {
       active = false;
@@ -133,12 +119,6 @@ export default function UserDashboardPage() {
           icon={CircleCheck}
         />
 
-        <InfoCard
-          title="Penonaktifan Menunggu"
-          value={loading ? "..." : pendingRequests.toLocaleString("id-ID")}
-          description="Permohonan yang menunggu admin"
-          icon={Clock3}
-        />
       </section>
 
       {/* Konten utama */}
@@ -260,12 +240,6 @@ export default function UserDashboardPage() {
                 icon={Users}
               />
 
-              <QuickLink
-                href="/user/pengajuan"
-                title="Penonaktifan Akun"
-                description="Ajukan penonaktifan akun"
-                icon={FileText}
-              />
             </div>
           </div>
 
@@ -294,7 +268,7 @@ export default function UserDashboardPage() {
 
               <li className="flex gap-2">
                 <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#b28b16]" />
-                Gunakan menu pengajuan untuk menyampaikan permintaan.
+                Hubungi administrator jika membutuhkan bantuan terkait akun.
               </li>
 
               <li className="flex gap-2">

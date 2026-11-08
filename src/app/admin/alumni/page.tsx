@@ -16,6 +16,7 @@ import {
   Search,
   Trash2,
   UserX,
+  UserCheck,
   UserRound,
   Users,
   X,
@@ -69,6 +70,7 @@ export default function AlumniPage() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [deactivatingId, setDeactivatingId] = useState<number | null>(null);
+  const [activatingId, setActivatingId] = useState<number | null>(null);
 
   // Read URL filters after mount to avoid a useSearchParams prerender/Suspense build error.
   useEffect(() => {
@@ -223,6 +225,29 @@ export default function AlumniPage() {
       window.alert(error instanceof Error ? error.message : "Gagal menonaktifkan akun.");
     } finally {
       setDeactivatingId(null);
+    }
+  };
+
+  // Pengaktifan akun dilakukan Admin langsung dari Data Alumni.
+  const handleActivateAccount = async (alumni: Alumni) => {
+    if (alumni.status !== "Terverifikasi" || alumni.accountActive || activatingId !== null) return;
+    if (!window.confirm(`Aktifkan kembali akun ${alumni.nama}? Alumni dapat login setelah akun aktif.`)) return;
+    setActivatingId(alumni.id);
+    try {
+      const response = await fetch("/api/admin/alumni-accounts/activate", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ alumniId: alumni.id }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Gagal mengaktifkan akun.");
+      window.alert(result.message || "Akun berhasil diaktifkan kembali.");
+      setReloadKey((value) => value + 1);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Gagal mengaktifkan akun.");
+    } finally {
+      setActivatingId(null);
     }
   };
 
@@ -416,6 +441,8 @@ export default function AlumniPage() {
                             onDelete={() => setDeleteAlumni(alumni)}
                             onDeactivate={() => handleDeactivateAccount(alumni)}
                             deactivating={deactivatingId === alumni.id}
+                            onActivate={() => handleActivateAccount(alumni)}
+                            activating={activatingId === alumni.id}
                           />
                         ))}
                       </tbody>
@@ -433,6 +460,8 @@ export default function AlumniPage() {
                         onDelete={() => setDeleteAlumni(alumni)}
                         onDeactivate={() => handleDeactivateAccount(alumni)}
                         deactivating={deactivatingId === alumni.id}
+                        onActivate={() => handleActivateAccount(alumni)}
+                        activating={activatingId === alumni.id}
                       />
                     ))}
                   </div>
@@ -526,7 +555,7 @@ function FilterSelect({ value, onChange, options }: { value: string; onChange: (
 /* =========================================
    TABLE ROW
 ========================================= */
-function AlumniTableRow({ alumni, onDetail, onEdit, onDelete, onDeactivate, deactivating }: { alumni: Alumni; onDetail: () => void; onEdit: () => void; onDelete: () => void; onDeactivate: () => void; deactivating: boolean }) {
+function AlumniTableRow({ alumni, onDetail, onEdit, onDelete, onDeactivate, deactivating, onActivate, activating }: { alumni: Alumni; onDetail: () => void; onEdit: () => void; onDelete: () => void; onDeactivate: () => void; deactivating: boolean; onActivate: () => void; activating: boolean }) {
   return (
     <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
       <td className="px-4 py-4 pl-6">
@@ -563,7 +592,7 @@ function AlumniTableRow({ alumni, onDetail, onEdit, onDelete, onDeactivate, deac
           <ActionButton label="Detail" onClick={onDetail}><Eye size={16} /></ActionButton>
           <ActionButton label="Edit" onClick={onEdit}><Pencil size={16} /></ActionButton>
           {alumni.status === "Terverifikasi" && alumni.accountActive && <ActionButton label={deactivating ? "Menonaktifkan..." : "Nonaktifkan akun"} danger onClick={onDeactivate}><UserX size={16} /></ActionButton>}
-          {alumni.status === "Terverifikasi" && !alumni.accountActive && <span className="px-2 text-[10px] font-semibold text-slate-400">Akun nonaktif</span>}
+          {alumni.status === "Terverifikasi" && !alumni.accountActive && <ActionButton label={activating ? "Mengaktifkan..." : "Aktifkan akun"} onClick={onActivate}><UserCheck size={16} /></ActionButton>}
           <ActionButton label="Hapus" danger onClick={onDelete}><Trash2 size={16} /></ActionButton>
         </div>
       </td>
@@ -574,7 +603,7 @@ function AlumniTableRow({ alumni, onDetail, onEdit, onDelete, onDeactivate, deac
 /* =========================================
    MOBILE CARD
 ========================================= */
-function AlumniMobileCard({ alumni, onDetail, onEdit, onDelete, onDeactivate, deactivating }: { alumni: Alumni; onDetail: () => void; onEdit: () => void; onDelete: () => void; onDeactivate: () => void; deactivating: boolean }) {
+function AlumniMobileCard({ alumni, onDetail, onEdit, onDelete, onDeactivate, deactivating, onActivate, activating }: { alumni: Alumni; onDetail: () => void; onEdit: () => void; onDelete: () => void; onDeactivate: () => void; deactivating: boolean; onActivate: () => void; activating: boolean }) {
   return (
     <div className="p-5">
       <div className="flex items-start justify-between gap-3">
@@ -607,7 +636,7 @@ function AlumniMobileCard({ alumni, onDetail, onEdit, onDelete, onDeactivate, de
           <Pencil size={15} />
         </button>
         {alumni.status === "Terverifikasi" && alumni.accountActive && <button type="button" onClick={onDeactivate} disabled={deactivating} title="Nonaktifkan akun" className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-50"><UserX size={15} />{deactivating ? "Memproses..." : "Nonaktifkan"}</button>}
-        {alumni.status === "Terverifikasi" && !alumni.accountActive && <span className="flex h-9 items-center px-2 text-xs text-slate-400">Akun nonaktif</span>}
+        {alumni.status === "Terverifikasi" && !alumni.accountActive && <button type="button" onClick={onActivate} disabled={activating} title="Aktifkan akun" className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50"><UserCheck size={15} />{activating ? "Memproses..." : "Aktifkan"}</button>}
         <button type="button" onClick={onDelete} className="flex h-9 w-10 items-center justify-center rounded-lg border border-red-100 bg-red-50 text-red-500 transition hover:bg-red-100">
           <Trash2 size={15} />
         </button>

@@ -15,6 +15,7 @@ import {
   Save,
   Search,
   Trash2,
+  UserX,
   UserRound,
   Users,
   X,
@@ -65,6 +66,7 @@ export default function AlumniPage() {
   const [saving, setSaving] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [deactivatingId, setDeactivatingId] = useState<number | null>(null);
 
   // Read URL filters after mount to avoid a useSearchParams prerender/Suspense build error.
   useEffect(() => {
@@ -193,6 +195,32 @@ export default function AlumniPage() {
       alert(e instanceof Error ? e.message : "Gagal menyimpan data.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Penonaktifan akun dilakukan langsung, dengan alasan dan audit log.
+  const handleDeactivateAccount = async (alumni: Alumni) => {
+    if (alumni.status !== "Terverifikasi" || deactivatingId !== null) return;
+    const reason = window.prompt(`Alasan penonaktifan akun untuk ${alumni.nama}:`);
+    if (reason === null || !reason.trim()) return;
+    const confirmed = window.confirm(`Nonaktifkan akun ${alumni.nama}? Data alumninya tetap tersimpan.`);
+    if (!confirmed) return;
+    setDeactivatingId(alumni.id);
+    try {
+      const response = await fetch("/api/admin/alumni-accounts/deactivate", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ alumniId: alumni.id, reason: reason.trim() }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Gagal menonaktifkan akun.");
+      window.alert(result.message || "Akun berhasil dinonaktifkan.");
+      setReloadKey((value) => value + 1);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Gagal menonaktifkan akun.");
+    } finally {
+      setDeactivatingId(null);
     }
   };
 
@@ -384,6 +412,8 @@ export default function AlumniPage() {
                             onDetail={() => setSelectedAlumni(alumni)}
                             onEdit={() => setEditAlumni(alumni)}
                             onDelete={() => setDeleteAlumni(alumni)}
+                            onDeactivate={() => handleDeactivateAccount(alumni)}
+                            deactivating={deactivatingId === alumni.id}
                           />
                         ))}
                       </tbody>
@@ -399,6 +429,8 @@ export default function AlumniPage() {
                         onDetail={() => setSelectedAlumni(alumni)}
                         onEdit={() => setEditAlumni(alumni)}
                         onDelete={() => setDeleteAlumni(alumni)}
+                        onDeactivate={() => handleDeactivateAccount(alumni)}
+                        deactivating={deactivatingId === alumni.id}
                       />
                     ))}
                   </div>
@@ -492,7 +524,7 @@ function FilterSelect({ value, onChange, options }: { value: string; onChange: (
 /* =========================================
    TABLE ROW
 ========================================= */
-function AlumniTableRow({ alumni, onDetail, onEdit, onDelete }: { alumni: Alumni; onDetail: () => void; onEdit: () => void; onDelete: () => void }) {
+function AlumniTableRow({ alumni, onDetail, onEdit, onDelete, onDeactivate, deactivating }: { alumni: Alumni; onDetail: () => void; onEdit: () => void; onDelete: () => void; onDeactivate: () => void; deactivating: boolean }) {
   return (
     <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
       <td className="px-4 py-4 pl-6">
@@ -528,6 +560,7 @@ function AlumniTableRow({ alumni, onDetail, onEdit, onDelete }: { alumni: Alumni
         <div className="flex justify-end gap-1">
           <ActionButton label="Detail" onClick={onDetail}><Eye size={16} /></ActionButton>
           <ActionButton label="Edit" onClick={onEdit}><Pencil size={16} /></ActionButton>
+          {alumni.status === "Terverifikasi" && <ActionButton label={deactivating ? "Menonaktifkan..." : "Nonaktifkan akun"} danger onClick={onDeactivate}><UserX size={16} /></ActionButton>}
           <ActionButton label="Hapus" danger onClick={onDelete}><Trash2 size={16} /></ActionButton>
         </div>
       </td>
@@ -538,7 +571,7 @@ function AlumniTableRow({ alumni, onDetail, onEdit, onDelete }: { alumni: Alumni
 /* =========================================
    MOBILE CARD
 ========================================= */
-function AlumniMobileCard({ alumni, onDetail, onEdit, onDelete }: { alumni: Alumni; onDetail: () => void; onEdit: () => void; onDelete: () => void }) {
+function AlumniMobileCard({ alumni, onDetail, onEdit, onDelete, onDeactivate, deactivating }: { alumni: Alumni; onDetail: () => void; onEdit: () => void; onDelete: () => void; onDeactivate: () => void; deactivating: boolean }) {
   return (
     <div className="p-5">
       <div className="flex items-start justify-between gap-3">
@@ -570,6 +603,7 @@ function AlumniMobileCard({ alumni, onDetail, onEdit, onDelete }: { alumni: Alum
         <button type="button" onClick={onEdit} className="flex h-9 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-[#64748b] transition hover:bg-slate-50">
           <Pencil size={15} />
         </button>
+        {alumni.status === "Terverifikasi" && <button type="button" onClick={onDeactivate} disabled={deactivating} title="Nonaktifkan akun" className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-50"><UserX size={15} />{deactivating ? "Memproses..." : "Nonaktifkan"}</button>}
         <button type="button" onClick={onDelete} className="flex h-9 w-10 items-center justify-center rounded-lg border border-red-100 bg-red-50 text-red-500 transition hover:bg-red-100">
           <Trash2 size={15} />
         </button>

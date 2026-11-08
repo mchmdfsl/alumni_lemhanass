@@ -558,7 +558,7 @@ export default function ImportExportPage() {
               {(accountScope === "cohort" || accountScope === "category") && <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className="text-xs font-semibold text-slate-700">Kategori program
                   <select value={accountCategory} onChange={(e) => setAccountCategory(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
-                    <option value="">Pilih kategori...</option><option>PPRA</option><option>P4N</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option>
+                    <option value="">Pilih kategori...</option><option>KRA</option><option>PPRA</option><option>P4N</option><option>KSA</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option>
                   </select>
                 </label>
                 {accountScope === "cohort" && <label className="text-xs font-semibold text-slate-700">Nomor angkatan
@@ -636,7 +636,7 @@ export default function ImportExportPage() {
                   </div>}
                   {importScope === "cohort" && <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <label className="block text-xs font-semibold text-slate-700">Kategori program (opsional)
-                      <select value={importCategory} onChange={(e) => setImportCategory(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Semua kategori</option><option>PPRA</option><option>P4N</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option></select>
+                      <select value={importCategory} onChange={(e) => setImportCategory(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Semua kategori</option><option>KRA</option><option>PPRA</option><option>P4N</option><option>KSA</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option></select>
                     </label>
                     <label className="block text-xs font-semibold text-slate-700">Nomor angkatan (wajib)
                       <input value={importCohortNumber} onChange={(e) => setImportCohortNumber(e.target.value)} placeholder="Mis. 1" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />

@@ -23,6 +23,46 @@ function csvCell(value: unknown) {
   return '"' + String(value ?? "").replace(/"/g, '""') + '"';
 }
 
+export async function HEAD() {
+  const role = await isAdminAuthenticated();
+  if (!role) return new Response(null, { status: 401 });
+  if (role !== "super_admin") return new Response(null, { status: 403 });
+
+  try {
+    const [progress] = await db()\`
+      WITH saved AS (
+        SELECT COUNT(*)::int AS saved_count, COALESCE(MAX(account_id), 0)::bigint AS last_account_id
+        FROM alumni_credential_vault
+      )
+      SELECT saved.saved_count AS "savedCount",
+             saved.last_account_id AS "lastAccountId",
+             (
+               SELECT COUNT(*)::int
+               FROM alumni_accounts aa
+               INNER JOIN alumni a ON a.id = aa.alumni_id
+               LEFT JOIN alumni_credential_vault v ON v.account_id = aa.id
+               WHERE aa.id <= saved.last_account_id
+                 AND aa.is_active = TRUE
+                 AND a.status = 'Terverifikasi'
+                 AND v.account_id IS NULL
+             ) AS "missingBeforeCursor"
+      FROM saved
+    \`;
+    return new Response(null, {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-store, private",
+        "X-Credential-Count": String(progress?.savedCount ?? 0),
+        "X-Credential-Last-Account-Id": String(progress?.lastAccountId ?? 0),
+        "X-Credential-Missing-Before-Cursor": String(progress?.missingBeforeCursor ?? 0),
+      },
+    });
+  } catch (error) {
+    console.error("Credential progress check failed:", error);
+    return new Response(null, { status: 500 });
+  }
+}
+
 export async function GET() {
   const role = await isAdminAuthenticated();
   if (!role) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });

@@ -249,7 +249,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
           </article>
         </div>
       )}
-      <p className="px-5 pb-5 text-xs text-slate-500 print:hidden">Data kartu mengikuti profil alumni. QR pada tampilan ini masih placeholder sampai layanan verifikasi KTM tersedia.</p>
+      <p className="px-5 pb-5 text-xs text-slate-500 print:hidden">Data kartu mengikuti profil alumni. QR dapat dipindai untuk memeriksa status verifikasi dan status akun alumni secara langsung.</p>
     </section>
     </>
   );

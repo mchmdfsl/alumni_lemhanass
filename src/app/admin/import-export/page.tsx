@@ -186,7 +186,96 @@ export default function ImportExportPage() {
   }
 
   async function handleBulkActivateAccounts() { const scope = accountFilter(); const invalid = validateAccountScope(scope); if (invalid) { setAccountError(invalid); return; } if (!window.confirm("Aktivasi akun untuk alumni terverifikasi yang sesuai dengan cakupan terpilih? Password baru akan diunduh dalam CSV. Lanjutkan?")) return; setAccountLoading(true); setAccountStatus(""); setAccountError(""); const all: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string}> = []; try { let more = true, batches = 0; while (more) { if (++batches > 500) throw new Error("Batas 50.000 akun per sekali jalan tercapai. Jalankan lagi untuk melanjutkan."); const response = await fetch("/api/admin/alumni-accounts/bulk-activate", { method:"POST", cache:"no-store", headers:{"Content-Type":"application/json"}, body:JSON.stringify(scope) }); const result = await parseApiResponse(response); if (!response.ok) throw new Error(result.error || "Aktivasi akun gagal."); const credentials = Array.isArray(result.credentials) ? result.credentials : []; const validCredentials = credentials.filter((item: { password?: unknown }) => typeof item.password === "string" && item.password.trim()); all.push(...validCredentials); if (validCredentials.length !== credentials.length) throw new Error("Server mengembalikan kredensial tanpa password. Baris kosong tidak dimasukkan ke CSV; periksa statistik database sebelum menjalankan ulang."); more = Boolean(result.hasMore); if (!credentials.length || scope.scope === "single") break; } if (!all.length) { setAccountStatus("Tidak ada alumni terverifikasi tanpa akun dalam cakupan ini. Tidak ada perubahan dilakukan."); return; } downloadCredentialsCsv("kredensial-alumni", all); setAccountStatus("Berhasil membuat " + all.length + " akun. CSV password siap diunduh. Tekan tombol Unduh CSV di bawah, lalu simpan file dengan aman."); } catch(e) { if (all.length) downloadCredentialsCsv("kredensial-alumni-parsial", all); setAccountError((e instanceof Error ? e.message : "Aktivasi akun gagal.") + (all.length ? " CSV parsial tersedia untuk " + all.length + " akun yang datanya berhasil diterima." : "")); } finally { setAccountLoading(false); void refreshAccountStats(); } }
-  async function handleResetPasswords() { const scope = accountFilter(); const invalid = validateAccountScope(scope); if (invalid) { setAccountError(invalid); return; } if (!window.confirm("PERINGATAN: password akun aktif dan terverifikasi dalam cakupan terpilih akan diganti. Password lama tidak berlaku lagi. CSV berisi password baru. Lanjutkan?")) return; setAccountLoading(true); setAccountStatus(""); setAccountError(""); const all: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string;accountId?:number}> = []; try { let afterId = 0, more = true; while (more) { const response = await fetch("/api/admin/alumni-accounts/reset-passwords", { method:"POST", cache:"no-store", headers:{"Content-Type":"application/json"}, body:JSON.stringify({afterId,...scope}) }); const result = await parseApiResponse(response); if (!response.ok) throw new Error(result.error || "Reset password gagal."); const credentials = Array.isArray(result.credentials) ? result.credentials : []; const validCredentials = credentials.filter((item: { password?: unknown }) => typeof item.password === "string" && item.password.trim()); all.push(...validCredentials); if (validCredentials.length !== credentials.length) throw new Error("Server mengembalikan kredensial tanpa password. Baris kosong tidak dimasukkan ke CSV; periksa statistik database sebelum menjalankan ulang."); afterId = Number(result.lastId) || afterId; more = Boolean(result.hasMore); if (more && !credentials.length) throw new Error("Batch kosong, proses dihentikan demi keamanan."); if (scope.scope === "single") more = false; } if (!all.length) { setAccountStatus("Tidak ada akun aktif terverifikasi dalam cakupan ini. Password tidak diubah."); return; } downloadCredentialsCsv("password-baru-alumni", all); setAccountStatus("Password " + all.length + " akun berhasil direset. CSV password baru siap diunduh. Tekan tombol Unduh CSV di bawah, lalu simpan file dengan aman."); } catch(e) { if (all.length) downloadCredentialsCsv("password-baru-alumni-parsial", all); setAccountError((e instanceof Error ? e.message : "Reset password gagal.") + (all.length ? " CSV parsial berisi " + all.length + " akun yang passwordnya sudah berubah." : "")); } finally { setAccountLoading(false); void refreshAccountStats(); } }
+  async function handleResetPasswords() {
+    const scope = accountFilter();
+    const invalid = validateAccountScope(scope);
+    if (invalid) { setAccountError(invalid); return; }
+    if (!window.confirm("Reset akan melanjutkan dari kredensial terakhir yang sudah tersimpan agar password yang sudah berhasil dibuat tidak diulang. Password akun yang belum diproses akan diganti. Lanjutkan?")) return;
+
+    setAccountLoading(true);
+    setAccountStatus("");
+    setAccountError("");
+    const all: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string;accountId?:number}> = [];
+
+    try {
+      let afterId = 0;
+      if (scope.scope === "all") {
+        const progressResponse = await fetch("/api/admin/alumni-accounts/credentials-export", { method: "HEAD", cache: "no-store" });
+        if (!progressResponse.ok) throw new Error("Tidak dapat memeriksa posisi reset tersimpan. Tidak ada password yang diubah.");
+        const savedCount = Number(progressResponse.headers.get("X-Credential-Count") || 0);
+        afterId = Number(progressResponse.headers.get("X-Credential-Last-Account-Id") || 0);
+        const missingBeforeCursor = Number(progressResponse.headers.get("X-Credential-Missing-Before-Cursor") || 0);
+        if (missingBeforeCursor > 0) {
+          throw new Error("Ditemukan " + missingBeforeCursor + " akun aktif yang belum memiliki kredensial tersimpan sebelum posisi lanjut. Proses dihentikan agar tidak melewati akun. Hubungi Super Admin untuk pemeriksaan.");
+        }
+        if (savedCount > 0) {
+          setAccountStatus("Melanjutkan setelah " + savedCount.toLocaleString("id-ID") + " kredensial tersimpan (ID akun terakhir " + afterId + "). Password yang sudah tersimpan tidak di-reset ulang.");
+        }
+      }
+
+      let more = true;
+      while (more) {
+        let result: Record<string, any> | null = null;
+        let lastError: unknown = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const response = await fetch("/api/admin/alumni-accounts/reset-passwords", {
+              method: "POST",
+              cache: "no-store",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ afterId, ...scope }),
+            });
+            if (response.ok) {
+              result = await parseApiResponse(response);
+              break;
+            }
+            if ([502, 503, 504].includes(response.status) && attempt < 3) {
+              lastError = new Error("Server sementara tidak merespons (HTTP " + response.status + ").");
+              await new Promise(resolve => setTimeout(resolve, 1200 * attempt));
+              continue;
+            }
+            const errorBody = await parseApiResponse(response);
+            throw new Error(errorBody.error || "Reset password gagal (HTTP " + response.status + ").");
+          } catch (error) {
+            lastError = error;
+            if (attempt < 3 && (!(error instanceof Error) || /Failed to fetch|NetworkError|HTTP 502|HTTP 503|HTTP 504/i.test(error.message))) {
+              await new Promise(resolve => setTimeout(resolve, 1200 * attempt));
+              continue;
+            }
+            throw error;
+          }
+        }
+        if (!result) throw lastError instanceof Error ? lastError : new Error("Reset batch gagal setelah tiga percobaan.");
+
+        const credentials = Array.isArray(result.credentials) ? result.credentials : [];
+        const validCredentials = credentials.filter((item: { password?: unknown }) => typeof item.password === "string" && item.password.trim());
+        all.push(...validCredentials);
+        if (validCredentials.length !== credentials.length) {
+          throw new Error("Server mengembalikan kredensial tanpa password. Baris kosong tidak dimasukkan ke CSV; periksa penyimpanan kredensial.");
+        }
+        afterId = Number(result.lastId) || afterId;
+        more = Boolean(result.hasMore);
+        if (more && !credentials.length) throw new Error("Batch kosong, proses dihentikan demi keamanan.");
+        if (scope.scope === "single") more = false;
+      }
+
+      if (scope.scope === "all") {
+        setAccountStatus("Proses reset selesai. Menyiapkan seluruh kredensial dari penyimpanan aman, termasuk batch sebelumnya...");
+        await handleDownloadStoredCredentials();
+      } else if (all.length) {
+        downloadCredentialsCsv("password-baru-alumni", all);
+        setAccountStatus("Password " + all.length + " akun berhasil direset. CSV password baru siap diunduh.");
+      } else {
+        setAccountStatus("Tidak ada akun aktif terverifikasi dalam cakupan ini. Password tidak diubah.");
+      }
+    } catch (e) {
+      if (all.length) downloadCredentialsCsv("password-baru-alumni-parsial", all);
+      setAccountError((e instanceof Error ? e.message : "Reset password gagal.") + (all.length ? " CSV respons parsial berisi " + all.length + " akun. Gunakan Unduh kredensial tersimpan untuk mengambil seluruh password yang sudah tersimpan." : ""));
+    } finally {
+      setAccountLoading(false);
+      void refreshAccountStats();
+    }
+  }
   function downloadCredentialsCsv(prefix: string, rows: Array<{nama:string;angkatan:string;nomorAlumni:string;email:string;password:string}>) {
     const headers = ["Nama","Angkatan","ID Alumni","Email","Password"];
     const esc = (value: unknown) => '"' + String(value ?? "").replace(/"/g,'""') + '"';

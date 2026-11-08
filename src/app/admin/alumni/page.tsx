@@ -204,7 +204,7 @@ export default function AlumniPage() {
 
   // Penonaktifan akun dilakukan langsung, dengan alasan dan audit log.
   const handleDeactivateAccount = async (alumni: Alumni) => {
-    if (alumni.status !== "Terverifikasi" || deactivatingId !== null) return;
+    if (alumni.status !== "Terverifikasi" || !alumni.accountId || deactivatingId !== null) return;
     const reason = window.prompt(`Alasan penonaktifan akun untuk ${alumni.nama}:`);
     if (reason === null || !reason.trim()) return;
     const confirmed = window.confirm(`Nonaktifkan akun ${alumni.nama}? Data alumninya tetap tersimpan.`);
@@ -230,7 +230,7 @@ export default function AlumniPage() {
 
   // Pengaktifan akun dilakukan Admin langsung dari Data Alumni.
   const handleActivateAccount = async (alumni: Alumni) => {
-    if (alumni.status !== "Terverifikasi" || alumni.accountActive || activatingId !== null) return;
+    if (alumni.status !== "Terverifikasi" || !alumni.accountId || alumni.accountActive || activatingId !== null) return;
     if (!window.confirm(`Aktifkan kembali akun ${alumni.nama}? Alumni dapat login setelah akun aktif.`)) return;
     setActivatingId(alumni.id);
     try {
@@ -592,7 +592,8 @@ function AlumniTableRow({ alumni, onDetail, onEdit, onDelete, onDeactivate, deac
           <ActionButton label="Detail" onClick={onDetail}><Eye size={16} /></ActionButton>
           <ActionButton label="Edit" onClick={onEdit}><Pencil size={16} /></ActionButton>
           {alumni.status === "Terverifikasi" && alumni.accountActive && <ActionButton label={deactivating ? "Menonaktifkan..." : "Nonaktifkan akun"} danger onClick={onDeactivate}><UserX size={16} /></ActionButton>}
-          {alumni.status === "Terverifikasi" && !alumni.accountActive && <ActionButton label={activating ? "Mengaktifkan..." : "Aktifkan akun"} onClick={onActivate}><UserCheck size={16} /></ActionButton>}
+          {alumni.status === "Terverifikasi" && alumni.accountId && !alumni.accountActive && <ActionButton label={activating ? "Mengaktifkan..." : "Aktifkan akun"} onClick={onActivate}><UserCheck size={16} /></ActionButton>}
+          {alumni.status === "Terverifikasi" && !alumni.accountId && <span className="text-xs text-slate-400">Belum ada akun</span>}
           <ActionButton label="Hapus" danger onClick={onDelete}><Trash2 size={16} /></ActionButton>
         </div>
       </td>
@@ -636,7 +637,8 @@ function AlumniMobileCard({ alumni, onDetail, onEdit, onDelete, onDeactivate, de
           <Pencil size={15} />
         </button>
         {alumni.status === "Terverifikasi" && alumni.accountActive && <button type="button" onClick={onDeactivate} disabled={deactivating} title="Nonaktifkan akun" className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-50"><UserX size={15} />{deactivating ? "Memproses..." : "Nonaktifkan"}</button>}
-        {alumni.status === "Terverifikasi" && !alumni.accountActive && <button type="button" onClick={onActivate} disabled={activating} title="Aktifkan akun" className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50"><UserCheck size={15} />{activating ? "Memproses..." : "Aktifkan"}</button>}
+        {alumni.status === "Terverifikasi" && alumni.accountId && !alumni.accountActive && <button type="button" onClick={onActivate} disabled={activating} title="Aktifkan akun" className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50"><UserCheck size={15} />{activating ? "Memproses..." : "Aktifkan"}</button>}
+        {alumni.status === "Terverifikasi" && !alumni.accountId && <span className="text-xs text-slate-400">Belum ada akun</span>}
         <button type="button" onClick={onDelete} className="flex h-9 w-10 items-center justify-center rounded-lg border border-red-100 bg-red-50 text-red-500 transition hover:bg-red-100">
           <Trash2 size={15} />
         </button>

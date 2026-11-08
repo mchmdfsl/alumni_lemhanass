@@ -5,6 +5,15 @@ import { db } from "@/lib/db";
 
 export type AdminScope = { role: "admin" | "super_admin"; kategoriProgram: string | null };
 
+/** Canonical program categories. Legacy aliases are accepted at input boundaries only. */
+export function normalizeProgramCategory(value: unknown): string {
+  if (typeof value !== "string") return "";
+  const category = value.trim().toLocaleUpperCase("id-ID").replace(/\\s+/g, " ");
+  if (category === "PRA") return "KRA";
+  if (category === "PSA") return "KSA";
+  return category;
+}
+
 export const ADMIN_CATEGORY_GROUPS = {
   ADMIN_GROUP_1: ["KRA", "PPRA", "P4N"],
   ADMIN_GROUP_2: ["KSA", "PPSA", "P3N"],
@@ -19,14 +28,14 @@ export function getAdminCategoryGroup(value: unknown): AdminCategoryGroup | null
 export function getAdminCategories(scope: AdminScope): string[] | null {
   if (scope.role === "super_admin") return null;
   if (!scope.kategoriProgram) return [];
-  const stored = scope.kategoriProgram.trim().toLocaleUpperCase("id-ID");
+  const stored = normalizeProgramCategory(scope.kategoriProgram);
   const group = getAdminCategoryGroup(stored);
   return group ? [...ADMIN_CATEGORY_GROUPS[group]] : [stored];
 }
 export function adminCanManageCategory(scope: AdminScope, category: unknown) {
   if (scope.role === "super_admin") return true;
   if (typeof category !== "string") return false;
-  return (getAdminCategories(scope) ?? []).includes(category.trim().toLocaleUpperCase("id-ID"));
+  return (getAdminCategories(scope) ?? []).includes(normalizeProgramCategory(category));
 }
 export async function getAdminScope(): Promise<AdminScope | null> {
   const role = await isAdminAuthenticated();

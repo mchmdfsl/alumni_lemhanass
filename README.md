@@ -11,13 +11,20 @@ Aplikasi Next.js 16 dengan PostgreSQL. Repository ini memuat antarmuka admin, AP
 1. Install dependency: `pnpm install`
 2. Buat database PostgreSQL dan user khusus aplikasi dengan hak akses minimum.
 3. Jalankan schema: `psql "$DATABASE_URL" -f db/schema.sql`.
-4. Terapkan file migrasi di `db/migrations/` yang belum pernah dijalankan, terutama `001_auth_accounts.sql`, `002_alumni_registration_details.sql`, `002_alumni_user_requests.sql`, dan `003_password_reset_tokens.sql`. Untuk migrasi email kosong, jalankan juga `002_allow_empty_alumni_email.sql` dan migrasi pembersihan email bila memang ingin semua email data lama dikosongkan.
+4. Terapkan file migrasi di `db/migrations/` yang belum pernah dijalankan. Untuk sinkronisasi fitur terbaru, terapkan juga `database/migrations/20261108_neon_neww_additive_sync.sql`. Migrasi ini bersifat aditif, menambahkan kolom/tabel/indeks yang dibutuhkan fitur registrasi, akun admin, KTM, dan permintaan penghapusan akun. Migrasi ini juga membuat email akun alumni boleh kosong agar aktivasi massal dapat berjalan sebelum alumni mengisi email. Jangan menjalankan migrasi pembersihan email kecuali memang ingin mengubah email lama.
 5. Salin `.env.example` ke `.env.local`, lalu atur `DATABASE_URL`, `ADMIN_USERNAME` atau `ADMIN_EMAIL`, `ADMIN_PASSWORD`, dan `SESSION_SECRET` yang acak dan panjang. Untuk login Super Admin melalui halaman login yang sama, atur juga `SUPER_ADMIN_USERNAME` atau `SUPER_ADMIN_EMAIL` serta `SUPER_ADMIN_PASSWORD` dengan kredensial yang berbeda.
 6. Agar fitur lupa password dapat mengirim email, atur `RESEND_API_KEY`, `PASSWORD_RESET_FROM` (alamat pengirim yang sudah diverifikasi di Resend), dan `NEXT_PUBLIC_APP_URL` (alamat situs lengkap, misalnya `https://domain-anda.id`). Tanpa konfigurasi email tersebut, halaman lupa password tetap terbuka tetapi pengiriman tautan reset belum aktif.
 7. Jalankan development: `pnpm dev`
 8. Uji build produksi: `pnpm build` lalu `pnpm start`
 
 Jangan commit `.env.local`, kredensial database, atau file CSV berisi data pribadi alumni. Aktifkan HTTPS di reverse proxy VPS. Batasi akses port PostgreSQL ke jaringan privat/localhost.
+
+## Koneksi Neon
+
+- Aplikasi memakai `DATABASE_URL` untuk koneksi runtime. Gunakan connection string pooled Neon (`-pooler`) pada Vercel.
+- Atur `DATABASE_SSL=require` pada environment produksi.
+- Simpan `DATABASE_URL_UNPOOLED` sebagai koneksi langsung untuk pekerjaan migrasi/manual, bukan untuk request runtime.
+- Jangan menaruh connection string atau password database di repository. Gunakan Environment Variables Vercel.
 
 ## API
 - `POST /api/auth/login` — login admin menggunakan `identifier` dan `password`.

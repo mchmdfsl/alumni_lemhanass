@@ -781,18 +781,6 @@ function AlumniDetailModal({ alumni, onClose, onEdit }: { alumni: Alumni; onClos
         <div className="p-5 sm:p-6">
           <h3 className="mb-3 text-sm font-bold text-[#172033]">Informasi Alumni</h3>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <p className="text-xs text-[#94a3b8]">Instansi / Jabatan</p>
-              <p className="mt-1 text-sm font-semibold text-[#475569]">{alumni.instansi}</p>
-              <p className="mt-0.5 text-xs text-[#94a3b8]">{alumni.jabatan}</p>
-            </div>
-            <StatusBadge status={alumni.status} />
-          </div>
-        </div>
-
-        <div className="p-5 sm:p-6">
-          <h3 className="mb-3 text-sm font-bold text-[#172033]">Informasi Alumni</h3>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <DetailItem label="Nama Lengkap" value={alumni.nama} />
             <DetailItem label="Nomor Alumni" value={alumni.nomorAlumni} />
             <DetailItem label="Kategori Program" value={alumni.kategoriProgram || alumni.angkatan} />

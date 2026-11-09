@@ -21,21 +21,27 @@ type Signature = {
   formatTtd?: "standard" | "tot_white";
 };
 
-function QrCode({ token, origin }: { token?: string | null; origin: string }) {
-  if (!token || !origin) {
-    return <div className="flex aspect-square w-full items-center justify-center bg-white text-center text-[8px] font-semibold text-[#17132f]">QR belum tersedia</div>;
+function QrCode({ token }: { token?: string | null }) {
+  const [failed, setFailed] = useState(false);
+  if (!token || failed) {
+    return <div className="flex aspect-square w-full items-center justify-center bg-white px-1 text-center text-[8px] font-semibold text-[#17132f]">{token ? "QR gagal dimuat" : "QR belum tersedia"}</div>;
   }
-  const verifyUrl = `${origin}/verifikasi-ktm/${token}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=4&data=${encodeURIComponent(verifyUrl)}`;
-  return <Image src={qrUrl} alt="QR verifikasi keaslian KTM" width={240} height={240} unoptimized className="aspect-square w-full bg-white object-contain" />;
+  return (
+    <Image
+      src={`/api/ktm/qr?token=${encodeURIComponent(token)}`}
+      alt="QR verifikasi keaslian KTM"
+      width={480}
+      height={480}
+      unoptimized
+      onError={() => setFailed(true)}
+      className="aspect-square w-full bg-white object-contain"
+    />
+  );
 }
 
 export default function KtmCard({ profile }: { profile: Profile }) {
   const [signature, setSignature] = useState<Signature | null>(null);
   const [loading, setLoading] = useState(true);
-  const [siteOrigin, setSiteOrigin] = useState("");
-
-  useEffect(() => { setSiteOrigin(window.location.origin); }, []);
 
   useEffect(() => {
     let active = true;
@@ -182,8 +188,8 @@ export default function KtmCard({ profile }: { profile: Profile }) {
                   <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[5px] border-2 border-[#d0bd83] bg-slate-200 shadow-sm">
                     {profile.fotoProfil ? <Image src={profile.fotoProfil} alt="Foto alumni" fill unoptimized sizes="110px" className="object-cover" /> : <div className="flex h-full items-center justify-center px-1 text-center text-[8px] text-slate-500">Foto alumni</div>}
                   </div>
-                  <div className="w-[82%] border border-[#c7b77e] bg-white p-[2px]"><QrCode token={profile.ktmVerificationToken} origin={siteOrigin} /></div>
-                  <p className="text-center text-[clamp(5px,.62vw,8px)] font-semibold leading-tight">Verifikasi Keaslian Kartu<br />Scan QR Code</p>
+                  <div className="w-[82%] border border-[#c7b77e] bg-white p-[2px]"><QrCode token={profile.ktmVerificationToken} /></div>
+                  <p className="text-center text-[clamp(6px,.72vw,9px)] font-semibold leading-tight">Verifikasi Keaslian Kartu<br />Scan QR Code</p>
                 </div>
               </div>
 
@@ -202,12 +208,11 @@ export default function KtmCard({ profile }: { profile: Profile }) {
           {/* BACK: navy, watermark gedung, blok data kiri, QR kanan, footer institusi */}
           <article className="relative isolate flex aspect-[1.586/1] w-full min-w-0 flex-col overflow-hidden rounded-[14px] border border-[#282343] bg-[#17132f] text-white shadow-lg print:break-inside-avoid print:shadow-none">
             <div
-              className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.10]"
+              className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.075]"
               style={{ backgroundImage: "url(https://images.unsplash.com/photo-1695815870617-31bef23919fb?auto=format&fit=crop&w=1600&q=80)" }}
               aria-hidden="true"
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#17132f]/95 via-[#17132f]/90 to-[#17132f]/85" />
-            <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent_0px,transparent_23px,rgba(255,255,255,.035)_24px,transparent_25px)]" />
 
             <header className="relative flex items-center gap-[2.5%] border-b border-[#c8b477]/30 px-[4%] py-[3%]">
               <Image src="/images/logo-lemhannas.png" alt="Lambang Lemhannas RI" width={54} height={54} className="h-[clamp(26px,5vw,42px)] w-[clamp(26px,5vw,42px)] shrink-0 object-contain" />

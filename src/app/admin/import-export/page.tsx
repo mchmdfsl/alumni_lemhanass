@@ -572,7 +572,7 @@ export default function ImportExportPage() {
       <div className="lg:pl-72">
         <AdminHeader />
         <main className="p-4 sm:p-6 lg:p-8 xl:p-10">
-          <div className="mx-auto grid max-w-7xl grid-cols-1 items-start gap-6 xl:grid-cols-2">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
 
 
             <div className="xl:col-span-2">
@@ -648,6 +648,63 @@ export default function ImportExportPage() {
               {exportDownload && <a href={exportDownload.url} download={exportDownload.filename} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"><Download size={16} />Unduh file CSV</a>}
             </section>}
 
+            <section className="rounded-2xl border border-[#dbe1e8] bg-white p-6 shadow-[0_10px_30px_rgba(11,31,58,0.055)] sm:p-7">
+              <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f7f1df] text-[#8a6b16]"><FileUp size={20} /></div>
+                <div><h2 className="font-bold text-[#0b1f3a]">Import Excel / CSV</h2><p className="text-xs text-slate-500">Unggah file Excel .xlsx atau CSV untuk memperbarui data alumni yang cocok dan menambahkan data baru ke database.</p></div>
+              </div>
+              <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-5">
+                <label className="block text-sm font-semibold text-slate-800">File Excel (.xlsx) atau CSV
+                  <input type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onChange={(e) => void handleFileChange(e.target.files?.[0] ?? null)} className="mt-3 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#0b1f3a] file:px-3 file:py-2 file:font-semibold file:text-white" />
+                </label>
+                <p className="mt-2 text-xs text-slate-500">Semua kolom wajib diisi kecuali Nomor Alumni. Sistem akan membuat Nomor Alumni secara otomatis. Jika nama file memuat kategori dan tahun, keduanya menjadi acuan utama: contoh REKAP ALUMNI TAPLAI 2024 akan dibaca sebagai TAPLAI, nomor angkatan 24, tahun angkatan 2024.</p>
+              </div>
+              {file && <p className="mt-3 text-xs text-slate-600">File: <strong>{file.name}</strong> · {importRows.length} baris tersisa untuk diperiksa</p>}
+              {importRows.length > 0 && <>
+                <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4">
+                  <div className="mb-3 flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0b1f3a]/5 text-[#0b1f3a]"><ShieldCheck size={18} /></div><div><h3 className="text-sm font-bold text-[#0b1f3a]">Tentukan cakupan import</h3><p className="text-xs text-slate-500">Saring data dahulu, lalu tinjau hasil sebelum konfirmasi.</p></div></div>
+                  <label className="block text-xs font-semibold text-slate-700">Import berdasarkan
+                    <select value={importScope} onChange={(e) => { setImportScope(e.target.value as typeof importScope); setSelectedImportKey(""); setImportError(""); setImportStatus(""); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
+                      <option value="single">Satu alumni</option><option value="cohort">Satu angkatan</option><option value="category">Satu kategori</option><option value="all">Semua baris dalam file</option>
+                    </select>
+                  </label>
+                  {importScope === "single" && <div className="mt-3 space-y-3">
+                    <label className="block text-xs font-semibold text-slate-700">Cari nama atau nomor alumni
+                      <input value={importSearch} onChange={(e) => setImportSearch(e.target.value)} placeholder="Ketik nama / nomor alumni..." className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
+                    </label>
+                    <label className="block text-xs font-semibold text-slate-700">Pilih satu baris alumni
+                      <select value={selectedImportKey} onChange={(e) => setSelectedImportKey(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
+                        <option value="">Pilih alumni...</option>{singleImportMatches.map((row) => <option key={row.rowKey} value={row.rowKey}>{row.nama}{row.nomorAlumni ? " · " + row.nomorAlumni : ""} · {row.kategoriProgram} · Angkatan {row.nomorAngkatan}</option>)}
+                      </select>
+                    </label>
+                  </div>}
+                  {importScope === "cohort" && <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label className="block text-xs font-semibold text-slate-700">Kategori program (opsional)
+                      <select value={importCategory} onChange={(e) => setImportCategory(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Semua kategori</option><option>KRA</option><option>PPRA</option><option>P4N</option><option>KSA</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option></select>
+                    </label>
+                    <label className="block text-xs font-semibold text-slate-700">Nomor angkatan (wajib)
+                      <input value={importCohortNumber} onChange={(e) => setImportCohortNumber(e.target.value)} placeholder="Mis. 1" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
+                    </label>
+                  </div>}
+                  {importScope === "category" && <label className="mt-3 block text-xs font-semibold text-slate-700">Kategori program (wajib)
+                    <select value={importCategory} onChange={(e) => setImportCategory(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Pilih kategori...</option><option>PPRA</option><option>P4N</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option></select>
+                  </label>}
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-50 p-3"><span className="text-xs text-slate-600">Hasil filter</span><strong className="text-sm text-[#0b1f3a]">{rowsToImport.length} baris dipilih dari {importRows.length}</strong></div>
+                  {importScope === "cohort" && !importCohortNumber.trim() && <p className="mt-2 text-xs text-amber-700">Masukkan nomor angkatan agar tidak mengimpor seluruh file tanpa sengaja.</p>}
+                  {importScope === "category" && !importCategory && <p className="mt-2 text-xs text-amber-700">Pilih kategori yang ingin diimpor.</p>}
+                </div>
+                <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-left text-xs"><thead className="bg-slate-50 text-slate-600"><tr><th className="p-3">Nama</th><th className="p-3">Kategori</th><th className="p-3">No. Angkatan</th><th className="p-3">Tahun</th></tr></thead><tbody>{rowsToImport.slice(0, 10).map((row) => <tr key={row.rowKey} className="border-t border-slate-100"><td className="p-3">{row.nama}</td><td className="p-3">{row.kategoriProgram || "Belum ada"}</td><td className="p-3">{row.nomorAngkatan || "Belum ada"}</td><td className="p-3">{row.tahunAngkatan || "Belum ada"}</td></tr>)}</tbody></table>
+                  {rowsToImport.length > 10 && <p className="p-3 text-slate-500">Pratinjau 10 dari {rowsToImport.length} baris terpilih.</p>}
+                  {rowsToImport.length === 0 && <p className="p-4 text-sm text-slate-500">Belum ada baris yang cocok. Periksa filter atau pilih alumni.</p>}
+                </div>
+              </>}
+              {importStatus && <p role="status" className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{importStatus}</p>}
+              {importError && <p role="alert" className="mt-4 whitespace-pre-line rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{importError}</p>}
+              <button type="button" disabled={!rowsToImport.length || busy} onClick={() => void submitImport()} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a365d] disabled:cursor-not-allowed disabled:opacity-50"><FileSpreadsheet size={16} />{busy ? "Mengimpor..." : `Tinjau & import ${rowsToImport.length} baris`}</button>
+              <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-slate-500"><ShieldCheck size={15} className="mt-0.5 shrink-0" />Data yang berhasil masuk berstatus Menunggu dan tetap harus diverifikasi admin. Nomor angkatan/tahun yang tidak sesuai akan ditolak oleh validasi server.</p>
+            </section>
+
             {roleChecked && <section className="rounded-2xl border border-[#dbe1e8] bg-white p-6 shadow-[0_10px_30px_rgba(11,31,58,0.055)] sm:p-7">
               <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f7f1df] text-[#8a6b16]"><KeyRound size={20} /></div>
@@ -710,7 +767,7 @@ export default function ImportExportPage() {
               {accountError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{accountError}</p>}
             </section>}
 
-                        <section id="template" className="scroll-mt-6 rounded-2xl border border-[#dbe1e8] bg-white p-6 shadow-[0_10px_30px_rgba(11,31,58,0.055)] sm:p-7">
+            <section id="template" className="scroll-mt-6 rounded-2xl border border-[#dbe1e8] bg-white p-6 shadow-[0_10px_30px_rgba(11,31,58,0.055)] sm:p-7">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="font-bold text-[#0b1f3a]">Template Data Alumni</h2>
@@ -728,62 +785,7 @@ export default function ImportExportPage() {
               </div>
             </section>
 
-<section className="xl:col-span-2 rounded-2xl border border-[#dbe1e8] bg-white p-6 shadow-[0_10px_30px_rgba(11,31,58,0.055)] sm:p-7">
-              <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f7f1df] text-[#8a6b16]"><FileUp size={20} /></div>
-                <div><h2 className="font-bold text-[#0b1f3a]">Import Excel / CSV</h2><p className="text-xs text-slate-500">Unggah file Excel .xlsx atau CSV untuk memperbarui data alumni yang cocok dan menambahkan data baru ke database.</p></div>
-              </div>
-              <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-5">
-                <label className="block text-sm font-semibold text-slate-800">File Excel (.xlsx) atau CSV
-                  <input type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onChange={(e) => void handleFileChange(e.target.files?.[0] ?? null)} className="mt-3 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#0b1f3a] file:px-3 file:py-2 file:font-semibold file:text-white" />
-                </label>
-                <p className="mt-2 text-xs text-slate-500">Semua kolom wajib diisi kecuali Nomor Alumni. Sistem akan membuat Nomor Alumni secara otomatis. Jika nama file memuat kategori dan tahun, keduanya menjadi acuan utama: contoh REKAP ALUMNI TAPLAI 2024 akan dibaca sebagai TAPLAI, nomor angkatan 24, tahun angkatan 2024.</p>
-              </div>
-              {file && <p className="mt-3 text-xs text-slate-600">File: <strong>{file.name}</strong> · {importRows.length} baris tersisa untuk diperiksa</p>}
-              {importRows.length > 0 && <>
-                <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4">
-                  <div className="mb-3 flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0b1f3a]/5 text-[#0b1f3a]"><ShieldCheck size={18} /></div><div><h3 className="text-sm font-bold text-[#0b1f3a]">Tentukan cakupan import</h3><p className="text-xs text-slate-500">Saring data dahulu, lalu tinjau hasil sebelum konfirmasi.</p></div></div>
-                  <label className="block text-xs font-semibold text-slate-700">Import berdasarkan
-                    <select value={importScope} onChange={(e) => { setImportScope(e.target.value as typeof importScope); setSelectedImportKey(""); setImportError(""); setImportStatus(""); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
-                      <option value="single">Satu alumni</option><option value="cohort">Satu angkatan</option><option value="category">Satu kategori</option><option value="all">Semua baris dalam file</option>
-                    </select>
-                  </label>
-                  {importScope === "single" && <div className="mt-3 space-y-3">
-                    <label className="block text-xs font-semibold text-slate-700">Cari nama atau nomor alumni
-                      <input value={importSearch} onChange={(e) => setImportSearch(e.target.value)} placeholder="Ketik nama / nomor alumni..." className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
-                    </label>
-                    <label className="block text-xs font-semibold text-slate-700">Pilih satu baris alumni
-                      <select value={selectedImportKey} onChange={(e) => setSelectedImportKey(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
-                        <option value="">Pilih alumni...</option>{singleImportMatches.map((row) => <option key={row.rowKey} value={row.rowKey}>{row.nama}{row.nomorAlumni ? " · " + row.nomorAlumni : ""} · {row.kategoriProgram} · Angkatan {row.nomorAngkatan}</option>)}
-                      </select>
-                    </label>
-                  </div>}
-                  {importScope === "cohort" && <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <label className="block text-xs font-semibold text-slate-700">Kategori program (opsional)
-                      <select value={importCategory} onChange={(e) => setImportCategory(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Semua kategori</option><option>KRA</option><option>PPRA</option><option>P4N</option><option>KSA</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option></select>
-                    </label>
-                    <label className="block text-xs font-semibold text-slate-700">Nomor angkatan (wajib)
-                      <input value={importCohortNumber} onChange={(e) => setImportCohortNumber(e.target.value)} placeholder="Mis. 1" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
-                    </label>
-                  </div>}
-                  {importScope === "category" && <label className="mt-3 block text-xs font-semibold text-slate-700">Kategori program (wajib)
-                    <select value={importCategory} onChange={(e) => setImportCategory(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Pilih kategori...</option><option>PPRA</option><option>P4N</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option></select>
-                  </label>}
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-50 p-3"><span className="text-xs text-slate-600">Hasil filter</span><strong className="text-sm text-[#0b1f3a]">{rowsToImport.length} baris dipilih dari {importRows.length}</strong></div>
-                  {importScope === "cohort" && !importCohortNumber.trim() && <p className="mt-2 text-xs text-amber-700">Masukkan nomor angkatan agar tidak mengimpor seluruh file tanpa sengaja.</p>}
-                  {importScope === "category" && !importCategory && <p className="mt-2 text-xs text-amber-700">Pilih kategori yang ingin diimpor.</p>}
-                </div>
-                <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="w-full text-left text-xs"><thead className="bg-slate-50 text-slate-600"><tr><th className="p-3">Nama</th><th className="p-3">Kategori</th><th className="p-3">No. Angkatan</th><th className="p-3">Tahun</th></tr></thead><tbody>{rowsToImport.slice(0, 10).map((row) => <tr key={row.rowKey} className="border-t border-slate-100"><td className="p-3">{row.nama}</td><td className="p-3">{row.kategoriProgram || "Belum ada"}</td><td className="p-3">{row.nomorAngkatan || "Belum ada"}</td><td className="p-3">{row.tahunAngkatan || "Belum ada"}</td></tr>)}</tbody></table>
-                  {rowsToImport.length > 10 && <p className="p-3 text-slate-500">Pratinjau 10 dari {rowsToImport.length} baris terpilih.</p>}
-                  {rowsToImport.length === 0 && <p className="p-4 text-sm text-slate-500">Belum ada baris yang cocok. Periksa filter atau pilih alumni.</p>}
-                </div>
-              </>}
-              {importStatus && <p role="status" className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{importStatus}</p>}
-              {importError && <p role="alert" className="mt-4 whitespace-pre-line rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{importError}</p>}
-              <button type="button" disabled={!rowsToImport.length || busy} onClick={() => void submitImport()} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a365d] disabled:cursor-not-allowed disabled:opacity-50"><FileSpreadsheet size={16} />{busy ? "Mengimpor..." : `Tinjau & import ${rowsToImport.length} baris`}</button>
-              <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-slate-500"><ShieldCheck size={15} className="mt-0.5 shrink-0" />Data yang berhasil masuk berstatus Menunggu dan tetap harus diverifikasi admin. Nomor angkatan/tahun yang tidak sesuai akan ditolak oleh validasi server.</p>
-            </section>
+
           </div>
         </main>
       </div>

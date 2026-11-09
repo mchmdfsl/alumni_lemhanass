@@ -130,7 +130,7 @@ export default function PengajuanAkunPage() {
               </button>
             </div>
 
-            <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
                   <Clock3 size={22} />

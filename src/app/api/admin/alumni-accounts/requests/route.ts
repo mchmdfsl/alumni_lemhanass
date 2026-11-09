@@ -45,6 +45,7 @@ export async function GET() {
       FROM alumni_account_requests r
       LEFT JOIN alumni a ON a.id = r.alumni_id
       WHERE lower(trim(r.status)) = lower('Menunggu')
+        AND r.request_type = 'register'
         AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, r.submitted_kategori_program, r.submitted_angkatan, '')) = ANY(${allowedCategories}))
       ORDER BY r.created_at DESC, r.id DESC
       LIMIT 100

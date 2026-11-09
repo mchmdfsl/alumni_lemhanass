@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   try {
     const sql = db();
 
-    const rows = await sql\`
+    const rows = await sql`
       SELECT
         r.id,
         r.email,
@@ -64,9 +64,9 @@ export async function GET(request: Request) {
         AND (\${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, r.submitted_kategori_program, r.submitted_angkatan, '')) = ANY(\${allowedCategories}))
       ORDER BY r.created_at DESC, r.id DESC
       LIMIT 100
-    \`;
+    `;
 
-    const statusRows = await sql\`
+    const statusRows = await sql`
       SELECT r.status, COUNT(*)::int AS total
       FROM alumni_account_requests r
       LEFT JOIN alumni a ON a.id = r.alumni_id
@@ -74,7 +74,7 @@ export async function GET(request: Request) {
         AND lower(trim(r.status)) IN ('menunggu', 'disetujui', 'ditolak')
         AND (\${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, r.submitted_kategori_program, r.submitted_angkatan, '')) = ANY(\${allowedCategories}))
       GROUP BY r.status
-    \`;
+    `;
 
     const statusCounts: Record<RequestStatus, number> = {
       Menunggu: 0,

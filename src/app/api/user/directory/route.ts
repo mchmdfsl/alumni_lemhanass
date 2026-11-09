@@ -56,6 +56,7 @@ const data = await db()`
   SELECT
     id,
     nama,
+    nomor_alumni AS "nomorAlumni",
     COALESCE(kategori_program, angkatan) AS "kategoriProgram",
     COALESCE(nomor_angkatan, '') AS "nomorAngkatan",
     tahun_angkatan AS "tahunAngkatan",

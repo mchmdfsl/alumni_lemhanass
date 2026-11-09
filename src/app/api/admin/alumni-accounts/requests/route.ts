@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { isAdminAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAdminCategories, getAdminScope } from "@/lib/admin-scope";
 
@@ -8,15 +7,22 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const scope = await getAdminScope();
-  if (!scope) return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
-  if (scope.role === "admin" && !scope.kategoriProgram) return NextResponse.json({ error: "Kategori akun Admin belum ditetapkan oleh Super Admin." }, { status: 403 });
+  if (!scope) {
+    return NextResponse.json({ error: "Tidak memiliki akses." }, { status: 401 });
+  }
+  if (scope.role === "admin" && !scope.kategoriProgram) {
+    return NextResponse.json(
+      { error: "Kategori akun Admin belum ditetapkan oleh Super Admin." },
+      { status: 403 },
+    );
+  }
 
   const allowedCategories = getAdminCategories(scope) ?? [];
+
   try {
     const sql = db();
 
-    // Pengajuan terbaru ditampilkan lebih dulu supaya tidak tertutup
-    // oleh 100 pengajuan lama.
+    // Hanya tampilkan pengajuan pendaftaran akun alumni baru yang menunggu approval.
     const rows = await sql`
       SELECT
         r.id,
@@ -46,7 +52,6 @@ export async function GET() {
       LEFT JOIN alumni a ON a.id = r.alumni_id
       WHERE lower(trim(r.status)) = lower('Menunggu')
         AND r.request_type = 'register'
-        AND r.request_type = 'register'
         AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, r.submitted_kategori_program, r.submitted_angkatan, '')) = ANY(${allowedCategories}))
       ORDER BY r.created_at DESC, r.id DESC
       LIMIT 100
@@ -56,4 +61,21 @@ export async function GET() {
       SELECT COUNT(*)::int AS total
       FROM alumni_account_requests r
       LEFT JOIN alumni a ON a.id = r.alumni_id
-      
+      WHERE lower(trim(r.status)) = lower('Menunggu')
+        AND r.request_type = 'register'
+        AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, r.submitted_kategori_program, r.submitted_angkatan, '')) = ANY(${allowedCategories}))
+    `;
+
+    return NextResponse.json({
+      data: rows,
+      totalPending: countRow?.total ?? rows.length,
+      limit: 100,
+    });
+  } catch (error) {
+    console.error("GET alumni account requests failed:", error);
+    return NextResponse.json(
+      { error: "Gagal mengambil daftar pendaftaran akun." },
+      { status: 500 },
+    );
+  }
+}

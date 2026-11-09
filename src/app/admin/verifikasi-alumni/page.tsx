@@ -36,6 +36,8 @@ interface VerificationAlumni {
   status: "Menunggu" | "Terverifikasi" | "Ditolak";
 }
 
+type VerificationHistoryItem = { id: string; alumniId: number; nama: string; nomorAlumni: string; kategoriProgram: string; status: "Terverifikasi" | "Ditolak"; reviewedBy: string; reviewedAt: string; reviewNote: string; action: string; };
+
 const ITEMS_PER_PAGE = 6;
 
 export default function VerifikasiAlumniPage() {
@@ -50,6 +52,24 @@ export default function VerifikasiAlumniPage() {
   const [credentialDownload, setCredentialDownload] = useState<{ url: string; filename: string } | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [canManageAccounts, setCanManageAccounts] = useState(false);
+  const [verificationHistory, setVerificationHistory] = useState<VerificationHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState("");
+
+  const refreshHistory = async () => {
+    setHistoryLoading(true);
+    setHistoryError("");
+    try {
+      const response = await fetch("/api/admin/alumni/verification-history", { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Gagal memuat riwayat verifikasi.");
+      setVerificationHistory(result.data ?? []);
+    } catch (error) {
+      setHistoryError(error instanceof Error ? error.message : "Gagal memuat riwayat verifikasi.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const [selectedAlumni, setSelectedAlumni] =
     useState<VerificationAlumni | null>(null);
@@ -67,6 +87,7 @@ export default function VerifikasiAlumniPage() {
 
   useEffect(() => {
     let active = true;
+    void refreshHistory();
     fetch("/api/auth/me", { cache: "no-store" })
       .then(async (response) => {
         const result = await response.json();
@@ -197,6 +218,7 @@ export default function VerifikasiAlumniPage() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Verifikasi gagal.");
       setVerificationData((items) => items.filter((item) => item.id !== alumni.id));
+      await refreshHistory();
     } catch (error) { alert(error instanceof Error ? error.message : "Verifikasi gagal."); }
   };
 
@@ -210,6 +232,7 @@ export default function VerifikasiAlumniPage() {
       setVerificationData((items) => items.filter((item) => item.id !== rejectAlumni.id));
       setRejectAlumni(null);
       setRejectionReason("");
+      await refreshHistory();
     } catch (error) { alert(error instanceof Error ? error.message : "Penolakan gagal."); }
   };
 
@@ -455,6 +478,25 @@ export default function VerifikasiAlumniPage() {
                 <EmptyState onReset={resetFilter} />
               )}
             </div>
+            <section className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex flex-col gap-1 border-b border-slate-100 p-5 sm:flex-row sm:items-end sm:justify-between">
+                <div><h2 className="text-lg font-bold text-[#0b1f3a]">Riwayat Verifikasi</h2><p className="text-sm text-slate-500">Daftar alumni yang sudah diverifikasi atau ditolak oleh Admin.</p></div>
+                <span className="text-sm font-semibold text-slate-500">{verificationHistory.length.toLocaleString("id-ID")} riwayat</span>
+              </div>
+              {historyError && <p role="alert" className="m-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{historyError}</p>}
+              {historyLoading ? <p className="p-8 text-center text-sm text-slate-500">Memuat riwayat verifikasi...</p> : verificationHistory.length === 0 ? <p className="p-8 text-center text-sm text-slate-500">Belum ada riwayat verifikasi yang tercatat.</p> : (
+                <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm">
+                  <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Nama Alumni</th><th className="px-5 py-3">Kategori</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Diproses oleh</th><th className="px-5 py-3">Waktu</th><th className="px-5 py-3">Alasan penolakan</th></tr></thead>
+                  <tbody className="divide-y divide-slate-100">{verificationHistory.map((entry) => <tr key={entry.id} className="align-top">
+                    <td className="px-5 py-4"><p className="font-semibold text-slate-800">{entry.nama}</p><p className="text-xs text-slate-500">{entry.nomorAlumni || "Nomor alumni belum tersedia"}</p></td>
+                    <td className="px-5 py-4 text-slate-600">{entry.kategoriProgram || "—"}</td>
+                    <td className="px-5 py-4"><span className={"rounded-full px-2.5 py-1 text-xs font-semibold " + (entry.status === "Terverifikasi" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700")}>{entry.status}</span></td>
+                    <td className="px-5 py-4 text-slate-600">{entry.reviewedBy || "—"}</td>
+                    <td className="whitespace-nowrap px-5 py-4 text-slate-600">{entry.reviewedAt ? new Date(entry.reviewedAt).toLocaleString("id-ID") : "—"}</td>
+                    <td className="max-w-xs whitespace-normal px-5 py-4 text-slate-600">{entry.reviewNote || "—"}</td>
+                  </tr>)}</tbody></table></div>
+              )}
+            </section>
           </div>
         </main>
       </div>

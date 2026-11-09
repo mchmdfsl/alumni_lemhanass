@@ -94,7 +94,17 @@ function waitForSlot(root: HTMLElement, timeoutMs = 30000): Promise<HTMLElement[
       const button = root.querySelector<HTMLButtonElement>("button");
       if (cards.length === 2 && button && !button.disabled) {
         const images = Array.from(root.querySelectorAll<HTMLImageElement>(".ktm-print-area img"));
-        if (images.every((img) => img.complete)) {
+        const failedImages = images.filter((img) => img.complete && img.naturalWidth === 0);
+        if (failedImages.length) {
+          reject(new Error("Ada gambar KTM yang gagal dimuat, termasuk kemungkinan QR. Coba lagi setelah koneksi stabil."));
+          return;
+        }
+        if (images.every((img) => img.complete && img.naturalWidth > 0)) {
+          const qrFallback = root.querySelector(".ktm-print-area")?.textContent?.includes("QR gagal dimuat");
+          if (qrFallback) {
+            reject(new Error("QR KTM gagal dimuat dari layanan QR. Coba lagi beberapa saat."));
+            return;
+          }
           resolve(cards);
           return;
         }
@@ -279,9 +289,9 @@ export default function BulkKtmExporter() {
         {cancelled && <p className="mt-3 text-sm text-amber-700">Permintaan pembatalan dikirim.</p>}
         {error && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
       </section>
-      <div aria-hidden="true" className="pointer-events-none fixed left-[-14000px] top-0 z-[-1] w-[1160px]">
+      <div aria-hidden="true" className="pointer-events-none fixed left-0 top-0 z-[-1] h-screen w-[1160px] overflow-hidden opacity-0">
         {profiles.map((profile, index) => (
-          <div key={index} ref={(element) => { roots.current[index] = element; }} className="w-[1160px]">
+          <div key={index} ref={(element) => { roots.current[index] = element; }} className="absolute left-0 top-0 w-[1160px]">
             <KtmCard profile={profile} />
           </div>
         ))}

@@ -116,7 +116,7 @@ export default function PengajuanAkunPage() {
                 <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#b28b16]">Administrasi Alumni</p>
                 <h1 className="text-2xl font-bold tracking-tight text-[#0b1f3a] sm:text-3xl">Pengajuan Akun Alumni</h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                  Periksa identitas alumni sebelum menyetujui klaim akun atau membuat akun untuk alumni baru.
+                  Periksa data pendaftaran alumni baru sebelum menyetujui pembuatan akun.
                 </p>
               </div>
               <button
@@ -149,15 +149,7 @@ export default function PengajuanAkunPage() {
                   <p className="mt-0.5 text-2xl font-bold text-[#172033]">{items.filter((item) => item.requestType === "register").length.toLocaleString("id-ID")}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                  <ShieldCheck size={22} />
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">Klaim akun</p>
-                  <p className="mt-0.5 text-2xl font-bold text-[#172033]">{items.filter((item) => item.requestType !== "register").length.toLocaleString("id-ID")}</p>
-                </div>
-              </div>
+
             </section>
 
             {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -177,7 +169,7 @@ export default function PengajuanAkunPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[760px] text-left text-sm">
                     <thead><tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400"><th className="px-3 py-3">Pemohon</th><th className="px-3 py-3">Jenis</th><th className="px-3 py-3">Keputusan</th><th className="px-3 py-3">Diproses oleh</th><th className="px-3 py-3">Tanggal keputusan</th><th className="px-3 py-3">Catatan</th></tr></thead>
-                    <tbody>{history.map((entry) => <tr key={entry.id} className="border-b border-slate-50 last:border-0"><td className="px-3 py-3"><p className="font-semibold text-[#172033]">{display(entry.nama)}</p><p className="text-xs text-slate-500">{entry.email}</p></td><td className="px-3 py-3 text-slate-600">{entry.requestType === "register" ? "Alumni baru" : "Klaim akun"}</td><td className="px-3 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${entry.status === "Disetujui" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{entry.status}</span></td><td className="px-3 py-3 text-slate-600">{display(entry.reviewedBy)}</td><td className="px-3 py-3 text-slate-600">{entry.reviewedAt ? new Date(entry.reviewedAt).toLocaleString("id-ID") : "—"}</td><td className="max-w-xs whitespace-normal px-3 py-3 text-slate-600">{display(entry.reviewNote)}</td></tr>)}</tbody>
+                    <tbody>{history.map((entry) => <tr key={entry.id} className="border-b border-slate-50 last:border-0"><td className="px-3 py-3"><p className="font-semibold text-[#172033]">{display(entry.nama)}</p><p className="text-xs text-slate-500">{entry.email}</p></td><td className="px-3 py-3 text-slate-600">{entry.requestType === "register" ? "Alumni baru" : "Pengajuan akun"}</td><td className="px-3 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${entry.status === "Disetujui" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{entry.status}</span></td><td className="px-3 py-3 text-slate-600">{display(entry.reviewedBy)}</td><td className="px-3 py-3 text-slate-600">{entry.reviewedAt ? new Date(entry.reviewedAt).toLocaleString("id-ID") : "—"}</td><td className="max-w-xs whitespace-normal px-3 py-3 text-slate-600">{display(entry.reviewNote)}</td></tr>)}</tbody>
                   </table>
                 </div>
               )}
@@ -194,7 +186,7 @@ export default function PengajuanAkunPage() {
                 </div>
                 <h2 className="mt-4 font-bold text-[#172033]">Belum ada pengajuan menunggu</h2>
                 <p className="mt-1 max-w-md text-sm leading-6 text-slate-500">
-                  Pengajuan pendaftaran alumni baru dan klaim akun akan muncul di sini setelah dikirim.
+                  Pengajuan pendaftaran alumni baru akan muncul di sini setelah dikirim.
                 </p>
                 <button type="button" onClick={() => void loadRequests()} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#0b1f3a] hover:underline">
                   <RefreshCw size={15} /> Periksa kembali
@@ -221,7 +213,7 @@ export default function PengajuanAkunPage() {
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <h2 className="break-words font-bold text-[#172033]">{display(nama)}</h2>
-                              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{isNew ? "Alumni baru" : "Klaim akun"}</span>
+                              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{isNew ? "Alumni baru" : "Pengajuan akun"}</span>
                             </div>
                             <p className="mt-1 flex items-center gap-1.5 break-all text-sm text-slate-500"><Mail size={14} className="shrink-0" />{item.email}</p>
                             <p className="mt-2 text-xs text-slate-400">
@@ -266,7 +258,7 @@ export default function PengajuanAkunPage() {
                               className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#18385f] disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               {busyId === item.id ? <LoaderCircle size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                              {isNew ? "Verifikasi & buat akun" : "Setujui klaim akun"}
+                              Verifikasi & buat akun
                             </button>
                           </div>
                         )}

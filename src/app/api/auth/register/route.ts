@@ -15,7 +15,13 @@ export async function POST(request: NextRequest) {
 
     const nama = value("nama", 200);
     const kategoriProgram = normalizeProgramCategory(value("kategoriProgram", 80));
-    const tahunAngkatanRaw = value("tahunAngkatan", 4);
+    const tahunAngkatanValue = body.tahunAngkatan;
+    const tahunAngkatanRaw =
+      typeof tahunAngkatanValue === "number" && Number.isFinite(tahunAngkatanValue)
+        ? String(tahunAngkatanValue)
+        : typeof tahunAngkatanValue === "string"
+          ? tahunAngkatanValue.trim()
+          : "";
     const tahunAngkatan = /^\d{4}$/.test(tahunAngkatanRaw) ? Number(tahunAngkatanRaw) : NaN;
     const nomorHp = value("nomorHp", 50);
     const instansi = value("instansi", 250);
@@ -25,9 +31,17 @@ export async function POST(request: NextRequest) {
     const email = value("email", 254).toLowerCase();
     const password = typeof body.password === "string" ? body.password : "";
 
-    if (!nama || !kategoriProgram || !Number.isInteger(tahunAngkatan) || !email || !password) {
+    const missingFields = [
+      !nama ? "nama" : null,
+      !kategoriProgram ? "kategori program" : null,
+      !Number.isInteger(tahunAngkatan) ? "tahun angkatan (harus 4 digit)" : null,
+      !email ? "email" : null,
+      !password ? "password" : null,
+    ].filter((field): field is string => field !== null);
+
+    if (missingFields.length > 0) {
       return NextResponse.json(
-        { error: "Nama, kategori program, tahun angkatan, email, dan password wajib diisi." },
+        { error: `Data wajib belum terbaca dengan benar: ${missingFields.join(", ")}. Periksa kembali kolom tersebut.` },
         { status: 400 },
       );
     }

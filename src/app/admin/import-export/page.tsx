@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Download, FileUp, FileSpreadsheet, ShieldCheck, KeyRound, UserRoundPlus } from "lucide-react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
+import BulkKtmExporter from "@/components/admin/BulkKtmExporter";
 import { parseXlsxFile } from "@/lib/xlsx-parser";
 
 type ImportRow = {
@@ -580,6 +581,8 @@ export default function ImportExportPage() {
               <h1 className="text-2xl font-bold tracking-tight text-[#0b1f3a] sm:text-3xl">Import & Export Data</h1>
               <p className="mt-1 text-sm text-slate-500">Pusat khusus administrator untuk memasukkan data alumni dan mengunduh CSV berdasarkan cakupan yang dipilih. Hasil import masuk ke antrean verifikasi.</p>
             </div>
+
+            {roleChecked && <BulkKtmExporter />}
 
             {!roleChecked ? (
               <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">Memeriksa akses administrator...</div>

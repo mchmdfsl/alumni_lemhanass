@@ -64,7 +64,7 @@ const EMPTY_PROFILE: KtmProfile = {
 
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(\`script[data-ktm-bulk-lib="\${src}"]\`);
+    const existing = document.querySelector<HTMLScriptElement>(`script[data-ktm-bulk-lib="${src}"]`);
     if (existing?.dataset.loaded === "true") return resolve();
     if (existing) {
       existing.addEventListener("load", () => resolve(), { once: true });
@@ -143,7 +143,7 @@ export default function BulkKtmExporter() {
         throw new Error("Ekspor satu ZIP berukuran besar memerlukan Chrome atau Edge versi terbaru agar file dapat ditulis langsung ke komputer tanpa memenuhi memori browser.");
       }
       const fileHandle = await win.showSaveFilePicker({
-        suggestedName: \`KTM-Alumni-Terverifikasi-\${new Date().toISOString().slice(0, 10)}.zip\`,
+        suggestedName: `KTM-Alumni-Terverifikasi-${new Date().toISOString().slice(0, 10)}.zip`,
         types: [{ description: "ZIP archive", accept: { "application/zip": [".zip"] } }],
       });
       writable = await fileHandle.createWritable();
@@ -170,7 +170,7 @@ export default function BulkKtmExporter() {
       let offset = 0;
       while (true) {
         if (cancelRef.current) throw new Error("Proses dibatalkan.");
-        const response = await fetch(\`/api/admin/ktm-export?limit=500&offset=\${offset}\`, { cache: "no-store" });
+        const response = await fetch(`/api/admin/ktm-export?limit=500&offset=${offset}`, { cache: "no-store" });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Gagal mengambil daftar alumni KTM.");
         const rows = Array.isArray(result.data) ? result.data as AlumniKtm[] : [];
@@ -223,7 +223,7 @@ export default function BulkKtmExporter() {
         }));
 
         for (const item of pdfBlobs) {
-          const filename = \`KTM_\${item.row.id}_\${safePart(item.row.nomorAlumni, "NoAlumni")}_\${safePart(item.row.nama, "Alumni")}.pdf\`;
+          const filename = `KTM_${item.row.id}_${safePart(item.row.nomorAlumni, "NoAlumni")}_${safePart(item.row.nama, "Alumni")}.pdf`;
           const entry = new win.fflate!.ZipPassThrough(filename);
           zip.add(entry);
           entry.push(new Uint8Array(await item.blob.arrayBuffer()), true);
@@ -231,7 +231,7 @@ export default function BulkKtmExporter() {
         await writeChain;
         if (streamError) throw streamError;
         const done = Math.min(start + batch.length, alumni.length);
-        setProgress({ done, total: alumni.length, message: \`Membuat PDF KTM: \${done.toLocaleString("id-ID")} dari \${alumni.length.toLocaleString("id-ID")} alumni.\` });
+        setProgress({ done, total: alumni.length, message: `Membuat PDF KTM: ${done.toLocaleString("id-ID")} dari ${alumni.length.toLocaleString("id-ID")} alumni.` });
       }
 
       if (cancelRef.current) throw new Error("Proses dibatalkan.");
@@ -241,7 +241,7 @@ export default function BulkKtmExporter() {
       if (streamError) throw streamError;
       await writable.close();
       writable = null;
-      setProgress({ done: alumni.length, total: alumni.length, message: \`Selesai. \${alumni.length.toLocaleString("id-ID")} PDF KTM sudah disimpan dalam satu ZIP.\` });
+      setProgress({ done: alumni.length, total: alumni.length, message: `Selesai. ${alumni.length.toLocaleString("id-ID")} PDF KTM sudah disimpan dalam satu ZIP.` });
     } catch (cause) {
       if (writable) await writable.abort().catch(() => undefined);
       const message = cause instanceof Error ? cause.message : "Ekspor KTM gagal.";
@@ -274,7 +274,7 @@ export default function BulkKtmExporter() {
         </div>
         {(busy || progress.message) && <div className="mt-4 rounded-xl bg-slate-50 p-3">
           <div className="flex items-center justify-between gap-3 text-xs text-slate-600"><span>{progress.message}</span>{progress.total > 0 && <strong>{Math.round((progress.done / progress.total) * 100)}%</strong>}</div>
-          {progress.total > 0 && <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-violet-700 transition-all" style={{ width: \`\${Math.min(100, (progress.done / progress.total) * 100)}%\` }} /></div>}
+          {progress.total > 0 && <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-violet-700 transition-all" style={{ width: `${Math.min(100, (progress.done / progress.total) * 100)}%` }} /></div>}
         </div>}
         {cancelled && <p className="mt-3 text-sm text-amber-700">Permintaan pembatalan dikirim.</p>}
         {error && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}

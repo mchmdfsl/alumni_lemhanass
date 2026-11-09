@@ -118,7 +118,7 @@ export default function UserLayout({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-200 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white shadow-[0_8px_30px_rgba(11,31,58,0.06)] transition-transform duration-200 ${
           menuOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
@@ -164,10 +164,10 @@ export default function UserLayout({
                 key={item.href}
                 href={item.href}
                 onClick={() => setMenuOpen(false)}
-                className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
                   active
                     ? "bg-[#0b1f3a] text-white shadow-sm"
-                    : "text-[#64748b] hover:bg-slate-50 hover:text-[#0b1f3a]"
+                    : "text-[#64748b] hover:bg-[#f7f1df] hover:text-[#0b1f3a]"
                 }`}
               >
                 <Icon size={18} strokeWidth={1.8} className="shrink-0" />

@@ -34,7 +34,7 @@ type PdfWindow = Window & {
   } };
   JSZip?: new () => {
     file: (name: string, data: Blob) => void;
-    generateAsync: (options: Record<string, unknown>) => Promise<Blob>;
+    generateAsync: (options: Record<string, unknown>, onUpdate?: (metadata: { percent: number }) => void) => Promise<Blob>;
   };
 };
 

@@ -46,6 +46,7 @@ export async function GET() {
       LEFT JOIN alumni a ON a.id = r.alumni_id
       WHERE lower(trim(r.status)) = lower('Menunggu')
         AND r.request_type = 'register'
+        AND r.request_type = 'register'
         AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, r.submitted_kategori_program, r.submitted_angkatan, '')) = ANY(${allowedCategories}))
       ORDER BY r.created_at DESC, r.id DESC
       LIMIT 100
@@ -55,20 +56,4 @@ export async function GET() {
       SELECT COUNT(*)::int AS total
       FROM alumni_account_requests r
       LEFT JOIN alumni a ON a.id = r.alumni_id
-      WHERE lower(trim(r.status)) = lower('Menunggu')
-        AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, r.submitted_kategori_program, r.submitted_angkatan, '')) = ANY(${allowedCategories}))
-    `;
-
-    return NextResponse.json({
-      data: rows,
-      totalPending: countRow?.total ?? rows.length,
-      limit: 100,
-    });
-  } catch (error) {
-    console.error("GET alumni account requests failed:", error);
-    return NextResponse.json(
-      { error: "Gagal mengambil daftar pendaftaran akun." },
-      { status: 500 },
-    );
-  }
-}
+      

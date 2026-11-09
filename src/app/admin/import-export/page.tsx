@@ -575,7 +575,7 @@ export default function ImportExportPage() {
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
 
 
-            <div className="xl:col-span-2">
+            <div>
               <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#9b791d]">PUSAT KENDALI DATA</p>
               <h1 className="text-2xl font-bold tracking-tight text-[#0b1f3a] sm:text-3xl">Import & Export Data</h1>
               <p className="mt-1 text-sm text-slate-500">Pusat khusus administrator untuk memasukkan data alumni dan mengunduh CSV berdasarkan cakupan yang dipilih. Hasil import masuk ke antrean verifikasi.</p>

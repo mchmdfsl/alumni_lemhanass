@@ -63,6 +63,9 @@ export default function KtmCard({ profile }: { profile: Profile }) {
   const cohort = profile.nomorAngkatan || "-";
   const year = profile.tahunAngkatan || "-";
   const alumniNo = profile.nomorAlumni || "-";
+  const nameLength = (profile.nama || "Nama Alumni").trim().length;
+  const frontNameSize = nameLength > 48 ? "clamp(10px, 1vw, 13px)" : nameLength > 38 ? "clamp(11px, 1.2vw, 15px)" : nameLength > 28 ? "clamp(13px, 1.5vw, 19px)" : "clamp(15px, 1.8vw, 23px)";
+  const backNameSize = nameLength > 48 ? "clamp(8px, .72vw, 9px)" : nameLength > 36 ? "clamp(8px, .82vw, 10px)" : "clamp(9px, 1vw, 13px)";
 
   const downloadKtmPdf = async () => {
     if (loading) {
@@ -176,7 +179,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
 
               <div className="relative mt-[5%] flex min-h-0 gap-[3%]">
                 <div className="min-w-0 flex-1">
-                  <h4 className="line-clamp-2 text-[clamp(15px,1.8vw,23px)] font-extrabold leading-tight text-[#17132f]">{profile.nama || "Nama Alumni"}</h4>
+                  <h4 style={{ fontSize: frontNameSize }} className="max-w-full break-words [overflow-wrap:anywhere] font-extrabold leading-[1.08] text-[#17132f]">{profile.nama || "Nama Alumni"}</h4>
                   <p className="mt-1 text-[clamp(9px,1.05vw,13px)] leading-tight">No. Alumni <span className="mx-1">:</span> <strong>{alumniNo}</strong></p>
                   <div className="mt-1.5 text-[clamp(9px,1.05vw,13px)] leading-[1.35]">
                     <p>Program <span className="mx-1">:</span> <strong>{category}</strong></p>
@@ -225,7 +228,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
               <div className="min-w-0 flex-1">
                 <h4 className="mb-[2.5%] border-b border-white/45 pb-1 text-[clamp(11px,1.15vw,14px)] font-bold">Data Alumni</h4>
                 <dl className="space-y-[1.6%] text-[clamp(9px,1vw,13px)] leading-tight">
-                  <div className="grid grid-cols-[5.3em_1fr] gap-1"><dt>Nama</dt><dd className="min-w-0 break-words">: {profile.nama || "-"}</dd></div>
+                  <div className="grid grid-cols-[5.3em_1fr] gap-1"><dt>Nama</dt><dd style={{ fontSize: backNameSize }} className="min-w-0 break-words leading-tight [overflow-wrap:anywhere]">: {profile.nama || "-"}</dd></div>
                   <div className="grid grid-cols-[5.3em_1fr] gap-1"><dt>No. Alumni</dt><dd className="min-w-0 break-all">: {alumniNo}</dd></div>
                   <div className="grid grid-cols-[5.3em_1fr] gap-1"><dt>Program</dt><dd>: {category}</dd></div>
                   <div className="grid grid-cols-[5.3em_1fr] gap-1"><dt>Angkatan</dt><dd>: {cohort}</dd></div>

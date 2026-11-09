@@ -168,6 +168,7 @@ export default function BulkKtmExporter() {
           } : EMPTY_PROFILE;
         });
         setProfiles(nextProfiles);
+        await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
         const cardSets = await Promise.all(batch.map(async (_, index) => {
           const root = roots.current[index];
@@ -192,7 +193,7 @@ export default function BulkKtmExporter() {
         }));
 
         for (const item of pdfBlobs) {
-          const filename = `KTM_${safePart(item.row.nomorAlumni, String(item.row.id))}_${safePart(item.row.nama, "Alumni")}.pdf`;
+          const filename = `KTM_${item.row.id}_${safePart(item.row.nomorAlumni, "NoAlumni")}_${safePart(item.row.nama, "Alumni")}.pdf`;
           zip.file(filename, item.blob);
         }
         const done = Math.min(start + batch.length, alumni.length);

@@ -2,6 +2,7 @@
 
 import {
   ChevronDown,
+  Download,
   ChevronLeft,
   ChevronRight,
   ShieldAlert,
@@ -747,9 +748,59 @@ function EmptyState({ onReset }: { onReset: () => void }) {
    DETAIL MODAL
 ========================================= */
 function AlumniDetailModal({ alumni, onClose, onEdit }: { alumni: Alumni; onClose: () => void; onEdit: () => void }) {
+  const [downloading, setDownloading] = useState(false);
+  const detailRef = useRef<HTMLDivElement>(null);
+  const downloadBiodata = async () => {
+    if (!detailRef.current || downloading) return;
+    setDownloading(true);
+    const loadScript = (src: string) => new Promise<void>((resolve, reject) => {
+      const existing = document.querySelector<HTMLScriptElement>(`script[data-biodata-lib="${src}"]`);
+      if (existing?.dataset.loaded === "true") return resolve();
+      if (existing) {
+        existing.addEventListener("load", () => resolve(), { once: true });
+        existing.addEventListener("error", () => reject(new Error("Gagal memuat pustaka PDF.")), { once: true });
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = src; script.async = true; script.dataset.biodataLib = src;
+      script.onload = () => { script.dataset.loaded = "true"; resolve(); };
+      script.onerror = () => reject(new Error("Gagal memuat pustaka PDF."));
+      document.head.appendChild(script);
+    });
+    try {
+      await Promise.all([
+        loadScript("https://cdn.jsdelivr.net/npm/html2canvas-pro@1.5.11/dist/html2canvas-pro.min.js"),
+        loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"),
+      ]);
+      const win = window as typeof window & {
+        html2canvas?: (element: HTMLElement, options: Record<string, unknown>) => Promise<HTMLCanvasElement>;
+        jspdf?: { jsPDF: new (options: Record<string, unknown>) => {
+          addImage: (data: string, type: string, x: number, y: number, width: number, height: number) => void;
+          addPage: (format: string, orientation: string) => void;
+          save: (filename: string) => void;
+        } };
+      };
+      if (!win.html2canvas || !win.jspdf?.jsPDF) throw new Error("Pustaka PDF tidak tersedia.");
+      const canvas = await win.html2canvas(detailRef.current, { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false });
+      const pdf = new win.jspdf.jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+      const pageWidth = 190; const pageHeight = 277;
+      const imageHeight = canvas.height * pageWidth / canvas.width;
+      const image = canvas.toDataURL("image/jpeg", 0.94);
+      let offset = 0; let remaining = imageHeight;
+      pdf.addImage(image, "JPEG", 10, 10, pageWidth, imageHeight);
+      remaining -= pageHeight;
+      while (remaining > 0) { offset += pageHeight; pdf.addPage("a4", "portrait"); pdf.addImage(image, "JPEG", 10, 10 - offset, pageWidth, imageHeight); remaining -= pageHeight; }
+      const safeName = (alumni.nama || "Alumni").normalize("NFKD").replace(/[\\u0300-\\u036f]/g, "").replace(/[^a-zA-Z0-9_-]+/g, "_").replace(/^_+|_+$/g, "");
+      pdf.save(`Biodata_Alumni_${safeName || alumni.id}.pdf`);
+    } catch (error) {
+      console.error("Biodata PDF failed:", error);
+      alert(error instanceof Error ? error.message : "Gagal membuat PDF biodata.");
+    } finally { setDownloading(false); }
+  };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#071526]/50 p-4 backdrop-blur-sm" onMouseDown={onClose}>
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl" onMouseDown={(e) => e.stopPropagation()}>
+        <div ref={detailRef} className="bg-white">
         <div className="flex items-start justify-between border-b border-slate-100 p-5 sm:p-6">
           <div className="flex items-center gap-3">
             <Avatar name={alumni.nama} photo={alumni.fotoProfil} />
@@ -795,9 +846,13 @@ function AlumniDetailModal({ alumni, onClose, onEdit }: { alumni: Alumni; onClos
             <div className="sm:col-span-2"><DetailItem label="Alamat Lengkap" value={alumni.alamat} /></div>
           </div>
         </div>
+        </div>
 
         <div className="flex flex-col-reverse gap-2 border-t border-slate-100 p-5 sm:flex-row sm:justify-end sm:p-6">
           <button type="button" onClick={onClose} className="h-10 rounded-xl border border-slate-200 px-5 text-sm font-semibold text-[#475569] transition hover:bg-slate-50">Tutup</button>
+          <button type="button" onClick={downloadBiodata} disabled={downloading} className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-[#0b1f3a] transition hover:bg-slate-50 disabled:opacity-60">
+            <Download size={15} /> {downloading ? "Menyiapkan PDF..." : "Unduh Biodata"}
+          </button>
           <button type="button" onClick={onEdit} className="flex h-10 items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-5 text-sm font-semibold text-white transition hover:bg-[#123b68]">
             <Pencil size={15} /> Edit Data
           </button>

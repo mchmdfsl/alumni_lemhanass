@@ -216,9 +216,9 @@ export default function KtmCard({ profile }: { profile: Profile }) {
             <div className="pointer-events-none absolute inset-0 opacity-[0.07] bg-[repeating-linear-gradient(135deg,transparent_0px,transparent_12px,rgba(255,255,255,.12)_13px,transparent_14px)]" />
 
             <header className="relative flex items-center gap-[2.5%] border-b border-[#c8b477]/30 px-[4%] py-[3%]">
-              <Image src="/images/logo-lemhannas.png" alt="Lambang Lemhannas RI" width={54} height={54} className="h-[clamp(26px,8cqw,42px)] w-[clamp(26px,5vw,42px)] shrink-0 object-contain" />
+              <Image src="/images/logo-lemhannas.png" alt="Lambang Lemhannas RI" width={54} height={54} className="h-[clamp(26px,8cqw,42px)] w-[clamp(26px,8cqw,42px)] shrink-0 object-contain" />
               <div>
-                <h3 className="text-[clamp(13px,1.5vw,18px)] font-extrabold tracking-wide text-[#d9c58f]">LEMHANNAS RI</h3>
+                <h3 className="text-[clamp(13px,3.75cqw,18px)] font-extrabold tracking-wide text-[#d9c58f]">LEMHANNAS RI</h3>
                 <p className="text-[clamp(8px,2.1cqw,11px)] text-white/85">Lembaga Ketahanan Nasional</p>
               </div>
               <p className="ml-auto max-w-[42%] text-right text-[clamp(8px,2.2cqw,11px)] italic leading-tight text-[#e0d3aa]">"Membangun Ketahanan Nasional<br />untuk Indonesia Maju"</p>

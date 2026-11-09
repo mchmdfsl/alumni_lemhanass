@@ -571,22 +571,22 @@ export default function ImportExportPage() {
       <AdminSidebar />
       <div className="lg:pl-72">
         <AdminHeader />
-        <main className="p-4 sm:p-6 lg:p-8">
-          <div className="mx-auto max-w-5xl space-y-6">
+        <main className="p-4 sm:p-6 lg:p-8 xl:p-10">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 items-start gap-6 xl:grid-cols-2">
 
 
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#b28b16]">Pengelolaan Data</p>
+            <div className="xl:col-span-2">
+              <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#9b791d]">PUSAT KENDALI DATA</p>
               <h1 className="text-2xl font-bold tracking-tight text-[#0b1f3a] sm:text-3xl">Import & Export Data</h1>
               <p className="mt-1 text-sm text-slate-500">Pusat khusus administrator untuk memasukkan data alumni dan mengunduh CSV berdasarkan cakupan yang dipilih. Hasil import masuk ke antrean verifikasi.</p>
             </div>
 
             {!roleChecked ? (
               <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">Memeriksa akses administrator...</div>
-            ) : <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            ) : <section className="rounded-2xl border border-[#dbe1e8] bg-white p-6 shadow-[0_10px_30px_rgba(11,31,58,0.055)] sm:p-7">
               <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><Download size={20} /></div>
-                <div><h2 className="font-bold text-[#172033]">Export CSV</h2><p className="text-xs text-slate-500">Pilih cakupan data alumni yang ingin diunduh.</p></div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f7f1df] text-[#8a6b16]"><Download size={20} /></div>
+                <div><h2 className="font-bold text-[#0b1f3a]">Export CSV</h2><p className="text-xs text-slate-500">Pilih cakupan data alumni yang ingin diunduh.</p></div>
               </div>
               <label className="block text-xs font-semibold text-slate-700">Cakupan export
                 <select value={exportScope} onChange={(e) => { setExportScope(e.target.value); setSelectedAlumni(""); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal sm:max-w-md">
@@ -638,20 +638,20 @@ export default function ImportExportPage() {
                   (exportScope === "year" && !/^\d{4}$/.test(exportTahun.trim()));
                 return <button type="button" disabled={invalid || exportLoading} onClick={() => void handleExportDownload()} aria-disabled={invalid} className={`mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition ${invalid || exportLoading ? "cursor-not-allowed bg-slate-400" : "bg-[#0b1f3a] hover:bg-[#1a365d]"}`}><Download size={16} />{exportLoading ? "Menyiapkan CSV..." : "Siapkan CSV"}</button>;
               })()}
-              <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
-                <p className="text-sm font-semibold text-blue-950">Laporan seluruh alumni terverifikasi</p>
-                <p className="mt-1 text-xs leading-5 text-blue-900">Mengambil semua baris berstatus Terverifikasi langsung dari database, termasuk profil dengan kolom kosong. Nama duplikat tetap dipertahankan.</p>
-                <button type="button" disabled={exportLoading} onClick={() => void handleVerifiedReportDownload()} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50"><Download size={16} />{exportLoading ? "Menyiapkan laporan..." : "Unduh seluruh data terverifikasi"}</button>
+              <div className="mt-5 rounded-xl border border-[#c9a227]/30 bg-[#f7f1df] p-4">
+                <p className="text-sm font-semibold text-[#0b1f3a]">Laporan seluruh alumni terverifikasi</p>
+                <p className="mt-1 text-xs leading-5 text-slate-700">Mengambil semua baris berstatus Terverifikasi langsung dari database, termasuk profil dengan kolom kosong. Nama duplikat tetap dipertahankan.</p>
+                <button type="button" disabled={exportLoading} onClick={() => void handleVerifiedReportDownload()} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#123b68] disabled:cursor-not-allowed disabled:opacity-50"><Download size={16} />{exportLoading ? "Menyiapkan laporan..." : "Unduh seluruh data terverifikasi"}</button>
               </div>
               {exportError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{exportError}</p>}
               {exportStatusMessage && <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{exportStatusMessage}</p>}
               {exportDownload && <a href={exportDownload.url} download={exportDownload.filename} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"><Download size={16} />Unduh file CSV</a>}
             </section>}
 
-            {roleChecked && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            {roleChecked && <section className="rounded-2xl border border-[#dbe1e8] bg-white p-6 shadow-[0_10px_30px_rgba(11,31,58,0.055)] sm:p-7">
               <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-700"><KeyRound size={20} /></div>
-                <div><h2 className="font-bold text-[#172033]">Aktivasi Akun & Reset Password</h2><p className="text-xs text-slate-500">Atur akun berdasarkan cakupan yang dipilih. CSV password harus disimpan dengan aman.</p></div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f7f1df] text-[#8a6b16]"><KeyRound size={20} /></div>
+                <div><h2 className="font-bold text-[#0b1f3a]">Aktivasi Akun & Reset Password</h2><p className="text-xs text-slate-500">Atur akun berdasarkan cakupan yang dipilih. CSV password harus disimpan dengan aman.</p></div>
               </div>
               <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between gap-3"><h3 className="text-sm font-bold text-slate-800">Sinkronisasi database</h3><button type="button" onClick={() => void refreshAccountStats()} disabled={accountStatsLoading} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:opacity-50">{accountStatsLoading ? "Memuat..." : "Perbarui"}</button></div>
@@ -691,12 +691,12 @@ export default function ImportExportPage() {
               {accountScope === "year" && <label className="mt-4 block text-xs font-semibold text-slate-700">Tahun angkatan
                 <input inputMode="numeric" maxLength={4} value={accountYear} onChange={(e) => setAccountYear(e.target.value.replace(/\D/g, "").slice(0,4))} placeholder="Mis. 2024" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal sm:max-w-xs" />
               </label>}
-              <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
-                <h3 className="text-sm font-bold text-blue-950">Ekspor daftar akun user (aman, tanpa reset)</h3>
-                <p className="mt-1 text-xs leading-5 text-blue-900">Mengunduh daftar akun yang sudah ada, termasuk akun aktif dan nonaktif. Password dibiarkan kosong dan tidak ada data akun yang diubah.</p>
-                <button type="button" disabled={accountListLoading} onClick={() => void handleExportAccountList()} className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-sm font-semibold text-blue-950 hover:bg-blue-100 disabled:opacity-50"><Download size={16}/>{accountListLoading ? "Menyiapkan CSV..." : "Ekspor semua akun user"}</button>
-                {accountListStatus && <p role="status" className="mt-3 rounded-xl bg-white p-3 text-sm text-blue-900">{accountListStatus}</p>}
-                {accountListDownload && <a href={accountListDownload.url} download={accountListDownload.filename} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-900"><Download size={16}/>Unduh daftar akun user CSV</a>}
+              <div className="mb-4 rounded-xl border border-[#c9a227]/30 bg-[#f7f1df] p-4">
+                <h3 className="text-sm font-bold text-[#0b1f3a]">Ekspor daftar akun user (aman, tanpa reset)</h3>
+                <p className="mt-1 text-xs leading-5 text-slate-700">Mengunduh daftar akun yang sudah ada, termasuk akun aktif dan nonaktif. Password dibiarkan kosong dan tidak ada data akun yang diubah.</p>
+                <button type="button" disabled={accountListLoading} onClick={() => void handleExportAccountList()} className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-[#c9a227]/40 bg-white px-4 py-2.5 text-sm font-semibold text-[#0b1f3a] hover:bg-[#efe5c5] disabled:opacity-50"><Download size={16}/>{accountListLoading ? "Menyiapkan CSV..." : "Ekspor semua akun user"}</button>
+                {accountListStatus && <p role="status" className="mt-3 rounded-xl bg-white p-3 text-sm text-slate-700">{accountListStatus}</p>}
+                {accountListDownload && <a href={accountListDownload.url} download={accountListDownload.filename} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#123b68]"><Download size={16}/>Unduh daftar akun user CSV</a>}
                 {accountListError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{accountListError}</p>}
               </div>
               <p className="mt-3 text-xs leading-5 text-slate-500">Aktivasi membuat akun yang belum ada. Reset mengganti password akun aktif. Keduanya hanya memproses alumni terverifikasi sesuai cakupan.</p>
@@ -710,10 +710,10 @@ export default function ImportExportPage() {
               {accountError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{accountError}</p>}
             </section>}
 
-                        <section id="template" className="scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                        <section id="template" className="scroll-mt-6 rounded-2xl border border-[#dbe1e8] bg-white p-6 shadow-[0_10px_30px_rgba(11,31,58,0.055)] sm:p-7">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="font-bold text-[#172033]">Template Data Alumni</h2>
+                  <h2 className="font-bold text-[#0b1f3a]">Template Data Alumni</h2>
                   <p className="mt-1 text-xs leading-5 text-slate-500">Unduh template ini dan bagikan kepada alumni. Mereka cukup mengisi data pribadi, lalu file dapat langsung diunggah melalui menu Import CSV.</p>
                 </div>
                 <button type="button" onClick={handleTemplateDownload} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1a365d]">
@@ -728,10 +728,10 @@ export default function ImportExportPage() {
               </div>
             </section>
 
-<section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+<section className="xl:col-span-2 rounded-2xl border border-[#dbe1e8] bg-white p-6 shadow-[0_10px_30px_rgba(11,31,58,0.055)] sm:p-7">
               <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><FileUp size={20} /></div>
-                <div><h2 className="font-bold text-[#172033]">Import Excel / CSV</h2><p className="text-xs text-slate-500">Unggah file Excel .xlsx atau CSV untuk memperbarui data alumni yang cocok dan menambahkan data baru ke database.</p></div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f7f1df] text-[#8a6b16]"><FileUp size={20} /></div>
+                <div><h2 className="font-bold text-[#0b1f3a]">Import Excel / CSV</h2><p className="text-xs text-slate-500">Unggah file Excel .xlsx atau CSV untuk memperbarui data alumni yang cocok dan menambahkan data baru ke database.</p></div>
               </div>
               <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-5">
                 <label className="block text-sm font-semibold text-slate-800">File Excel (.xlsx) atau CSV
@@ -742,7 +742,7 @@ export default function ImportExportPage() {
               {file && <p className="mt-3 text-xs text-slate-600">File: <strong>{file.name}</strong> · {importRows.length} baris tersisa untuk diperiksa</p>}
               {importRows.length > 0 && <>
                 <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4">
-                  <div className="mb-3 flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0b1f3a]/5 text-[#0b1f3a]"><ShieldCheck size={18} /></div><div><h3 className="text-sm font-bold text-[#172033]">Tentukan cakupan import</h3><p className="text-xs text-slate-500">Saring data dahulu, lalu tinjau hasil sebelum konfirmasi.</p></div></div>
+                  <div className="mb-3 flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0b1f3a]/5 text-[#0b1f3a]"><ShieldCheck size={18} /></div><div><h3 className="text-sm font-bold text-[#0b1f3a]">Tentukan cakupan import</h3><p className="text-xs text-slate-500">Saring data dahulu, lalu tinjau hasil sebelum konfirmasi.</p></div></div>
                   <label className="block text-xs font-semibold text-slate-700">Import berdasarkan
                     <select value={importScope} onChange={(e) => { setImportScope(e.target.value as typeof importScope); setSelectedImportKey(""); setImportError(""); setImportStatus(""); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
                       <option value="single">Satu alumni</option><option value="cohort">Satu angkatan</option><option value="category">Satu kategori</option><option value="all">Semua baris dalam file</option>

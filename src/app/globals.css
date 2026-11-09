@@ -115,3 +115,75 @@ textarea:focus-visible {
 :where(hr) {
   border-color: var(--lemhannas-border);
 }
+
+
+/* Consistent application rhythm across Super Admin, Admin, and Alumni views. */
+:root {
+  --lemhannas-page-gutter: clamp(1rem, 2.2vw, 2rem);
+  --lemhannas-section-gap: 1.5rem;
+  --lemhannas-panel-padding: clamp(1rem, 1.8vw, 1.5rem);
+  --lemhannas-control-height: 2.75rem;
+}
+
+/* Keep the shared page canvas calm and predictable. */
+body {
+  background-color: var(--lemhannas-background);
+}
+
+main {
+  min-width: 0;
+}
+
+/* Common panel treatment without changing page-specific colors or layouts. */
+:where(.rounded-2xl.border.bg-white, .rounded-xl.border.bg-white) {
+  border-color: var(--lemhannas-border);
+}
+
+:where(.rounded-2xl.border.bg-white) {
+  box-shadow: var(--lemhannas-card-shadow);
+}
+
+/* Consistent control sizing and readable focus states. */
+:where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  border-color: var(--lemhannas-border);
+  color: var(--lemhannas-text);
+}
+
+:where(input:not([type="checkbox"]):not([type="radio"]), select) {
+  min-height: var(--lemhannas-control-height);
+}
+
+:where(textarea) {
+  min-height: 6rem;
+}
+
+:where(button, a) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Tables remain readable while allowing their own responsive wrappers to scroll. */
+:where(table) {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+:where(table thead th) {
+  background: #f8fafc;
+  letter-spacing: 0.01em;
+}
+
+:where(table tbody tr:last-child td) {
+  border-bottom-color: transparent;
+}
+
+/* Avoid accidental horizontal overflow in the three role areas. */
+:where(main, main > div, main section, main article) {
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --lemhannas-section-gap: 1.125rem;
+    --lemhannas-panel-padding: 1rem;
+  }
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, Users, RefreshCw, AlertCircle, Building2, BriefcaseBusiness } from "lucide-react";
+import { Search, Users, RefreshCw, AlertCircle, Building2, BriefcaseBusiness, Eye, X, GraduationCap, MapPin } from "lucide-react";
 
 type Alumni = {
   id: string | number;
@@ -13,6 +13,7 @@ type Alumni = {
   jabatan: string | null;
   instansi: string | null;
   fotoProfil: string | null;
+  nomorAlumni?: string | null;
 };
 
 export default function ListAngkatan() {
@@ -25,6 +26,7 @@ export default function ListAngkatan() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
+  const [selectedAlumni, setSelectedAlumni] = useState<Alumni | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -147,6 +149,7 @@ export default function ListAngkatan() {
                   <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Kategori / Angkatan</th>
                   <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Jabatan</th>
                   <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Instansi</th>
+                  <th className="px-5 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Detail</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,6 +164,7 @@ export default function ListAngkatan() {
                     <td className="px-5 py-4 text-sm text-slate-600">{[person.kategoriProgram || person.angkatan, person.nomorAngkatan, person.tahunAngkatan].filter(Boolean).join(" · ") || "-"}</td>
                     <td className="px-5 py-4 text-sm text-slate-600">{person.jabatan || "-"}</td>
                     <td className="px-5 py-4 text-sm text-slate-600">{person.instansi || "-"}</td>
+                    <td className="px-5 py-4 text-right"><button type="button" onClick={() => setSelectedAlumni(person)} aria-label={`Lihat detail ${person.nama || "alumni"}`} title="Lihat detail alumni" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-[#0b1f3a] hover:bg-[#0b1f3a] hover:text-white"><Eye size={17} /></button></td>
                   </tr>
                 ))}
               </tbody>
@@ -178,6 +182,7 @@ export default function ListAngkatan() {
                       <p className="flex gap-2"><BriefcaseBusiness size={16} className="mt-0.5 shrink-0 text-slate-400" /><span>{person.jabatan || "Jabatan belum diisi"}</span></p>
                       <p className="flex gap-2"><Building2 size={16} className="mt-0.5 shrink-0 text-slate-400" /><span>{person.instansi || "Instansi belum diisi"}</span></p>
                     </div>
+                    <button type="button" onClick={() => setSelectedAlumni(person)} className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 text-xs font-semibold text-[#0b1f3a] hover:bg-slate-50"><Eye size={15} /> Lihat Detail</button>
                   </div>
                 </div>
               </article>
@@ -195,6 +200,7 @@ export default function ListAngkatan() {
         </nav>
       )}
       <p className="text-xs leading-5 text-slate-400">Direktori hanya menampilkan alumni berstatus terverifikasi. Informasi dibatasi pada data profesional yang tersedia di sistem.</p>
+      {selectedAlumni && <DirectoryPreview alumni={selectedAlumni} onClose={() => setSelectedAlumni(null)} />}
     </div>
   );
 }
@@ -221,6 +227,46 @@ function Avatar({ person }: { person: Alumni }) {
           className="h-full w-full object-cover"
         />
       ) : initials}
+    </div>
+  );
+}
+
+
+function DirectoryPreview({ alumni, onClose }: { alumni: Alumni; onClose: () => void }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const category = alumni.kategoriProgram || alumni.angkatan || "-";
+  const cohort = [alumni.nomorAngkatan ? `Angkatan ${alumni.nomorAngkatan}` : null, alumni.tahunAngkatan].filter(Boolean).join(" / ") || "-";
+  const items = [
+    ["Nomor Alumni", alumni.nomorAlumni || "Belum tersedia"],
+    ["Program", category],
+    ["Angkatan", cohort],
+    ["Jabatan", alumni.jabatan || "Belum diisi"],
+    ["Instansi / Kantor", alumni.instansi || "Belum diisi"],
+  ];
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#071526]/65 p-3 backdrop-blur-sm sm:p-6" onMouseDown={onClose}>
+      <section role="dialog" aria-modal="true" aria-label={`Preview data alumni ${alumni.nama || ""}`} className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
+        <header className="flex items-center justify-between bg-[#17132f] px-5 py-4 text-white sm:px-6">
+          <div><p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#d9c58f]">Direktori Alumni</p><h2 className="mt-1 text-lg font-bold">Preview Data Alumni</h2></div>
+          <button type="button" onClick={onClose} aria-label="Tutup preview" className="flex h-9 w-9 items-center justify-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white"><X size={19} /></button>
+        </header>
+        <div className="grid gap-5 p-5 sm:grid-cols-[220px_minmax(0,1fr)] sm:p-6">
+          <div className="space-y-3">
+            <div className="aspect-[3/4] overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+              {alumni.fotoProfil && !imageFailed ? <img src={alumni.fotoProfil} alt={`Foto ${alumni.nama || "alumni"}`} referrerPolicy="no-referrer" onError={() => setImageFailed(true)} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-sm text-slate-400">Foto belum tersedia</div>}
+            </div>
+            <div className="rounded-xl bg-[#17132f] p-4 text-white"><p className="text-xs text-[#d9c58f]">Nama Alumni</p><p className="mt-1 break-words text-base font-bold">{alumni.nama || "-"}</p></div>
+          </div>
+          <div className="min-w-0">
+            <div className="mb-4 flex items-center gap-2 text-sm font-bold text-[#17132f]"><GraduationCap size={18} className="text-[#b28b16]" /> Informasi Alumni</div>
+            <dl className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200">
+              {items.map(([label, value]) => <div key={label} className="grid grid-cols-[minmax(105px,34%)_1fr] gap-3 px-4 py-3"><dt className="text-xs font-medium text-slate-500">{label}</dt><dd className="break-words text-sm font-semibold text-[#172033]">{value}</dd></div>)}
+            </dl>
+            <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-slate-400"><MapPin size={14} className="mt-0.5 shrink-0" />Preview hanya untuk melihat informasi. Pengguna direktori tidak dapat mengubah data alumni.</p>
+            <button type="button" onClick={onClose} className="mt-5 w-full rounded-xl bg-[#17132f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#28234a] sm:w-auto">Tutup Preview</button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

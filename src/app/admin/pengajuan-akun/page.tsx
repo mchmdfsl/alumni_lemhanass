@@ -16,12 +16,16 @@ import {
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 
+type RequestStatus = "Menunggu" | "Disetujui" | "Ditolak";
+
 type RequestItem = {
   id: number;
   email: string;
   requestType: string;
   status: string;
   createdAt: string;
+  reviewedAt?: string | null;
+  reviewNote?: string | null;
   alumniId: number | null;
   nomorAlumni: string | null;
   namaAlumni: string | null;
@@ -46,6 +50,10 @@ const display = (value: string | null | undefined) => value?.trim() || "—";
 
 export default function PengajuanAkunPage() {
   const [items, setItems] = useState<RequestItem[]>([]);
+  const [statusFilter, setStatusFilter] = useState<RequestStatus>("Menunggu");
+  const [statusCounts, setStatusCounts] = useState<Record<RequestStatus, number>>({
+    Menunggu: 0, Disetujui: 0, Ditolak: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -56,16 +64,17 @@ export default function PengajuanAkunPage() {
     setError("");
     setNotice("");
     try {
-      const response = await fetch("/api/admin/alumni-accounts/requests", { cache: "no-store" });
+      const response = await fetch(`/api/admin/alumni-accounts/requests?status=${encodeURIComponent(statusFilter)}`, { cache: "no-store" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Gagal memuat pengajuan.");
       setItems(result.data ?? []);
+      setStatusCounts(result.statusCounts ?? { Menunggu: 0, Disetujui: 0, Ditolak: 0 });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusFilter]);
 
   useEffect(() => { void loadRequests(); }, [loadRequests]);
 
@@ -124,14 +133,42 @@ export default function PengajuanAkunPage() {
               </button>
             </div>
 
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" role="tablist" aria-label="Filter status pengajuan">
+              {([
+                { status: "Menunggu" as const, label: "Menunggu", icon: Clock3, tone: "amber" },
+                { status: "Disetujui" as const, label: "Diterima", icon: CheckCircle2, tone: "emerald" },
+                { status: "Ditolak" as const, label: "Ditolak", icon: XCircle, tone: "red" },
+              ]).map((tab) => {
+                const active = statusFilter === tab.status;
+                return (
+                  <button
+                    key={tab.status}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setStatusFilter(tab.status)}
+                    className={`flex items-center justify-between rounded-2xl border p-4 text-left shadow-sm transition ${active ? "border-[#0b1f3a] bg-[#0b1f3a] text-white" : "border-slate-200 bg-white text-[#172033] hover:border-slate-300"}`}
+                  >
+                    <span className="flex items-center gap-2 text-sm font-semibold">
+                      <tab.icon size={18} />
+                      Pengajuan {tab.label.toLowerCase()}
+                    </span>
+                    <span className={`rounded-lg px-2.5 py-1 text-sm font-bold tabular-nums ${active ? "bg-white/15 text-white" : "bg-slate-100 text-slate-700"}`}>
+                      {statusCounts[tab.status].toLocaleString("id-ID")}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
             <section className="max-w-sm">
               <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
                   <Clock3 size={22} />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Pengajuan menunggu</p>
-                  <p className="mt-0.5 text-2xl font-bold text-[#172033]">{items.length.toLocaleString("id-ID")}</p>
+                  <p className="text-sm text-slate-500">Pengajuan {statusFilter.toLowerCase()}</p>
+                  <p className="mt-0.5 text-2xl font-bold text-[#172033]">{statusCounts[statusFilter].toLocaleString("id-ID")}</p>
                 </div>
               </div>
             </section>
@@ -148,9 +185,9 @@ export default function PengajuanAkunPage() {
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
                   <FileCheck2 size={26} />
                 </div>
-                <h2 className="mt-4 font-bold text-[#172033]">Belum ada pengajuan menunggu</h2>
+                <h2 className="mt-4 font-bold text-[#172033]">Belum ada pengajuan {statusFilter.toLowerCase()}</h2>
                 <p className="mt-1 max-w-md text-sm leading-6 text-slate-500">
-                  Pengajuan pendaftaran alumni baru akan muncul di sini setelah dikirim.
+                  Daftar pengajuan dengan status ini masih kosong.
                 </p>
                 <button type="button" onClick={() => void loadRequests()} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#0b1f3a] hover:underline">
                   <RefreshCw size={15} /> Periksa kembali
@@ -227,6 +264,12 @@ export default function PengajuanAkunPage() {
                           </div>
                         )}
                         {pending && <p className="text-xs leading-5 text-amber-700">Pastikan identitas pemohon sudah diperiksa secara manual sebelum menyetujui pengajuan.</p>}
+                        {item.status === "Ditolak" && item.reviewNote && (
+                          <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800">
+                            <p className="font-semibold">Alasan penolakan</p>
+                            <p className="mt-1">{item.reviewNote}</p>
+                          </div>
+                        )}
                       </div>
                     </article>
                   );

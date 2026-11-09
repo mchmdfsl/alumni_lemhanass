@@ -6,16 +6,23 @@
   --lemhannas-blue: #123b68;
   --lemhannas-gold: #c9a227;
   --lemhannas-red: #9e1b32;
+  --lemhannas-gold-soft: #f7f1df;
+  --lemhannas-surface: #ffffff;
+  --lemhannas-surface-subtle: #f8fafc;
+  --lemhannas-focus: rgba(201, 162, 39, 0.42);
+  --lemhannas-card-radius: 16px;
+  --lemhannas-control-radius: 10px;
+  --lemhannas-card-shadow: 0 1px 2px rgba(11, 31, 58, 0.04), 0 8px 24px rgba(11, 31, 58, 0.045);
   --lemhannas-white: #ffffff;
   --lemhannas-background: #f5f7fa;
   --lemhannas-text: #172033;
   --lemhannas-muted: #526176;
   --lemhannas-border: #dbe1e8;
   --content-width: 1440px;
-  --surface: #ffffff;
-  --surface-muted: #f8fafc;
-  --radius-card: 1rem;
-  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.04);
+  --surface: var(--lemhannas-surface);
+  --surface-muted: var(--lemhannas-surface-subtle);
+  --radius-card: var(--lemhannas-card-radius);
+  --shadow-card: var(--lemhannas-card-shadow);
 }
 
 * { box-sizing: border-box; }
@@ -60,7 +67,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid rgba(201, 162, 39, 0.55);
+  outline: 3px solid var(--lemhannas-focus);
   outline-offset: 2px;
 }
 
@@ -82,4 +89,29 @@ textarea:focus-visible {
 :where(.rounded-2xl.border, .rounded-xl.border) { border-color: var(--lemhannas-border); }
 @media print {
   body { background: #fff !important; }
+}
+
+
+/* LEMHANNAS visual system: navy primary, restrained gold accent, neutral surfaces. */
+:where(.bg-white.rounded-2xl, .bg-white.rounded-xl) {
+  border-color: var(--lemhannas-border);
+}
+:where(.bg-white.rounded-2xl.border, .bg-white.rounded-xl.border) {
+  box-shadow: var(--lemhannas-card-shadow);
+}
+:where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  border-radius: var(--lemhannas-control-radius);
+}
+:where(input:not([type="checkbox"]):not([type="radio"]), select, textarea)::placeholder {
+  color: #94a3b8;
+}
+:where(table thead) {
+  background-color: #f8fafc;
+}
+:where(table th) {
+  color: var(--lemhannas-navy);
+  font-weight: 700;
+}
+:where(hr) {
+  border-color: var(--lemhannas-border);
 }

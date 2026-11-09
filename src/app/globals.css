@@ -12,6 +12,10 @@
   --lemhannas-muted: #526176;
   --lemhannas-border: #dbe1e8;
   --content-width: 1440px;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --radius-card: 1rem;
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.04);
 }
 
 * { box-sizing: border-box; }
@@ -60,10 +64,6 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
-.text-sm { font-size: 1rem; line-height: 1.5rem; }
-.text-xs { font-size: 0.8125rem; line-height: 1.25rem; }
-.text-\\[10px\\] { font-size: 0.75rem; line-height: 1.1rem; }
-.text-\\[11px\\] { font-size: 0.8125rem; line-height: 1.25rem; }
 
 ::selection {
   background: rgba(201, 162, 39, 0.24);
@@ -74,4 +74,12 @@ textarea:focus-visible {
   body { font-size: 16px; }
   main { min-width: 0; }
   table { min-width: 640px; }
+}
+
+/* Shared visual rhythm for cards, dialogs, and controls across all app areas. */
+:where(main, [role="main"]) { min-width: 0; }
+:where(button, input, select, textarea) { min-width: 0; }
+:where(.rounded-2xl.border, .rounded-xl.border) { border-color: var(--lemhannas-border); }
+@media print {
+  body { background: #fff !important; }
 }

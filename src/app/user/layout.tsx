@@ -122,7 +122,7 @@ export default function UserLayout({
           menuOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
-        <div className="flex h-20 items-center gap-3 border-b border-slate-100 px-6">
+        <div className="flex min-h-20 shrink-0 items-center gap-3 border-b border-slate-100 px-6">
           <Image
             src="/images/logo-lemhannas.png"
             alt="Logo LEMHANNAS RI"
@@ -150,7 +150,7 @@ export default function UserLayout({
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-5">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
           <p className="mb-3 px-3 text-xs font-bold uppercase tracking-[0.2em] text-[#94a3b8]">
             Menu Alumni
           </p>
@@ -164,13 +164,13 @@ export default function UserLayout({
                 key={item.href}
                 href={item.href}
                 onClick={() => setMenuOpen(false)}
-                className={`flex items-center gap-3 rounded-xl px-3 py-3 text-base font-semibold transition ${
+                className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${
                   active
                     ? "bg-[#0b1f3a] text-white shadow-sm"
                     : "text-[#64748b] hover:bg-slate-50 hover:text-[#0b1f3a]"
                 }`}
               >
-                <Icon size={18} strokeWidth={1.8} />
+                <Icon size={18} strokeWidth={1.8} className="shrink-0" />
                 <span>{item.label}</span>
               </Link>
             );

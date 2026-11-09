@@ -765,7 +765,22 @@ function AlumniDetailModal({ alumni, onClose, onEdit }: { alumni: Alumni; onClos
         </div>
 
         <div className="border-b border-slate-100 bg-slate-50/70 p-5 sm:p-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="h-36 w-28 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 sm:h-44 sm:w-36">
+              {alumni.fotoProfil ? <img src={alumni.fotoProfil} alt={`Foto ${alumni.nama}`} referrerPolicy="no-referrer" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center px-2 text-center text-xs text-slate-400">Foto belum tersedia</div>}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-[#94a3b8]">Instansi / Jabatan</p>
+              <p className="mt-1 break-words text-sm font-semibold text-[#475569]">{alumni.instansi || "-"}</p>
+              <p className="mt-0.5 break-words text-xs text-[#94a3b8]">{alumni.jabatan || "-"}</p>
+              <div className="mt-3"><StatusBadge status={alumni.status} /></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-5 sm:p-6">
+          <h3 className="mb-3 text-sm font-bold text-[#172033]">Informasi Alumni</h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <p className="text-xs text-[#94a3b8]">Instansi / Jabatan</p>
               <p className="mt-1 text-sm font-semibold text-[#475569]">{alumni.instansi}</p>

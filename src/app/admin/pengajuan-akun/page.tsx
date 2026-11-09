@@ -10,7 +10,6 @@ import {
   MapPin,
   Phone,
   RefreshCw,
-  ShieldCheck,
   UserRound,
   XCircle,
 } from "lucide-react";
@@ -47,7 +46,6 @@ const display = (value: string | null | undefined) => value?.trim() || "—";
 
 export default function PengajuanAkunPage() {
   const [items, setItems] = useState<RequestItem[]>([]);
-  const [history, setHistory] = useState<Array<{ id: number; email: string; requestType: string; status: string; createdAt: string; reviewedAt: string | null; reviewNote: string | null; nama: string | null; kategoriProgram: string | null; reviewedBy: string | null }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -62,10 +60,6 @@ export default function PengajuanAkunPage() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Gagal memuat pengajuan.");
       setItems(result.data ?? []);
-      const historyResponse = await fetch("/api/admin/alumni-accounts/requests/history", { cache: "no-store" });
-      const historyResult = await historyResponse.json();
-      if (!historyResponse.ok) throw new Error(historyResult.error || "Gagal memuat riwayat pengajuan.");
-      setHistory(historyResult.data ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan.");
     } finally {
@@ -130,7 +124,7 @@ export default function PengajuanAkunPage() {
               </button>
             </div>
 
-            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <section className="max-w-sm">
               <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
                   <Clock3 size={22} />
@@ -140,40 +134,10 @@ export default function PengajuanAkunPage() {
                   <p className="mt-0.5 text-2xl font-bold text-[#172033]">{items.length.toLocaleString("id-ID")}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-800">
-                  <UserRound size={22} />
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">Alumni baru</p>
-                  <p className="mt-0.5 text-2xl font-bold text-[#172033]">{items.filter((item) => item.requestType === "register").length.toLocaleString("id-ID")}</p>
-                </div>
-              </div>
-
             </section>
 
             {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
             {notice && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-              <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-bold text-[#0b1f3a]">Riwayat Pengajuan</h2>
-                  <p className="text-sm text-slate-500">Daftar pengajuan yang sudah disetujui atau ditolak.</p>
-                </div>
-                <span className="text-sm font-semibold text-slate-500">{history.length.toLocaleString("id-ID")} riwayat</span>
-              </div>
-              {loading ? <p className="py-6 text-center text-sm text-slate-400">Memuat riwayat...</p> : history.length === 0 ? (
-                <p className="rounded-xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Belum ada pengajuan yang selesai diproses.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[760px] text-left text-sm">
-                    <thead><tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400"><th className="px-3 py-3">Pemohon</th><th className="px-3 py-3">Jenis</th><th className="px-3 py-3">Keputusan</th><th className="px-3 py-3">Diproses oleh</th><th className="px-3 py-3">Tanggal keputusan</th><th className="px-3 py-3">Catatan</th></tr></thead>
-                    <tbody>{history.map((entry) => <tr key={entry.id} className="border-b border-slate-50 last:border-0"><td className="px-3 py-3"><p className="font-semibold text-[#172033]">{display(entry.nama)}</p><p className="text-xs text-slate-500">{entry.email}</p></td><td className="px-3 py-3 text-slate-600">{entry.requestType === "register" ? "Alumni baru" : "Pengajuan akun"}</td><td className="px-3 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${entry.status === "Disetujui" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{entry.status}</span></td><td className="px-3 py-3 text-slate-600">{display(entry.reviewedBy)}</td><td className="px-3 py-3 text-slate-600">{entry.reviewedAt ? new Date(entry.reviewedAt).toLocaleString("id-ID") : "—"}</td><td className="max-w-xs whitespace-normal px-3 py-3 text-slate-600">{display(entry.reviewNote)}</td></tr>)}</tbody>
-                  </table>
-                </div>
-              )}
-            </section>
 
             {loading ? (
               <div className="flex min-h-64 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-sm text-slate-500">
@@ -195,7 +159,7 @@ export default function PengajuanAkunPage() {
             ) : (
               <div className="space-y-4">
                 {items.map((item) => {
-                  const isNew = item.requestType === "register";
+                  const isNew = true;
                   const nama = isNew ? item.submittedNama : item.namaAlumni;
                   const kategoriProgram = isNew
                     ? item.submittedKategoriProgram || item.submittedAngkatan
@@ -208,12 +172,12 @@ export default function PengajuanAkunPage() {
                       <div className="flex flex-col gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
                         <div className="flex min-w-0 items-start gap-3">
                           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0b1f3a]/5 text-[#0b1f3a]">
-                            {isNew ? <UserRound size={21} /> : <ShieldCheck size={21} />}
+                            <UserRound size={21} />
                           </div>
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <h2 className="break-words font-bold text-[#172033]">{display(nama)}</h2>
-                              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{isNew ? "Alumni baru" : "Pengajuan akun"}</span>
+                              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">"Pendaftaran baru"</span>
                             </div>
                             <p className="mt-1 flex items-center gap-1.5 break-all text-sm text-slate-500"><Mail size={14} className="shrink-0" />{item.email}</p>
                             <p className="mt-2 text-xs text-slate-400">

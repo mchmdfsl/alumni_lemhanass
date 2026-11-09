@@ -25,6 +25,12 @@ type KtmProfile = {
   ktmVerificationToken: string | null;
 };
 
+type WritableFile = {
+  write: (data: Uint8Array) => Promise<void>;
+  close: () => Promise<void>;
+  abort: () => Promise<void>;
+};
+type FileHandle = { createWritable: () => Promise<WritableFile> };
 type PdfWindow = Window & {
   html2canvas?: (element: HTMLElement, options: Record<string, unknown>) => Promise<HTMLCanvasElement>;
   jspdf?: { jsPDF: new (options: Record<string, unknown>) => {
@@ -32,10 +38,17 @@ type PdfWindow = Window & {
     addPage: (format: number[]) => void;
     output: (type: "blob") => Blob;
   } };
-  JSZip?: new () => {
-    file: (name: string, data: Blob) => void;
-    generateAsync: (options: Record<string, unknown>, onUpdate?: (metadata: { percent: number }) => void) => Promise<Blob>;
+  fflate?: {
+    Zip: new (callback: (error: Error | null, data: Uint8Array, final: boolean) => void) => {
+      add: (file: { push: (data: Uint8Array, final?: boolean) => void }) => void;
+      end: () => void;
+    };
+    ZipPassThrough: new (filename: string) => { push: (data: Uint8Array, final?: boolean) => void };
   };
+  showSaveFilePicker?: (options: {
+    suggestedName: string;
+    types: Array<{ description: string; accept: Record<string, string[]> }>;
+  }) => Promise<FileHandle>;
 };
 
 const SLOT_COUNT = 4;
@@ -51,7 +64,7 @@ const EMPTY_PROFILE: KtmProfile = {
 
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(`script[data-ktm-bulk-lib="${src}"]`);
+    const existing = document.querySelector<HTMLScriptElement>(\`script[data-ktm-bulk-lib="\${src}"]\`);
     if (existing?.dataset.loaded === "true") return resolve();
     if (existing) {
       existing.addEventListener("load", () => resolve(), { once: true });
@@ -81,7 +94,7 @@ function waitForSlot(root: HTMLElement, timeoutMs = 30000): Promise<HTMLElement[
       const button = root.querySelector<HTMLButtonElement>("button");
       if (cards.length === 2 && button && !button.disabled) {
         const images = Array.from(root.querySelectorAll<HTMLImageElement>(".ktm-print-area img"));
-        if (images.every((img) => img.complete && img.naturalWidth > 0)) {
+        if (images.every((img) => img.complete)) {
           resolve(cards);
           return;
         }
@@ -102,7 +115,6 @@ export default function BulkKtmExporter() {
   const [cancelled, setCancelled] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0, message: "" });
   const [error, setError] = useState("");
-  const [download, setDownload] = useState<{ url: string; filename: string } | null>(null);
   const cancelRef = useRef(false);
   const roots = useRef<Array<HTMLDivElement | null>>([]);
 
@@ -119,39 +131,57 @@ export default function BulkKtmExporter() {
     setCancelled(false);
     cancelRef.current = false;
     setError("");
-    setDownload(null);
-    setProgress({ done: 0, total: 0, message: "Memuat pustaka PDF dan ZIP..." });
+    setProgress({ done: 0, total: 0, message: "Pilih lokasi penyimpanan ZIP..." });
+
+    let writable: WritableFile | null = null;
+    let writeChain: Promise<void> = Promise.resolve();
+    let streamError: Error | null = null;
 
     try {
+      const win = window as PdfWindow;
+      if (!win.showSaveFilePicker) {
+        throw new Error("Ekspor satu ZIP berukuran besar memerlukan Chrome atau Edge versi terbaru agar file dapat ditulis langsung ke komputer tanpa memenuhi memori browser.");
+      }
+      const fileHandle = await win.showSaveFilePicker({
+        suggestedName: \`KTM-Alumni-Terverifikasi-\${new Date().toISOString().slice(0, 10)}.zip\`,
+        types: [{ description: "ZIP archive", accept: { "application/zip": [".zip"] } }],
+      });
+      writable = await fileHandle.createWritable();
+
       await Promise.all([
         loadScript("https://cdn.jsdelivr.net/npm/html2canvas-pro@1.5.11/dist/html2canvas-pro.min.js"),
         loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"),
-        loadScript("https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"),
+        loadScript("https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"),
       ]);
 
-      const win = window as PdfWindow;
-      if (!win.html2canvas || !win.jspdf?.jsPDF || !win.JSZip) {
+      if (!win.html2canvas || !win.jspdf?.jsPDF || !win.fflate?.Zip || !win.fflate.ZipPassThrough) {
         throw new Error("Pustaka PDF/ZIP tidak tersedia di browser.");
       }
 
+      const zip = new win.fflate.Zip((zipError, data) => {
+        if (zipError) {
+          streamError = zipError;
+          return;
+        }
+        writeChain = writeChain.then(() => writable!.write(data));
+      });
+
       const alumni: AlumniKtm[] = [];
       let offset = 0;
-      let total = 0;
       while (true) {
         if (cancelRef.current) throw new Error("Proses dibatalkan.");
-        const response = await fetch(`/api/admin/ktm-export?limit=500&offset=${offset}`, { cache: "no-store" });
+        const response = await fetch(\`/api/admin/ktm-export?limit=500&offset=\${offset}\`, { cache: "no-store" });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Gagal mengambil daftar alumni KTM.");
         const rows = Array.isArray(result.data) ? result.data as AlumniKtm[] : [];
         if (!rows.length && offset === 0) throw new Error("Tidak ada alumni terverifikasi dengan token KTM dalam cakupan akun ini.");
         alumni.push(...rows);
-        total = Number(result.total) || alumni.length;
+        const total = Number(result.total) || alumni.length;
         setProgress({ done: 0, total, message: "Data alumni terverifikasi berhasil dimuat." });
         if (!result.hasMore || !rows.length) break;
         offset += rows.length;
       }
 
-      const zip = new win.JSZip();
       for (let start = 0; start < alumni.length; start += SLOT_COUNT) {
         if (cancelRef.current) throw new Error("Proses dibatalkan.");
         const batch = alumni.slice(start, start + SLOT_COUNT);
@@ -185,7 +215,7 @@ export default function BulkKtmExporter() {
               logging: false, width: card.scrollWidth, height: card.scrollHeight,
             });
             if (side > 0) pdf.addPage([85.6, 54]);
-            pdf.addImage(canvas.toDataURL("image/jpeg", 0.94), "JPEG", 0, 0, 85.6, 54);
+            pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, 85.6, 54);
             canvas.width = 1;
             canvas.height = 1;
           }
@@ -193,23 +223,27 @@ export default function BulkKtmExporter() {
         }));
 
         for (const item of pdfBlobs) {
-          const filename = `KTM_${item.row.id}_${safePart(item.row.nomorAlumni, "NoAlumni")}_${safePart(item.row.nama, "Alumni")}.pdf`;
-          zip.file(filename, item.blob);
+          const filename = \`KTM_\${item.row.id}_\${safePart(item.row.nomorAlumni, "NoAlumni")}_\${safePart(item.row.nama, "Alumni")}.pdf\`;
+          const entry = new win.fflate!.ZipPassThrough(filename);
+          zip.add(entry);
+          entry.push(new Uint8Array(await item.blob.arrayBuffer()), true);
         }
+        await writeChain;
+        if (streamError) throw streamError;
         const done = Math.min(start + batch.length, alumni.length);
-        setProgress({ done, total: alumni.length, message: `Membuat PDF KTM: ${done.toLocaleString("id-ID")} dari ${alumni.length.toLocaleString("id-ID")} alumni.` });
+        setProgress({ done, total: alumni.length, message: \`Membuat PDF KTM: \${done.toLocaleString("id-ID")} dari \${alumni.length.toLocaleString("id-ID")} alumni.\` });
       }
 
       if (cancelRef.current) throw new Error("Proses dibatalkan.");
-      setProgress({ done: alumni.length, total: alumni.length, message: "Mengompres seluruh PDF menjadi satu ZIP..." });
-      const blob = await zip.generateAsync(
-        { type: "blob", compression: "DEFLATE", compressionOptions: { level: 3 } },
-        (metadata: { percent: number }) => setProgress({ done: alumni.length, total: alumni.length, message: `Mengompres ZIP: ${Math.round(metadata.percent)}%.` })
-      );
-      const url = URL.createObjectURL(blob);
-      setDownload({ url, filename: `KTM-Alumni-Terverifikasi-${new Date().toISOString().slice(0, 10)}.zip` });
-      setProgress({ done: alumni.length, total: alumni.length, message: `Selesai. ${alumni.length.toLocaleString("id-ID")} PDF KTM sudah dimasukkan ke ZIP.` });
+      setProgress({ done: alumni.length, total: alumni.length, message: "Menyelesaikan arsip ZIP..." });
+      zip.end();
+      await writeChain;
+      if (streamError) throw streamError;
+      await writable.close();
+      writable = null;
+      setProgress({ done: alumni.length, total: alumni.length, message: \`Selesai. \${alumni.length.toLocaleString("id-ID")} PDF KTM sudah disimpan dalam satu ZIP.\` });
     } catch (cause) {
+      if (writable) await writable.abort().catch(() => undefined);
       const message = cause instanceof Error ? cause.message : "Ekspor KTM gagal.";
       setError(message);
       setProgress((current) => ({ ...current, message: cancelRef.current ? "Proses dihentikan." : current.message }));
@@ -230,7 +264,7 @@ export default function BulkKtmExporter() {
             <p className="text-xs text-slate-500">Satu ZIP berisi PDF terpisah untuk setiap alumni terverifikasi.</p>
           </div>
         </div>
-        <p className="text-sm leading-6 text-slate-600">Setiap PDF berisi sisi depan dan belakang dengan desain KTM yang sudah disetujui. Admin hanya dapat mengunduh kategori yang menjadi tanggung jawabnya, sedangkan Super Admin mencakup seluruh kategori.</p>
+        <p className="text-sm leading-6 text-slate-600">Setiap PDF berisi sisi depan dan belakang dengan desain KTM yang sudah disetujui. Admin hanya dapat mengunduh kategori yang menjadi tanggung jawabnya, sedangkan Super Admin mencakup seluruh kategori. Arsip ditulis langsung ke komputer agar ribuan PDF tidak menumpuk di memori browser.</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <button type="button" disabled={busy} onClick={() => void handleDownload()} className="inline-flex items-center gap-2 rounded-xl bg-[#17132f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#28234a] disabled:cursor-not-allowed disabled:opacity-50">
             {busy ? <LoaderCircle size={16} className="animate-spin" /> : <Download size={16} />}
@@ -240,11 +274,10 @@ export default function BulkKtmExporter() {
         </div>
         {(busy || progress.message) && <div className="mt-4 rounded-xl bg-slate-50 p-3">
           <div className="flex items-center justify-between gap-3 text-xs text-slate-600"><span>{progress.message}</span>{progress.total > 0 && <strong>{Math.round((progress.done / progress.total) * 100)}%</strong>}</div>
-          {progress.total > 0 && <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-violet-700 transition-all" style={{ width: `${Math.min(100, (progress.done / progress.total) * 100)}%` }} /></div>}
+          {progress.total > 0 && <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-violet-700 transition-all" style={{ width: \`\${Math.min(100, (progress.done / progress.total) * 100)}%\` }} /></div>}
         </div>}
         {cancelled && <p className="mt-3 text-sm text-amber-700">Permintaan pembatalan dikirim.</p>}
         {error && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
-        {download && <a href={download.url} download={download.filename} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"><Download size={16} />Unduh ZIP KTM</a>}
       </section>
       <div aria-hidden="true" className="pointer-events-none fixed left-[-14000px] top-0 z-[-1] w-[1160px]">
         {profiles.map((profile, index) => (

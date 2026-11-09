@@ -235,7 +235,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
                 </dl>
               </div>
               <div className="w-[25%] max-w-[112px] shrink-0 border border-[#c8b477]/50 bg-white p-[5px] text-center">
-                <QrCode token={profile.ktmVerificationToken} origin={siteOrigin} />
+                <QrCode token={profile.ktmVerificationToken} />
                 <p className="mt-1 text-[clamp(5px,.62vw,8px)] font-semibold leading-tight text-[#17132f]">Verifikasi Keaslian Kartu<br />Scan QR Code</p>
               </div>
             </div>

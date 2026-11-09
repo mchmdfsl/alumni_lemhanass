@@ -177,7 +177,7 @@ export default function AdminSidebar() {
                 href={item.href}
                 onClick={closeMobileSidebar}
                 aria-current={active ? "page" : undefined}
-                className={`group flex items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${
+                className={`group flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
                   active ? "bg-[#0b1f3a] text-white shadow-sm" : "text-[#64748b] hover:bg-[#f7f1df] hover:text-[#0b1f3a]"
                 }`}
               >

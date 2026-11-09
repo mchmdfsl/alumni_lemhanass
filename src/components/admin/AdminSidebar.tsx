@@ -177,12 +177,12 @@ export default function AdminSidebar() {
                 href={item.href}
                 onClick={closeMobileSidebar}
                 aria-current={active ? "page" : undefined}
-                className={`group flex items-center justify-between gap-3 rounded-xl px-3 py-3 text-base font-semibold transition-colors ${
+                className={`group flex items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${
                   active ? "bg-[#0b1f3a] text-white shadow-sm" : "text-[#64748b] hover:bg-slate-50 hover:text-[#0b1f3a]"
                 }`}
               >
                 <span className="flex min-w-0 items-center gap-3">
-                  <Icon size={20} className={`shrink-0 ${active ? "text-white" : "text-[#94a3b8] group-hover:text-[#0b1f3a]"}`} />
+                  <Icon size={18} strokeWidth={1.8} className={`shrink-0 ${active ? "text-white" : "text-[#94a3b8] group-hover:text-[#0b1f3a]"}`} />
                   <span className="truncate">{item.label}</span>
                 </span>
                 {"showBadge" in item && item.showBadge && pendingCount > 0 && (

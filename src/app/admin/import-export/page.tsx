@@ -572,7 +572,7 @@ export default function ImportExportPage() {
       <div className="lg:pl-72">
         <AdminHeader />
         <main className="p-4 sm:p-6 lg:p-8 xl:p-10">
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-7">
 
 
             <div>
@@ -588,8 +588,8 @@ export default function ImportExportPage() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f7f1df] text-[#8a6b16]"><Download size={20} /></div>
                 <div><h2 className="font-bold text-[#0b1f3a]">Export CSV</h2><p className="text-xs text-slate-500">Pilih cakupan data alumni yang ingin diunduh.</p></div>
               </div>
-              <label className="block text-xs font-semibold text-slate-700">Cakupan export
-                <select value={exportScope} onChange={(e) => { setExportScope(e.target.value); setSelectedAlumni(""); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal sm:max-w-md">
+              <label className="mb-4 block text-xs font-semibold text-slate-700">Cakupan export
+                <select value={exportScope} onChange={(e) => { setExportScope(e.target.value); setSelectedAlumni(""); }} className="mt-2 block w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-normal sm:max-w-xl">
                   <option value="single">Satu alumni</option><option value="cohort">Angkatan tertentu</option><option value="category">Kategori program</option><option value="year">Tahun angkatan</option><option value="all">Semua data alumni</option>
                 </select>
               </label>
@@ -602,7 +602,7 @@ export default function ImportExportPage() {
                 </label>
                 {searchAlumniError && <p role="status" className="text-sm text-rose-600">{searchAlumniError}</p>}
                 {alumniResults.length > 0 && <label className="block text-xs font-semibold text-slate-700">Pilih satu alumni
-                  <select value={selectedAlumni} onChange={(e) => setSelectedAlumni(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
+                  <select value={selectedAlumni} onChange={(e) => setSelectedAlumni(e.target.value)} className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
                     <option value="">Pilih hasil pencarian...</option>
                     {alumniResults.map((alumni) => <option key={alumni.id} value={String(alumni.id)}>{alumni.nama}{alumni.nomorAlumni ? ` · ${alumni.nomorAlumni}` : ""}{alumni.kategoriProgram ? ` · ${alumni.kategoriProgram}` : ""}{alumni.nomorAngkatan ? ` Angkatan ${alumni.nomorAngkatan}` : ""}</option>)}
                   </select>
@@ -610,23 +610,23 @@ export default function ImportExportPage() {
               </div>}
               {(exportScope === "cohort" || exportScope === "category") && <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className="text-xs font-semibold text-slate-700">Kategori program
-                  <select value={exportKategori} onChange={(e) => setExportKategori(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
+                  <select value={exportKategori} onChange={(e) => setExportKategori(e.target.value)} className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
                     <option value="">Pilih kategori...</option><option>KRA</option><option>PPRA</option><option>P4N</option><option>KSA</option><option>PPSA</option><option>P3N</option><option>TAPLAI</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option>
                   </select>
                 </label>
                 {exportScope === "cohort" && <label className="text-xs font-semibold text-slate-700">Nomor angkatan
-                  <input value={exportNomorAngkatan} onChange={(e) => setExportNomorAngkatan(e.target.value)} placeholder="Mis. 1" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
+                  <input value={exportNomorAngkatan} onChange={(e) => setExportNomorAngkatan(e.target.value)} placeholder="Mis. 1" className="mt-1.5 block w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
                 </label>}
               </div>}
               {exportScope === "year" && <label className="mt-4 block text-xs font-semibold text-slate-700">Tahun angkatan
-                <input inputMode="numeric" value={exportTahun} onChange={(e) => setExportTahun(e.target.value)} placeholder="Mis. 2024" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal sm:max-w-xs" />
+                <input inputMode="numeric" value={exportTahun} onChange={(e) => setExportTahun(e.target.value)} placeholder="Mis. 2024" className="mt-1.5 block w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal sm:max-w-xs" />
               </label>}
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className="text-xs font-semibold text-slate-700">Filter nama tambahan (opsional)
-                  <input value={exportNama} onChange={(e) => setExportNama(e.target.value)} placeholder="Cari nama" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
+                  <input value={exportNama} onChange={(e) => setExportNama(e.target.value)} placeholder="Cari nama" className="mt-1.5 block w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
                 </label>
                 <label className="text-xs font-semibold text-slate-700">Status (opsional)
-                  <select value={exportStatus} onChange={(e) => setExportStatus(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
+                  <select value={exportStatus} onChange={(e) => setExportStatus(e.target.value)} className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
                     <option value="">Semua status</option><option value="Terverifikasi">Terverifikasi</option><option value="Menunggu">Menunggu</option><option value="Ditolak">Ditolak</option>
                   </select>
                 </label>
@@ -664,30 +664,30 @@ export default function ImportExportPage() {
                 <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4">
                   <div className="mb-3 flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0b1f3a]/5 text-[#0b1f3a]"><ShieldCheck size={18} /></div><div><h3 className="text-sm font-bold text-[#0b1f3a]">Tentukan cakupan import</h3><p className="text-xs text-slate-500">Saring data dahulu, lalu tinjau hasil sebelum konfirmasi.</p></div></div>
                   <label className="block text-xs font-semibold text-slate-700">Import berdasarkan
-                    <select value={importScope} onChange={(e) => { setImportScope(e.target.value as typeof importScope); setSelectedImportKey(""); setImportError(""); setImportStatus(""); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
+                    <select value={importScope} onChange={(e) => { setImportScope(e.target.value as typeof importScope); setSelectedImportKey(""); setImportError(""); setImportStatus(""); }} className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
                       <option value="single">Satu alumni</option><option value="cohort">Satu angkatan</option><option value="category">Satu kategori</option><option value="all">Semua baris dalam file</option>
                     </select>
                   </label>
                   {importScope === "single" && <div className="mt-3 space-y-3">
                     <label className="block text-xs font-semibold text-slate-700">Cari nama atau nomor alumni
-                      <input value={importSearch} onChange={(e) => setImportSearch(e.target.value)} placeholder="Ketik nama / nomor alumni..." className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
+                      <input value={importSearch} onChange={(e) => setImportSearch(e.target.value)} placeholder="Ketik nama / nomor alumni..." className="mt-1.5 block w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
                     </label>
                     <label className="block text-xs font-semibold text-slate-700">Pilih satu baris alumni
-                      <select value={selectedImportKey} onChange={(e) => setSelectedImportKey(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
+                      <select value={selectedImportKey} onChange={(e) => setSelectedImportKey(e.target.value)} className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
                         <option value="">Pilih alumni...</option>{singleImportMatches.map((row) => <option key={row.rowKey} value={row.rowKey}>{row.nama}{row.nomorAlumni ? " · " + row.nomorAlumni : ""} · {row.kategoriProgram} · Angkatan {row.nomorAngkatan}</option>)}
                       </select>
                     </label>
                   </div>}
                   {importScope === "cohort" && <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <label className="block text-xs font-semibold text-slate-700">Kategori program (opsional)
-                      <select value={importCategory} onChange={(e) => setImportCategory(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Semua kategori</option><option>KRA</option><option>PPRA</option><option>P4N</option><option>KSA</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option></select>
+                      <select value={importCategory} onChange={(e) => setImportCategory(e.target.value)} className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Semua kategori</option><option>KRA</option><option>PPRA</option><option>P4N</option><option>KSA</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option></select>
                     </label>
                     <label className="block text-xs font-semibold text-slate-700">Nomor angkatan (wajib)
-                      <input value={importCohortNumber} onChange={(e) => setImportCohortNumber(e.target.value)} placeholder="Mis. 1" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
+                      <input value={importCohortNumber} onChange={(e) => setImportCohortNumber(e.target.value)} placeholder="Mis. 1" className="mt-1.5 block w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
                     </label>
                   </div>}
                   {importScope === "category" && <label className="mt-3 block text-xs font-semibold text-slate-700">Kategori program (wajib)
-                    <select value={importCategory} onChange={(e) => setImportCategory(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Pilih kategori...</option><option>PPRA</option><option>P4N</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option></select>
+                    <select value={importCategory} onChange={(e) => setImportCategory(e.target.value)} className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Pilih kategori...</option><option>PPRA</option><option>P4N</option><option>PPSA</option><option>P3N</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option></select>
                   </label>}
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-50 p-3"><span className="text-xs text-slate-600">Hasil filter</span><strong className="text-sm text-[#0b1f3a]">{rowsToImport.length} baris dipilih dari {importRows.length}</strong></div>
                   {importScope === "cohort" && !importCohortNumber.trim() && <p className="mt-2 text-xs text-amber-700">Masukkan nomor angkatan agar tidak mengimpor seluruh file tanpa sengaja.</p>}
@@ -715,8 +715,8 @@ export default function ImportExportPage() {
                 {accountStatsError && <p role="alert" className="mt-2 text-xs text-rose-700">{accountStatsError}</p>}
                 {accountStats && <><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3"><div className="rounded-lg bg-white p-3"><p className="text-xs text-slate-500">Total data alumni</p><p className="mt-1 text-lg font-bold text-slate-900">{Number(accountStats.totalAlumni ?? 0).toLocaleString("id-ID")}</p></div><div className="rounded-lg bg-white p-3"><p className="text-xs text-slate-500">Terverifikasi</p><p className="mt-1 text-lg font-bold text-slate-900">{Number(accountStats.verifiedAlumni ?? 0).toLocaleString("id-ID")}</p></div><div className="rounded-lg bg-white p-3"><p className="text-xs text-slate-500">Menunggu</p><p className="mt-1 text-lg font-bold text-amber-700">{Number(accountStats.pendingAlumni ?? 0).toLocaleString("id-ID")}</p></div><div className="rounded-lg bg-white p-3"><p className="text-xs text-slate-500">Ditolak</p><p className="mt-1 text-lg font-bold text-rose-700">{Number(accountStats.rejectedAlumni ?? 0).toLocaleString("id-ID")}</p></div><div className="rounded-lg bg-white p-3"><p className="text-xs text-slate-500">Total akun</p><p className="mt-1 text-lg font-bold text-slate-900">{Number(accountStats.totalAccounts ?? 0).toLocaleString("id-ID")}</p></div><div className="rounded-lg bg-white p-3"><p className="text-xs text-slate-500">Akun aktif</p><p className="mt-1 text-lg font-bold text-slate-900">{Number(accountStats.activeAccounts ?? 0).toLocaleString("id-ID")}</p></div><div className="rounded-lg bg-white p-3"><p className="text-xs text-slate-500">Terverifikasi tanpa akun</p><p className="mt-1 text-lg font-bold text-amber-700">{Number(accountStats.verifiedWithoutAccount ?? 0).toLocaleString("id-ID")}</p></div><div className="rounded-lg bg-white p-3"><p className="text-xs text-slate-500">Terverifikasi punya akun</p><p className="mt-1 text-lg font-bold text-slate-900">{Number(accountStats.verifiedWithAccount ?? 0).toLocaleString("id-ID")}</p></div><div className="rounded-lg bg-white p-3"><p className="text-xs text-slate-500">Akun tanpa hash password</p><p className="mt-1 text-lg font-bold text-rose-700">{Number(accountStats.accountsWithoutPasswordHash ?? 0).toLocaleString("id-ID")}</p></div></div><p className="mt-3 text-xs leading-5 text-slate-600">Aktivasi dan reset mengikuti data database secara langsung. Hanya alumni berstatus Terverifikasi yang bisa login; data Menunggu/Ditolak tetap dihitung pada total data, tetapi tidak masuk batch password.</p></>}
               </div>
-              <label className="block text-xs font-semibold text-slate-700">Cakupan akun
-                <select value={accountScope} onChange={(e) => { setAccountScope(e.target.value); setAccountAlumniId(""); setAccountError(""); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal sm:max-w-md">
+              <label className="mb-4 block text-xs font-semibold text-slate-700">Cakupan akun
+                <select value={accountScope} onChange={(e) => { setAccountScope(e.target.value); setAccountAlumniId(""); setAccountError(""); }} className="mt-2 block w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-normal sm:max-w-xl">
                   <option value="single">Satu alumni</option><option value="cohort">Angkatan tertentu</option><option value="category">Kategori program</option><option value="year">Tahun angkatan</option><option value="all">Semua alumni yang memenuhi syarat</option>
                 </select>
               </label>
@@ -729,7 +729,7 @@ export default function ImportExportPage() {
                 </label>
                 {accountSearchError && <p role="status" className="text-sm text-rose-600">{accountSearchError}</p>}
                 {accountResults.length > 0 && <label className="block text-xs font-semibold text-slate-700">Pilih satu alumni
-                  <select value={accountAlumniId} onChange={(e) => setAccountAlumniId(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
+                  <select value={accountAlumniId} onChange={(e) => setAccountAlumniId(e.target.value)} className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
                     <option value="">Pilih hasil pencarian...</option>
                     {accountResults.map((item) => <option key={item.id} value={String(item.id)}>{item.nama}{item.nomorAlumni ? " · " + item.nomorAlumni : ""}{item.kategoriProgram ? " · " + item.kategoriProgram : ""}{item.nomorAngkatan ? " Angkatan " + item.nomorAngkatan : ""}</option>)}
                   </select>
@@ -737,18 +737,18 @@ export default function ImportExportPage() {
               </div>}
               {(accountScope === "cohort" || accountScope === "category") && <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className="text-xs font-semibold text-slate-700">Kategori program
-                  <select value={accountCategory} onChange={(e) => setAccountCategory(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
+                  <select value={accountCategory} onChange={(e) => setAccountCategory(e.target.value)} className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
                     <option value="">Pilih kategori...</option><option>KRA</option><option>PPRA</option><option>P4N</option><option>KSA</option><option>PPSA</option><option>P3N</option><option>TAPLAI</option><option>PPNK</option><option value="PPNK KOLABORASI">PPNK Kolaborasi</option><option>TOT</option>
                   </select>
                 </label>
                 {accountScope === "cohort" && <label className="text-xs font-semibold text-slate-700">Nomor angkatan
-                  <input value={accountCohort} onChange={(e) => setAccountCohort(e.target.value)} placeholder="Mis. 1" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
+                  <input value={accountCohort} onChange={(e) => setAccountCohort(e.target.value)} placeholder="Mis. 1" className="mt-1.5 block w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal" />
                 </label>}
               </div>}
               {accountScope === "year" && <label className="mt-4 block text-xs font-semibold text-slate-700">Tahun angkatan
-                <input inputMode="numeric" maxLength={4} value={accountYear} onChange={(e) => setAccountYear(e.target.value.replace(/\D/g, "").slice(0,4))} placeholder="Mis. 2024" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal sm:max-w-xs" />
+                <input inputMode="numeric" maxLength={4} value={accountYear} onChange={(e) => setAccountYear(e.target.value.replace(/\D/g, "").slice(0,4))} placeholder="Mis. 2024" className="mt-1.5 block w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal sm:max-w-xs" />
               </label>}
-              <div className="mb-4 rounded-xl border border-[#c9a227]/30 bg-[#f7f1df] p-4">
+              <div className="mt-5 rounded-xl border border-[#c9a227]/30 bg-[#f7f1df] p-5 sm:p-6">
                 <h3 className="text-sm font-bold text-[#0b1f3a]">Ekspor daftar akun user (aman, tanpa reset)</h3>
                 <p className="mt-1 text-xs leading-5 text-slate-700">Mengunduh daftar akun yang sudah ada, termasuk akun aktif dan nonaktif. Password dibiarkan kosong dan tidak ada data akun yang diubah.</p>
                 <button type="button" disabled={accountListLoading} onClick={() => void handleExportAccountList()} className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-[#c9a227]/40 bg-white px-4 py-2.5 text-sm font-semibold text-[#0b1f3a] hover:bg-[#efe5c5] disabled:opacity-50"><Download size={16}/>{accountListLoading ? "Menyiapkan CSV..." : "Ekspor semua akun user"}</button>
@@ -756,8 +756,10 @@ export default function ImportExportPage() {
                 {accountListDownload && <a href={accountListDownload.url} download={accountListDownload.filename} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#123b68]"><Download size={16}/>Unduh daftar akun user CSV</a>}
                 {accountListError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{accountListError}</p>}
               </div>
-              <p className="mt-3 text-xs leading-5 text-slate-500">Aktivasi membuat akun yang belum ada. Reset mengganti password akun aktif. Keduanya hanya memproses alumni terverifikasi sesuai cakupan.</p>
-              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs leading-5 text-slate-600">Aktivasi membuat akun yang belum ada. Reset mengganti password akun aktif. Keduanya hanya memproses alumni berstatus Terverifikasi sesuai cakupan. Ekspor daftar akun di atas tidak mengubah akun maupun password.</p>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
                 <button type="button" disabled={accountLoading} onClick={() => void handleDownloadStoredCredentials()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-300 px-4 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"><Download size={16}/>Unduh kredensial tersimpan</button>
                 <button type="button" disabled={accountLoading} onClick={() => void handleBulkActivateAccounts()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1a365d] disabled:opacity-50"><UserRoundPlus size={16}/>{accountLoading ? "Memproses..." : "Aktivasi akun & unduh password"}</button>
                 {isSuperAdmin && <button type="button" disabled={accountLoading} onClick={() => void handleResetPasswords()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"><KeyRound size={16}/>{accountLoading ? "Memproses..." : "Reset password & unduh CSV"}</button>}

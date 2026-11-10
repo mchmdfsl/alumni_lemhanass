@@ -59,9 +59,9 @@ export async function GET(request: Request) {
         r.submitted_alamat AS "submittedAlamat"
       FROM alumni_account_requests r
       LEFT JOIN alumni a ON a.id = r.alumni_id
-      WHERE lower(trim(r.status)) = lower(\${statusFilter})
+      WHERE lower(trim(r.status)) = lower(${statusFilter})
         AND r.request_type = 'register'
-        AND (\${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, r.submitted_kategori_program, r.submitted_angkatan, '')) = ANY(\${allowedCategories}))
+        AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, r.submitted_kategori_program, r.submitted_angkatan, '')) = ANY(${allowedCategories}))
       ORDER BY r.created_at DESC, r.id DESC
       LIMIT 100
     `;
@@ -72,7 +72,7 @@ export async function GET(request: Request) {
       LEFT JOIN alumni a ON a.id = r.alumni_id
       WHERE r.request_type = 'register'
         AND lower(trim(r.status)) IN ('menunggu', 'disetujui', 'ditolak')
-        AND (\${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, r.submitted_kategori_program, r.submitted_angkatan, '')) = ANY(\${allowedCategories}))
+        AND (${scope.role === "super_admin"} = TRUE OR upper(COALESCE(NULLIF(trim(a.kategori_program), ''), a.angkatan, r.submitted_kategori_program, r.submitted_angkatan, '')) = ANY(${allowedCategories}))
       GROUP BY r.status
     `;
 
@@ -82,8 +82,12 @@ export async function GET(request: Request) {
       Ditolak: 0,
     };
     for (const row of statusRows) {
-      const key = String(row.status || "").trim() as RequestStatus;
-      if (key in statusCounts) statusCounts[key] = Number(row.total) || 0;
+      const normalized = String(row.status || "").trim().toLocaleLowerCase("id-ID");
+      const key: RequestStatus | null =
+        normalized === "menunggu" ? "Menunggu" :
+        normalized === "disetujui" ? "Disetujui" :
+        normalized === "ditolak" ? "Ditolak" : null;
+      if (key) statusCounts[key] += Number(row.total) || 0;
     }
 
     return NextResponse.json({

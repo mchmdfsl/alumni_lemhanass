@@ -161,18 +161,6 @@ export default function PengajuanAkunPage() {
               })}
             </div>
 
-            <section className="max-w-sm">
-              <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
-                  <Clock3 size={22} />
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">Pengajuan {statusFilter.toLowerCase()}</p>
-                  <p className="mt-0.5 text-2xl font-bold text-[#172033]">{statusCounts[statusFilter].toLocaleString("id-ID")}</p>
-                </div>
-              </div>
-            </section>
-
             {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
             {notice && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}
 

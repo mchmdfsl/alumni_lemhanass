@@ -40,7 +40,7 @@ export async function GET(request: Request) {
         r.reviewed_at AS "reviewedAt",
         r.review_note AS "reviewNote",
         r.revision_requested_at AS "revisionRequestedAt",
-        r.submitted_bukti_url AS "submittedBuktiUrl",
+        CASE WHEN r.submitted_bukti_url IS NOT NULL THEN '/api/admin/alumni-accounts/requests/' || r.id || '/evidence' END AS "submittedBuktiUrl",
         r.submitted_bukti_nama AS "submittedBuktiNama",
         r.submitted_bukti_jenis AS "submittedBuktiJenis",
         r.alumni_id AS "alumniId",

@@ -15,7 +15,7 @@ type ReviewError =
   | "EMAIL_IN_USE" | "NOMOR_ALUMNI_IN_USE" | "INVALID_NEW_ALUMNI";
 
 type ReviewResult =
-  | { success: true; status: "Disetujui" | "Ditolak"; alumniId?: number }
+  | { success: true; status: "Disetujui" | "Ditolak" | "PerluPerbaikan"; alumniId?: number }
   | { error: ReviewError };
 
 const errorResponses: Record<ReviewError, { status: number; message: string }> = {
@@ -50,10 +50,10 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
     const status = body.status;
     const reviewNote = typeof body.reviewNote === "string" ? body.reviewNote.trim().slice(0, 1000) : "";
-    if (status !== "Disetujui" && status !== "Ditolak") {
+    if (status !== "Disetujui" && status !== "Ditolak" && status !== "PerluPerbaikan") {
       return NextResponse.json({ error: "Status harus Disetujui atau Ditolak." }, { status: 400 });
     }
-    if (status === "Ditolak" && !reviewNote) {
+    if ((status === "Ditolak" || status === "PerluPerbaikan") && !reviewNote) {
       return NextResponse.json({ error: "Alasan penolakan wajib diisi." }, { status: 400 });
     }
 
@@ -80,6 +80,17 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
         }
       }
       if (req.status !== "Menunggu") return { error: "ALREADY_REVIEWED" };
+
+      if (status === "PerluPerbaikan") {
+        if (req.request_type !== "register") return { error: "INVALID_NEW_ALUMNI" };
+        await tx`
+          UPDATE alumni_account_requests
+          SET review_note = ${reviewNote}, revision_requested_at = NOW(),
+              reviewed_by = ${actor?.actor || null}
+          WHERE id = ${id}
+        `;
+        return { success: true, status: "PerluPerbaikan" };
+      }
 
       if (status === "Ditolak") {
         await tx`

@@ -24,6 +24,7 @@ export default function DaftarPage() {
   const [cohortLoading, setCohortLoading] = useState(false);
   const [revisionNote, setRevisionNote] = useState("");
   const [checkingRevision, setCheckingRevision] = useState(false);
+  const [revisionFeedback, setRevisionFeedback] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
 
   async function handleDaftar(event: FormEvent<HTMLFormElement>) {
@@ -82,11 +83,12 @@ export default function DaftarPage() {
     const email = String(values.get("email") ?? "").trim();
     const password = String(values.get("password") ?? "");
     if (!email || !password) {
-      setMessage("Masukkan email dan password yang digunakan saat registrasi untuk memeriksa catatan Admin.");
+      setRevisionFeedback("Masukkan email dan password yang sama seperti saat mengajukan pendaftaran.");
       return;
     }
     setCheckingRevision(true);
     setMessage("");
+    setRevisionFeedback("");
     setRevisionNote("");
     try {
       const response = await fetch("/api/auth/register", {
@@ -97,6 +99,7 @@ export default function DaftarPage() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Catatan revisi belum dapat diperiksa.");
       setRevisionNote(result.reviewNote || "Tidak ada catatan revisi dari Admin.");
+      setRevisionFeedback("Pengajuan ditemukan. Data sebelumnya sudah dimuat; periksa kembali dan unggah dokumen bukti terbaru.");
       const setField = (name: string, value: unknown) => {
         const control = current.elements.namedItem(name);
         if (control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement || control instanceof HTMLSelectElement) {
@@ -113,7 +116,7 @@ export default function DaftarPage() {
       setField("alamat", result.submittedAlamat);
       setNomorAngkatan(String(result.submittedNomorAngkatan || ""));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Catatan revisi gagal dimuat.");
+      setRevisionFeedback(error instanceof Error ? error.message : "Catatan revisi gagal dimuat.");
     } finally {
       setCheckingRevision(false);
     }
@@ -178,9 +181,9 @@ export default function DaftarPage() {
       </div>
       <div><label htmlFor="alamat" className="mb-1.5 block text-sm font-semibold text-slate-700">Alamat</label>
         <textarea id="alamat" name="alamat" defaultValue={initialForm.alamat} rows={3} maxLength={5000} className={inputClass} /></div>
-      <div className="rounded-2xl border border-violet-100 bg-violet-50/50 p-4">
-        <p className="text-sm font-bold text-violet-950">Bukti status alumni *</p>
-        <p className="mt-1 text-xs leading-5 text-violet-800">KTM tidak wajib. Jika belum memiliki KTM, unggah ijazah, sertifikat kelulusan, atau surat keterangan resmi dari Lemhannas. Dokumen akan diperiksa Admin.</p>
+      <div className="rounded-2xl border border-[#d8e0ea] bg-[#f8fafc] p-4">
+        <p className="text-sm font-bold text-[#0b1f3a]">Bukti status alumni *</p>
+        <p className="mt-1 text-xs leading-5 text-[#334155]">KTM tidak wajib. Jika belum memiliki KTM, unggah ijazah, sertifikat kelulusan, atau surat keterangan resmi dari Lemhannas. Dokumen akan diperiksa Admin.</p>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="evidenceType" className="mb-1.5 block text-sm font-semibold text-slate-700">Jenis bukti *</label>
@@ -204,13 +207,15 @@ export default function DaftarPage() {
         {renderField("Password (minimal 12 karakter) *", "password", "password", true, 1024)}
         {renderField("Konfirmasi password *", "konfirmasi", "password", true, 1024)}
       </div>
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <p className="text-sm font-semibold text-slate-800">Sudah pernah mengajukan dan diminta revisi?</p>
-        <p className="mt-1 text-xs leading-5 text-slate-500">Masukkan email dan password yang sama, lalu periksa catatan Admin. Data pengajuan sebelumnya akan dimuat agar bisa diperbaiki.</p>
-        <button type="button" onClick={() => void handleCheckRevision()} disabled={checkingRevision} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-violet-200 px-3 py-2 text-xs font-semibold text-violet-800 hover:bg-violet-50 disabled:opacity-60">
-          {checkingRevision ? "Memeriksa..." : "Periksa catatan Admin"}
+      <div className="rounded-xl border border-[#d8e0ea] bg-[#f8fafc] p-4">
+        <p className="text-sm font-semibold text-[#0b1f3a]">Sudah pernah mengajukan dan diminta revisi?</p>
+        <p className="mt-1 text-xs leading-5 text-slate-600">Masukkan email dan password yang sama seperti saat registrasi, lalu tekan tombol di bawah. Jika Admin memberi catatan perbaikan, catatan dan data pengajuan sebelumnya akan ditampilkan di sini.</p>
+        <button type="button" onClick={() => void handleCheckRevision()} disabled={checkingRevision} aria-busy={checkingRevision} className="mt-3 inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#0b1f3a] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#18385f] focus:outline-none focus:ring-2 focus:ring-[#b28b16] focus:ring-offset-2 disabled:cursor-wait disabled:opacity-60">
+          {checkingRevision && <LoaderCircle size={15} className="animate-spin" />}
+          {checkingRevision ? "Sedang memeriksa..." : "Periksa catatan Admin"}
         </button>
-        {revisionNote && <div role="status" className="mt-3 rounded-lg bg-amber-50 px-3 py-2.5 text-sm leading-6 text-amber-900"><strong>Catatan Admin:</strong> {revisionNote}</div>}
+        {revisionFeedback && <p role="status" aria-live="polite" className="mt-3 rounded-lg border border-[#d8e0ea] bg-white px-3 py-2.5 text-sm leading-6 text-[#334155]">{revisionFeedback}</p>}
+        {revisionNote && <div role="status" aria-live="polite" className="mt-3 rounded-lg border border-[#e8d8a8] bg-[#fffaf0] px-3 py-3 text-sm leading-6 text-[#604b16]"><strong className="text-[#0b1f3a]">Catatan Admin:</strong> <span>{revisionNote}</span></div>}
       </div>
       <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0b1f3a] py-3.5 text-sm font-bold text-white transition hover:bg-[#18385f] disabled:opacity-60">
         {loading && <LoaderCircle size={17} className="animate-spin" />}{loading ? "Mengirim pengajuan..." : "Ajukan Pendaftaran"}

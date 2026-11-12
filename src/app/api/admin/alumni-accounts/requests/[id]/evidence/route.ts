@@ -39,7 +39,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     return new NextResponse(Buffer.from(bytes), {
       headers: {
         "Content-Type": contentType,
-        "Content-Disposition": \`inline; filename*=UTF-8''${encodeURIComponent(filename)}\`,
+        "Content-Disposition": "inline; filename*=UTF-8''" + encodeURIComponent(filename),
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
       },

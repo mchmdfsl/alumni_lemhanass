@@ -27,10 +27,14 @@ export async function PATCH(
       typeof body.nama === "string" ? body.nama.trim().slice(0, 200) : undefined;
     const kategoriProgram =
       typeof body.kategoriProgram === "string" ? body.kategoriProgram.trim().toLocaleUpperCase("id-ID").slice(0, 80) : undefined;
-    const nomorAngkatan =
+    const nomorAngkatanInput =
       typeof body.nomorAngkatan === "string" ? body.nomorAngkatan.trim().slice(0, 40) : undefined;
     const tahunAngkatan =
       body.tahunAngkatan === undefined ? undefined : Number(body.tahunAngkatan);
+    const nomorAngkatan =
+      tahunAngkatan !== undefined && Number.isInteger(tahunAngkatan)
+        ? String(tahunAngkatan).slice(-2)
+        : nomorAngkatanInput;
     const instansi =
       typeof body.instansi === "string" ? body.instansi.trim().slice(0, 250) : undefined;
     const jabatan =

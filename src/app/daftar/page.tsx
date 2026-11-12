@@ -21,7 +21,10 @@ export default function DaftarPage() {
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
   const [nomorAngkatan, setNomorAngkatan] = useState("");
-  const [cohortLoading, setCohortLoading] = useState(false);\n  const [revisionNote, setRevisionNote] = useState("");\n  const [checkingRevision, setCheckingRevision] = useState(false);\n  const formRef = useRef<HTMLFormElement>(null);
+  const [cohortLoading, setCohortLoading] = useState(false);
+  const [revisionNote, setRevisionNote] = useState("");
+  const [checkingRevision, setCheckingRevision] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   async function handleDaftar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -39,11 +42,14 @@ export default function DaftarPage() {
       alamat: String(submitted.get("alamat") ?? "").trim(),
       email: String(submitted.get("email") ?? "").trim(),
       password: String(submitted.get("password") ?? ""),
-      konfirmasi: String(submitted.get("konfirmasi") ?? ""),\n      evidenceType: String(submitted.get("evidenceType") ?? ""),
+      konfirmasi: String(submitted.get("konfirmasi") ?? ""),
+      evidenceType: String(submitted.get("evidenceType") ?? ""),
     };
     setMessage("");
     setSuccess(false);
-    if (!form.kategoriProgram) return setMessage("Pilih kategori program terlebih dahulu.");\n    if (!form.evidenceType || !(submitted.get("buktiAlumni") instanceof File) || (submitted.get("buktiAlumni") as File).size === 0) return setMessage("Unggah bukti status alumni terlebih dahulu.");\n    if ((submitted.get("buktiAlumni") as File).size > 10 * 1024 * 1024) return setMessage("Ukuran dokumen maksimal 10 MB.");
+    if (!form.kategoriProgram) return setMessage("Pilih kategori program terlebih dahulu.");
+    if (!form.evidenceType || !(submitted.get("buktiAlumni") instanceof File) || (submitted.get("buktiAlumni") as File).size === 0) return setMessage("Unggah bukti status alumni terlebih dahulu.");
+    if ((submitted.get("buktiAlumni") as File).size > 10 * 1024 * 1024) return setMessage("Ukuran dokumen maksimal 10 MB.");
     if (cohortLoading || !form.nomorAngkatan) return setMessage("Tunggu sampai nomor angkatan berhasil ditentukan.");
     if (form.password.length < 12) return setMessage("Password minimal 12 karakter.");
     if (form.password !== form.konfirmasi) return setMessage("Konfirmasi password tidak cocok.");
@@ -58,7 +64,8 @@ export default function DaftarPage() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Pendaftaran gagal diproses.");
       setSuccess(true);
-      setMessage(result.message || "Pengajuan berhasil dikirim dan menunggu pemeriksaan admin.");\n      setRevisionNote("");
+      setMessage(result.message || "Pengajuan berhasil dikirim dan menunggu pemeriksaan admin.");
+      setRevisionNote("");
       formElement.reset();
       setNomorAngkatan("");
     } catch (error) {

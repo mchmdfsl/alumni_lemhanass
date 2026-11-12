@@ -99,8 +99,8 @@ export default function PengajuanAkunPage() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Pengajuan gagal diproses.");
       setSelectedItem(null);
-      setNotice(status === "Disetujui" ? "Pengajuan berhasil disetujui dan akun alumni telah diproses." : status === "PerluPerbaikan" ? "Catatan perbaikan berhasil dikirim kepada pendaftar." : "Pengajuan berhasil ditolak.");
       await loadRequests();
+      setNotice(status === "Disetujui" ? "Pengajuan berhasil disetujui dan akun alumni telah diproses." : status === "PerluPerbaikan" ? "Catatan perbaikan berhasil dikirim kepada pendaftar." : "Pengajuan berhasil ditolak.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan.");
     } finally {
@@ -197,7 +197,7 @@ export default function PengajuanAkunPage() {
                       <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
                         <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${pending ? "bg-amber-50 text-amber-700" : item.status === "Disetujui" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
                           {pending ? <Clock3 size={14} /> : item.status === "Disetujui" ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-                          {item.status === "Disetujui" ? "Diterima" : item.status}
+                          {pending && item.revisionRequestedAt ? "Perlu perbaikan" : item.status === "Disetujui" ? "Diterima" : item.status}
                         </span>
                         <button
                           type="button"

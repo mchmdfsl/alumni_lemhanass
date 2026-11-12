@@ -51,10 +51,10 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     const status = body.status;
     const reviewNote = typeof body.reviewNote === "string" ? body.reviewNote.trim().slice(0, 1000) : "";
     if (status !== "Disetujui" && status !== "Ditolak" && status !== "PerluPerbaikan") {
-      return NextResponse.json({ error: "Status harus Disetujui atau Ditolak." }, { status: 400 });
+      return NextResponse.json({ error: "Status tidak valid." }, { status: 400 });
     }
     if ((status === "Ditolak" || status === "PerluPerbaikan") && !reviewNote) {
-      return NextResponse.json({ error: "Alasan penolakan wajib diisi." }, { status: 400 });
+      return NextResponse.json({ error: "Catatan wajib diisi." }, { status: 400 });
     }
 
     const actor = await getAdminActor();
@@ -188,8 +188,8 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       const response = errorResponses[result.error];
       return NextResponse.json({ error: response.message }, { status: response.status });
     }
-    if (actor) await writeAdminAudit(actor, result.status === "Disetujui" ? "account_request_approved" : "account_request_rejected", { requestId: Number(id), status: result.status, alumniId: result.alumniId ?? null });
-    return NextResponse.json({ ok: true, status: result.status, alumniId: result.alumniId });
+    if (actor) await writeAdminAudit(actor, result.status === "Disetujui" ? "account_request_approved" : result.status === "Ditolak" ? "account_request_rejected" : "account_request_revision_requested", { requestId: Number(id), status: result.status, alumniId: result.alumniId ?? null, reviewNote: result.status === "PerluPerbaikan" ? reviewNote : undefined });
+    return NextResponse.json({ ok: true, status: result.status, alumniId: result.alumniId, message: result.status === "PerluPerbaikan" ? "Catatan perbaikan berhasil dikirim kepada pendaftar." : undefined });
   } catch (error) {
     console.error("PATCH alumni account request failed:", error);
     return NextResponse.json({ error: "Gagal memproses pendaftaran akun." }, { status: 500 });

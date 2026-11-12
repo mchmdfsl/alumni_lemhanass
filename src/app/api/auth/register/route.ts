@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { normalizeProgramCategory } from "@/lib/admin-scope";
-import { getR2Client, r2Bucket, r2PublicUrl } from "@/lib/r2";
+import { getR2Client, r2Bucket } from "@/lib/r2";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -166,10 +166,6 @@ export async function POST(request: NextRequest) {
         { error: "Terlalu banyak percobaan registrasi. Silakan coba lagi beberapa saat." },
         { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
       );
-    }
-
-    if (!r2PublicUrl) {
-      return NextResponse.json({ error: "Penyimpanan dokumen belum dikonfigurasi. Hubungi administrator." }, { status: 503 });
     }
 
     const passwordHash = await hashPassword(password);

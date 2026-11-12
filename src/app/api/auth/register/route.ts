@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
       ContentType: evidenceFile.type,
       CacheControl: "private, no-store",
     }));
-    const evidenceUrl = `${r2PublicUrl}/${evidenceKey}`;
+    const evidenceUrl = evidenceKey;
     const sql = db();
 
     const result = await sql.begin(async (tx) => {

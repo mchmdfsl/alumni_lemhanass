@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  CheckCircle2, Clock3, Eye, FileCheck2, LoaderCircle, Mail, MapPin,
+  CheckCircle2, Clock3, Eye, FileCheck2, FileText, LoaderCircle, Mail, MapPin, MessageSquareText,
   Phone, RefreshCw, UserRound, X, XCircle,
 } from "lucide-react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
@@ -18,6 +18,10 @@ type RequestItem = {
   createdAt: string;
   reviewedAt?: string | null;
   reviewNote?: string | null;
+  revisionRequestedAt?: string | null;
+  submittedBuktiUrl?: string | null;
+  submittedBuktiNama?: string | null;
+  submittedBuktiJenis?: string | null;
   alumniId: number | null;
   nomorAlumni: string | null;
   namaAlumni: string | null;
@@ -71,10 +75,13 @@ export default function PengajuanAkunPage() {
 
   useEffect(() => { void loadRequests(); }, [loadRequests]);
 
-  async function review(item: RequestItem, status: "Disetujui" | "Ditolak") {
+  async function review(item: RequestItem, status: "Disetujui" | "Ditolak" | "PerluPerbaikan") {
     let reviewNote = "";
     if (status === "Ditolak") {
       reviewNote = window.prompt("Masukkan alasan penolakan:")?.trim() ?? "";
+      if (!reviewNote) return;
+    } else if (status === "PerluPerbaikan") {
+      reviewNote = window.prompt("Tuliskan catatan data atau dokumen yang perlu diperbaiki oleh pendaftar:")?.trim() ?? "";
       if (!reviewNote) return;
     } else if (!window.confirm(`Setujui pengajuan dari ${item.email}? Pastikan identitas sudah diperiksa.`)) {
       return;
@@ -92,7 +99,7 @@ export default function PengajuanAkunPage() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Pengajuan gagal diproses.");
       setSelectedItem(null);
-      setNotice(status === "Disetujui" ? "Pengajuan berhasil disetujui dan akun alumni telah diproses." : "Pengajuan berhasil ditolak.");
+      setNotice(status === "Disetujui" ? "Pengajuan berhasil disetujui dan akun alumni telah diproses." : status === "PerluPerbaikan" ? "Catatan perbaikan berhasil dikirim kepada pendaftar." : "Pengajuan berhasil ditolak.");
       await loadRequests();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan.");
@@ -239,6 +246,20 @@ export default function PengajuanAkunPage() {
                 <InfoItem label="Alamat" value={display(selectedItem.submittedAlamat)} wide />
                 <InfoItem label="Tanggal pengajuan" value={selectedItem.createdAt ? new Date(selectedItem.createdAt).toLocaleString("id-ID") : "—"} wide />
               </div>
+              <div className="rounded-xl border border-violet-100 bg-violet-50/60 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-violet-800">Bukti status alumni</p>
+                {selectedItem.submittedBuktiUrl ? (
+                  <a href={selectedItem.submittedBuktiUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-violet-800 underline">
+                    <FileText size={16} /> {display(selectedItem.submittedBuktiNama || selectedItem.submittedBuktiJenis || "Lihat dokumen bukti")}
+                  </a>
+                ) : <p className="mt-1 text-sm text-red-700">Dokumen bukti belum tersedia.</p>}
+                {selectedItem.submittedBuktiJenis && <p className="mt-1 text-xs text-violet-700">Jenis dokumen: {selectedItem.submittedBuktiJenis}</p>}
+              </div>
+              {selectedItem.status === "Menunggu" && selectedItem.revisionRequestedAt && selectedItem.reviewNote && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <p className="font-semibold">Catatan revisi terakhir</p><p className="mt-1">{selectedItem.reviewNote}</p>
+                </div>
+              )}
               {selectedItem.status === "Ditolak" && selectedItem.reviewNote && (
                 <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800">
                   <p className="font-semibold">Alasan penolakan</p><p className="mt-1">{selectedItem.reviewNote}</p>
@@ -248,6 +269,9 @@ export default function PengajuanAkunPage() {
                 <>
                   <p className="rounded-xl bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">Periksa kecocokan identitas dan data pemohon sebelum mengambil keputusan. Jika diterima, data alumni dan akun akan dibuat/diaktifkan melalui proses persetujuan ini.</p>
                   <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
+                    <button type="button" onClick={() => void review(selectedItem, "PerluPerbaikan")} disabled={busyId !== null} className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-200 px-4 py-2.5 text-sm font-semibold text-amber-800 hover:bg-amber-50 disabled:opacity-60">
+                      {busyId === selectedItem.id ? <LoaderCircle size={16} className="animate-spin" /> : <MessageSquareText size={16} />} Minta perbaikan
+                    </button>
                     <button type="button" onClick={() => void review(selectedItem, "Ditolak")} disabled={busyId !== null} className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">
                       {busyId === selectedItem.id ? <LoaderCircle size={16} className="animate-spin" /> : <XCircle size={16} />} Tolak pengajuan
                     </button>

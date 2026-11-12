@@ -180,13 +180,14 @@ export default function DaftarPage() {
         <textarea id="alamat" name="alamat" defaultValue={initialForm.alamat} rows={3} maxLength={5000} className={inputClass} /></div>
       <div className="rounded-2xl border border-violet-100 bg-violet-50/50 p-4">
         <p className="text-sm font-bold text-violet-950">Bukti status alumni *</p>
-        <p className="mt-1 text-xs leading-5 text-violet-800">KTM tidak wajib. Jika belum memiliki KTM, unggah sertifikat kelulusan atau surat keterangan resmi dari Lemhannas. Dokumen akan diperiksa Admin.</p>
+        <p className="mt-1 text-xs leading-5 text-violet-800">KTM tidak wajib. Jika belum memiliki KTM, unggah ijazah, sertifikat kelulusan, atau surat keterangan resmi dari Lemhannas. Dokumen akan diperiksa Admin.</p>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="evidenceType" className="mb-1.5 block text-sm font-semibold text-slate-700">Jenis bukti *</label>
             <select id="evidenceType" name="evidenceType" required defaultValue="" className={inputClass}>
               <option value="">Pilih jenis dokumen</option>
               <option value="KTM Alumni">KTM Alumni</option>
+              <option value="Ijazah">Ijazah</option>
               <option value="Sertifikat kelulusan">Sertifikat kelulusan</option>
               <option value="Surat keterangan Lemhannas">Surat keterangan Lemhannas</option>
               <option value="Dokumen pendukung lainnya">Dokumen pendukung lainnya</option>

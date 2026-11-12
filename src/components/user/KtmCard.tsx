@@ -149,7 +149,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_18%,rgba(255,255,255,.95),transparent_55%),linear-gradient(115deg,#f7f4e6_0%,#eeecd9_58%,#f8f5e8_100%)]" />
             <div className="pointer-events-none absolute inset-0 opacity-[0.07] bg-[repeating-linear-gradient(135deg,transparent_0px,transparent_10px,rgba(177,151,86,.18)_11px,transparent_12px)]" />
             <div className="pointer-events-none absolute inset-0 opacity-25 bg-[repeating-linear-gradient(135deg,transparent_0px,transparent_8px,rgba(177,151,86,.12)_9px,transparent_10px)]" />
-            <div className="relative flex w-[25%] shrink-0 flex-col items-center overflow-hidden bg-[#17132f]">
+            <div className="relative flex w-[25%] shrink-0 flex-col items-center overflow-hidden bg-[#5b2878]">
               <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_20%,#665b8d_0_1px,transparent_2px),radial-gradient(circle_at_75%_38%,#8a7da7_0_1px,transparent_2px),repeating-linear-gradient(135deg,transparent_0px,transparent_9px,rgba(255,255,255,.08)_10px,transparent_11px)]" />
               <div className="relative z-10 mt-[17%] flex w-full flex-col items-center px-2">
                 <span className="mb-1 text-[clamp(12px,4cqw,20px)] text-[#d5b66b]">★</span>
@@ -158,7 +158,7 @@ export default function KtmCard({ profile }: { profile: Profile }) {
               <svg className="absolute -bottom-1 left-0 h-[34%] w-full" viewBox="0 0 220 100" preserveAspectRatio="none" aria-hidden="true">
                 <path d="M-8 8 C52 42 78 54 130 70 C166 82 190 91 230 100 L230 112 L-8 112Z" fill="#b71936" />
                 <path d="M-8 31 C48 61 86 70 132 84 C172 96 194 101 230 106 L230 118 L-8 118Z" fill="#f4f1e8" />
-                <path d="M-8 53 C42 78 82 87 132 98 C173 107 198 111 230 114 L230 125 L-8 125Z" fill="#17132f" />
+                <path d="M-8 53 C42 78 82 87 132 98 C173 107 198 111 230 114 L230 125 L-8 125Z" fill="#5b2878" />
               </svg>
               <div className="absolute inset-y-0 right-0 w-[3px] bg-gradient-to-b from-[#c9ad6a] via-[#fff5d4] to-[#b99c59]" />
             </div>
@@ -209,9 +209,9 @@ export default function KtmCard({ profile }: { profile: Profile }) {
           </article>
 
           {/* BACK: navy, watermark gedung, blok data kiri, QR kanan, footer institusi */}
-          <article style={{ containerType: "inline-size" }} className="relative isolate flex aspect-[85.6/54] w-full min-w-0 flex-col overflow-hidden rounded-[14px] border border-[#282343] bg-[#17132f] text-white shadow-lg print:break-inside-avoid print:shadow-none">
+          <article style={{ containerType: "inline-size" }} className="relative isolate flex aspect-[85.6/54] w-full min-w-0 flex-col overflow-hidden rounded-[14px] border border-[#4a2166] bg-[#5b2878] text-white shadow-lg print:break-inside-avoid print:shadow-none">
             <div
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(111,94,151,.20),transparent_65%),linear-gradient(135deg,#211b40_0%,#17132f_55%,#211b40_100%)]" />
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(111,94,151,.20),transparent_65%),linear-gradient(135deg,#6b3288_0%,#5b2878_55%,#6b3288_100%)]" />
             <div className="pointer-events-none absolute inset-0 opacity-[0.10] bg-[linear-gradient(rgba(211,195,143,.16)_1px,transparent_1px),linear-gradient(90deg,rgba(211,195,143,.16)_1px,transparent_1px)] bg-[size:28px_28px]" />
             <div className="pointer-events-none absolute inset-0 opacity-[0.07] bg-[repeating-linear-gradient(135deg,transparent_0px,transparent_12px,rgba(255,255,255,.12)_13px,transparent_14px)]" />
 

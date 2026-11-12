@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 const MAX_EVIDENCE_SIZE = 10 * 1024 * 1024;
 const EVIDENCE_TYPES = new Set([
   "KTM Alumni",
+  "Ijazah",
   "Sertifikat kelulusan",
   "Surat keterangan Lemhannas",
   "Dokumen pendukung lainnya",

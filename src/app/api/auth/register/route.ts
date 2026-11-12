@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
               submitted_nama = ${nama},
               submitted_angkatan = ${kategoriProgram},
               submitted_kategori_program = ${kategoriProgram},
-              submitted_nomor_angkatan = COALESCE(NULLIF(submitted_nomor_angkatan, ''), ${value("nomorAngkatan", 40)}),
+              submitted_nomor_angkatan = ${String(tahunAngkatan).slice(-2)},
               submitted_tahun_angkatan = ${tahunAngkatan},
               submitted_nomor_hp = ${nomorHp || null},
               submitted_instansi = ${instansi},
@@ -227,32 +227,7 @@ export async function POST(request: NextRequest) {
       }
 
       await tx`SELECT pg_advisory_xact_lock(hashtextextended(${"register-category:" + kategoriProgram}, 0))`;
-      const cohortRows = await tx`
-        SELECT COALESCE(NULLIF(trim(nomor_angkatan), ''), legacy.parts[2]) AS "nomorAngkatan"
-        FROM alumni
-        CROSS JOIN LATERAL (
-          SELECT regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)') AS parts
-        ) legacy
-        WHERE upper(trim(coalesce(
-          CASE WHEN legacy.parts[1] IS NOT NULL
-            AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, ''))))
-            THEN legacy.parts[1]
-            ELSE NULLIF(trim(kategori_program), '') END,
-          legacy.parts[1], angkatan, ''
-        ))) = ${kategoriProgram}
-        UNION ALL
-        SELECT submitted_nomor_angkatan AS "nomorAngkatan"
-        FROM alumni_account_requests
-        WHERE status = 'Menunggu' AND request_type = 'register'
-          AND upper(trim(coalesce(submitted_kategori_program, submitted_angkatan, ''))) = ${kategoriProgram}
-      `;
-      const highestCohort = cohortRows.reduce((highest, row) => {
-        const raw = String(row.nomorAngkatan ?? "").trim();
-        if (!/^\d+$/.test(raw)) return highest;
-        const parsed = Number(raw);
-        return Number.isSafeInteger(parsed) ? Math.max(highest, parsed) : highest;
-      }, 0);
-      const nomorAngkatan = String(highestCohort + 1);
+      const nomorAngkatan = String(tahunAngkatan).slice(-2);
 
       await tx`SELECT pg_advisory_xact_lock(hashtextextended(${"register-identity:" + [nama.toLocaleLowerCase("id-ID"), kategoriProgram, nomorAngkatan].join("|")}, 0))`;
       const pendingIdentity = await tx`

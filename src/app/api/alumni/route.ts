@@ -128,6 +128,8 @@ export async function GET(request: NextRequest) {
       SELECT DISTINCT CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan) END AS kategori, CASE WHEN a.tahun_angkatan IS NOT NULL THEN RIGHT(a.tahun_angkatan::text, 2) ELSE COALESCE(NULLIF(trim(a.nomor_angkatan), ''), legacy.parts[2], '') END AS "nomorAngkatan", COALESCE(a.tahun_angkatan::text, '') AS "tahunAngkatan", COALESCE(a.wilayah, '') AS wilayah
       FROM alumni a CROSS JOIN LATERAL (SELECT regexp_match(upper(trim(coalesce(a.angkatan, ''))), '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)') AS parts) legacy
       WHERE (${scope.role === "super_admin"} = TRUE OR CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, '')))) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan) END = ANY(${allowedCategories}))
+        AND (${kategoriProgram} = '' OR CASE WHEN legacy.parts[1] IS NOT NULL AND upper(trim(coalesce(a.kategori_program, ''))) IN ('', upper(trim(coalesce(a.angkatan, ''))) ) THEN legacy.parts[1] ELSE COALESCE(NULLIF(upper(trim(a.kategori_program)), ''), legacy.parts[1], a.angkatan) END = ${kategoriProgram})
+        AND (${tahunAngkatan} = '' OR a.tahun_angkatan::text = ${tahunAngkatan})
     `) as { kategori: string | null; nomorAngkatan: string; tahunAngkatan: string; wilayah: string }[];
 
     return NextResponse.json({

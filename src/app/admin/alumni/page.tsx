@@ -393,9 +393,9 @@ export default function AlumniPage() {
                 </div>
 
                 <FilterSelect value={status} onChange={(v) => { setStatus(v); setPage(1); }} options={STATUS_OPTIONS} />
-                <FilterSelect value={kategori} onChange={(v) => { setKategori(v); setPage(1); }} options={kategoriOptions} />
+                <FilterSelect value={kategori} onChange={(v) => { setKategori(v); setNomorAngkatanFilter("Semua Nomor Angkatan"); setPage(1); }} options={kategoriOptions} />
                 <FilterSelect value={nomorAngkatanFilter} onChange={(v) => { setNomorAngkatanFilter(v); setPage(1); }} options={nomorAngkatanOptions} />
-                <FilterSelect value={tahunAngkatanFilter} onChange={(v) => { setTahunAngkatanFilter(v); setPage(1); }} options={tahunAngkatanOptions} />
+                <FilterSelect value={tahunAngkatanFilter} onChange={(v) => { setTahunAngkatanFilter(v); setNomorAngkatanFilter("Semua Nomor Angkatan"); setPage(1); }} options={tahunAngkatanOptions} />
                 <FilterSelect value={wilayah} onChange={(v) => { setWilayah(v); setPage(1); }} options={wilayahOptions} />
               </div>
             </div>

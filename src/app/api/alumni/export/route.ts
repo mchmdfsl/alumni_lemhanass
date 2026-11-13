@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         nama,
         angkatan,
         COALESCE(NULLIF(trim(kategori_program), ''), '') AS "kategoriProgram",
-        CASE WHEN tahun_angkatan IS NOT NULL THEN RIGHT(tahun_angkatan::text, 2) ELSE COALESCE(NULLIF(trim(nomor_angkatan), ''), '') END AS "nomorAngkatan",
+        COALESCE(NULLIF(trim(nomor_angkatan), ''), (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[2], CASE WHEN tahun_angkatan IS NOT NULL THEN RIGHT(tahun_angkatan::text, 2) ELSE '' END) AS "nomorAngkatan",
         COALESCE(tahun_angkatan::text, '') AS "tahunAngkatan",
         instansi,
         jabatan,
@@ -59,14 +59,7 @@ export async function GET(request: NextRequest) {
         AND (${angkatan} = '' OR upper(CASE WHEN (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] IS NOT NULL AND upper(trim(coalesce(kategori_program, ''))) IN ('', upper(trim(coalesce(angkatan, '')))) THEN (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1] ELSE COALESCE(NULLIF(upper(trim(kategori_program)), ''), (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[1], angkatan) END) = upper(${angkatan}))
         AND (
           ${nomorAngkatan} = ''
-          OR (CASE WHEN tahun_angkatan IS NOT NULL THEN RIGHT(tahun_angkatan::text, 2) ELSE trim(COALESCE(
-            NULLIF(nomor_angkatan, ''),
-            (regexp_match(
-              upper(trim(coalesce(angkatan, ''))),
-              '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'
-            ))[2],
-            ''
-          )) END) = ${nomorAngkatan}
+          OR COALESCE(NULLIF(trim(nomor_angkatan), ''), (regexp_match(upper(trim(coalesce(angkatan, ''))), '^(PPNK KOLABORASI|KRA|PPRA|P4N|KSA|PPSA|P3N|TAPLAI|PPNK|TOT)[[:space:]]+([0-9]+)'))[2], CASE WHEN tahun_angkatan IS NOT NULL THEN RIGHT(tahun_angkatan::text, 2) ELSE '' END) = ${nomorAngkatan}
         )
         AND (${wilayah} = '' OR wilayah = ${wilayah})
         AND (${nama} = '' OR nama ILIKE ${'%' + nama + '%'})

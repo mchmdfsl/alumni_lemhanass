@@ -48,7 +48,7 @@ interface Alumni {
   fotoProfil?: string | null;
 }
 
-const formatAlumniYear = (value: string | number | null | undefined) => { const year = String(value ?? "").trim(); return /^\d{4}$/.test(year) ? year.slice(-2) : year || "—"; };
+const formatAlumniYear = (value: string | number | null | undefined) => { const year = String(value ?? "").trim(); return /^\d{4}$/.test(year) ? year : year || "—"; };
 
 const ITEMS_PER_PAGE = 10;
 const STATUS_OPTIONS = ["Semua Status", "Terverifikasi", "Menunggu", "Ditolak"];
